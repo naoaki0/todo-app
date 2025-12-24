@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoリスト</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel (JSX変換用) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @keyframes confetti-explode {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            60% { opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 20px; }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen overflow-hidden text-gray-800 font-sans">
+    <div id="root" class="h-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- アイコンコンポーネント (SVG直接記述) ---
+        const SvgIcon = ({ children, size = 20, className = "", ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+                {children}
+            </svg>
+        );
+
+        const Menu = (p) => <SvgIcon {...p}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></SvgIcon>;
+        const Plus = (p) => <SvgIcon {...p}><path d="M5 12h14"/><path d="M12 5v14"/></SvgIcon>;
+        const Check = (p) => <SvgIcon {...p}><polyline points="20 6 9 17 4 12"/></SvgIcon>;
+        const Trash2 = (p) => <SvgIcon {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-1 1-1h6c0 0 1 0 1 1v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgIcon>;
+        const Calendar = (p) => <SvgIcon {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></SvgIcon>;
+        const Star = (p) => <SvgIcon {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></SvgIcon>;
+        const MoreVertical = (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></SvgIcon>;
+        const ChevronDown = (p) => <SvgIcon {...p}><path d="m6 9 6 6 6-6"/></SvgIcon>;
+        const ListIcon = (p) => <SvgIcon {...p}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></SvgIcon>;
+        const X = (p) => <SvgIcon {...p}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></SvgIcon>;
+        const CheckCircle = (p) => <SvgIcon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></SvgIcon>;
+        const ChevronRight = (p) => <SvgIcon {...p}><path d="m9 18 6-6-6-6"/></SvgIcon>;
+
+        // --- ユーティリティ ---
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '';
+            const now = new Date();
+            const isThisYear = date.getFullYear() === now.getFullYear();
+            const options = { month: 'short', day: 'numeric', weekday: 'short' };
+            if (!isThisYear) options.year = 'numeric';
+            return date.toLocaleDateString('ja-JP', options);
+        };
+
+        // --- UIコンポーネント ---
+        const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20 }) => (
+            <button 
+                onClick={onClick}
+                className={`p-2 rounded-full transition-colors duration-200 ${active ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-100'} ${className}`}
+            >
+                <Icon size={size} strokeWidth={2} />
+            </button>
+        );
+
+        const ConfettiExplosion = ({ type }) => {
+            const colors = ['bg-[#4285F4]', 'bg-[#EA4335]', 'bg-[#FBBC05]', 'bg-[#34A853]'];
+            const isBig = type === 'big';
+            const count = isBig ? 40 : 8;
+            const duration = isBig ? '0.9s' : '0.6s';
+
+            const particles = Array.from({ length: count }).map((_, i) => {
+                const angle = Math.random() * 360;
+                const velocity = (isBig ? 40 : 12) + Math.random() * (isBig ? 60 : 10);
+                const size = (isBig ? 4 : 2) + Math.random() * (isBig ? 4 : 2);
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const tx = Math.cos(angle * Math.PI / 180) * velocity;
+                const ty = Math.sin(angle * Math.PI / 180) * velocity;
+                return { id: i, tx, ty, size, color };
+            });
+
+            return (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 overflow-visible">
+                    {particles.map((p) => (
+                        <div key={p.id} className={`absolute rounded-full ${p.color}`} style={{
+                            width: `${p.size}px`, height: `${p.size}px`,
+                            '--tx': `${p.tx}px`, '--ty': `${p.ty}px`,
+                            animation: `confetti-explode ${duration} ease-out forwards`,
+                        }} />
+                    ))}
+                </div>
+            );
+        };
+
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect }) => {
+            const [isCompleting, setIsCompleting] = useState(false);
+            const [confettiType, setConfettiType] = useState(null);
+
+            const handleToggle = (e) => {
+                e.stopPropagation();
+                if (task.completed) { onToggle(task); return; }
+                if (isCompleting) return;
+
+                const rand = Math.random();
+                let type = null;
+                if (rand < 0.07) type = 'big';
+                else if (rand < 0.27) type = 'small';
+
+                setConfettiType(type);
+                setIsCompleting(true);
+                setTimeout(() => {
+                    onToggle(task);
+                    setIsCompleting(false);
+                    setConfettiType(null);
+                }, 600);
+            };
+
+            const isVisuallyCompleted = task.completed || isCompleting;
+
+            return (
+                <div onClick={onSelect} className={`group flex items-start p-3 pl-4 border-b border-gray-100 cursor-pointer transition-colors duration-300 ${isVisuallyCompleted ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'} ${isSelected ? 'bg-blue-50 hover:bg-blue-50' : ''}`}>
+                    <div className="pt-1 pr-3 flex-shrink-0 relative flex items-center justify-center">
+                        {isCompleting && confettiType && <ConfettiExplosion type={confettiType} />}
+                        <button onClick={handleToggle} className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 z-10 relative ${isVisuallyCompleted ? 'bg-blue-600 border-blue-600 scale-100' : 'border-gray-400 hover:border-blue-600 hover:bg-blue-50'}`}>
+                            <Check size={14} className={`text-white transition-all duration-500 transform ${isVisuallyCompleted ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-45'}`} strokeWidth={3} />
+                        </button>
+                    </div>
+                    <div className="flex-grow min-w-0 pr-2">
+                        <div className={`text-base font-normal truncate transition-all duration-500 ${isVisuallyCompleted ? 'text-gray-500 line-through opacity-60' : 'text-gray-800'}`}>{task.title}</div>
+                        <div className={`flex flex-wrap items-center gap-2 mt-1 transition-opacity duration-300 ${isVisuallyCompleted ? 'opacity-60' : 'opacity-100'}`}>
+                            {task.details && <span className="text-xs text-gray-500 truncate">{task.details}</span>}
+                            {task.dueDate && <span className={`flex items-center text-xs px-2 py-0.5 rounded-full border ${isVisuallyCompleted ? 'text-gray-400 border-gray-200' : 'text-blue-600 border-blue-100 bg-blue-50'}`}><Calendar size={10} className="mr-1" />{formatDate(task.dueDate)}</span>}
+                        </div>
+                    </div>
+                    <div className="flex items-center opacity-0 group-hover:opacity-100 md:opacity-0 opacity-100">
+                        <IconButton icon={Star} size={18} active={task.isStarred} onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
+                        <IconButton icon={Trash2} size={18} className="hover:text-red-600" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+        const App = () => {
+            const [tasks, setTasks] = useState(() => {
+                try { return JSON.parse(localStorage.getItem('gt_tasks')) || []; } catch { return []; }
+            });
+            const [lists, setLists] = useState(() => {
+                try { return JSON.parse(localStorage.getItem('gt_lists')) || [{ id: 'default', title: 'マイタスク', icon: 'check' }, { id: 'starred', title: 'スター付き', icon: 'star' }]; } catch { return [{ id: 'default', title: 'マイタスク', icon: 'check' }]; }
+            });
+            
+            const [activeListId, setActiveListId] = useState('default');
+            const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+            const [newTaskTitle, setNewTaskTitle] = useState('');
+            const [newTaskDetails, setNewTaskDetails] = useState('');
+            const [newTaskDate, setNewTaskDate] = useState('');
+            const [isInputExpanded, setIsInputExpanded] = useState(false);
+            const [showCompleted, setShowCompleted] = useState(false);
+            const [selectedTaskId, setSelectedTaskId] = useState(null);
+            const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+            const inputRef = useRef(null);
+
+            useEffect(() => localStorage.setItem('gt_tasks', JSON.stringify(tasks)), [tasks]);
+            useEffect(() => localStorage.setItem('gt_lists', JSON.stringify(lists)), [lists]);
+            useEffect(() => {
+                const handleResize = () => {
+                    const mobile = window.innerWidth < 768;
+                    setIsMobile(mobile);
+                    setIsSidebarOpen(!mobile);
+                };
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            const handleAddTask = () => {
+                if (!newTaskTitle.trim()) return;
+                const newTask = {
+                    id: Date.now().toString(),
+                    title: newTaskTitle,
+                    details: newTaskDetails,
+                    dueDate: newTaskDate,
+                    listId: activeListId === 'starred' ? 'default' : activeListId,
+                    isStarred: activeListId === 'starred',
+                    completed: false,
+                    createdAt: Date.now(),
+                };
+                setTasks([newTask, ...tasks]);
+                setNewTaskTitle(''); setNewTaskDetails(''); setNewTaskDate('');
+            };
+
+            const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
+            const toggleTask = (t) => updateTask(t.id, { completed: !t.completed });
+            const deleteTask = (id) => {
+                setTasks(tasks.filter(t => t.id !== id));
+                if (selectedTaskId === id) setSelectedTaskId(null);
+            };
+
+            const visibleTasks = tasks
+                .filter(t => activeListId === 'starred' ? t.isStarred : (t.listId === activeListId || (!t.listId && activeListId === 'default')))
+                .sort((a, b) => (a.completed === b.completed) ? b.createdAt - a.createdAt : (a.completed ? 1 : -1));
+            
+            const incomplete = visibleTasks.filter(t => !t.completed);
+            const completed = visibleTasks.filter(t => t.completed);
+
+            return (
+                <div className="flex h-screen w-full bg-white font-sans text-gray-800 overflow-hidden">
+                    {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/30 z-10" onClick={() => setIsSidebarOpen(false)} />}
+                    
+                    {/* サイドバー */}
+                    <div className={`fixed md:relative z-20 h-full bg-white flex flex-col transition-all duration-300 border-r border-gray-200 ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full md:w-0 overflow-hidden'}`}>
+                        <div className="p-4 flex items-center justify-between">
+                            <span className="text-xl font-medium text-gray-700 flex items-center gap-2">
+                                <span className="bg-blue-600 text-white rounded p-1"><Check size={16} strokeWidth={3}/></span> ToDoリスト
+                            </span>
+                            {isMobile && <IconButton icon={X} onClick={() => setIsSidebarOpen(false)} />}
+                        </div>
+                        <div className="flex-1 overflow-y-auto py-2">
+                            {lists.map(list => (
+                                <div key={list.id} onClick={() => { setActiveListId(list.id); if(isMobile) setIsSidebarOpen(false); }} className={`flex items-center px-6 py-3 cursor-pointer text-sm font-medium transition-colors ${activeListId === list.id ? 'bg-blue-50 text-blue-800 rounded-r-full mr-2' : 'text-gray-700 hover:bg-gray-100 rounded-r-full mr-2'}`}>
+                                    {list.icon === 'star' ? <Star size={18} className="mr-4"/> : <CheckCircle size={18} className="mr-4"/>}
+                                    <span className="truncate">{list.title}</span>
+                                </div>
+                            ))}
+                            <div onClick={() => { const t = prompt("リスト名:"); if(t) setLists([...lists, {id: Date.now().toString(), title: t, icon:'list'}]) }} className="flex items-center px-6 py-3 cursor-pointer text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-r-full mr-2 mt-2">
+                                <Plus size={18} className="mr-4"/> 新しいリスト
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* メインエリア */}
+                    <div className="flex-1 flex flex-col h-full min-w-0 bg-white md:bg-gray-50/50">
+                        <header className="h-16 flex items-center px-4 bg-white md:bg-transparent flex-shrink-0">
+                            {!isSidebarOpen && <IconButton icon={Menu} onClick={() => setIsSidebarOpen(true)} className="mr-2" />}
+                            <h1 className="text-2xl text-gray-700 ml-2 truncate">{lists.find(l => l.id === activeListId)?.title}</h1>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto px-2 md:px-8 pb-20">
+                            <div className="max-w-3xl mx-auto bg-white min-h-[calc(100vh-8rem)] shadow-sm rounded-xl md:mt-2">
+                                {/* 入力エリア */}
+                                <div className={`p-4 border-b border-gray-100 transition-all ${isInputExpanded ? 'shadow-lg rounded-xl m-2 border' : ''}`}>
+                                    <div className="flex items-center gap-3 text-gray-500 cursor-text" onClick={() => { setIsInputExpanded(true); setTimeout(() => inputRef.current?.focus(), 10); }}>
+                                        {isInputExpanded ? <div className="w-5 h-5 rounded-full border-2 border-gray-300"/> : <Plus size={24} className="text-blue-600"/>}
+                                        <input ref={inputRef} type="text" placeholder="タスクを追加" className="flex-1 bg-transparent border-none outline-none text-gray-800 h-10" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddTask()} />
+                                    </div>
+                                    {isInputExpanded && (
+                                        <div className="mt-3 pl-8">
+                                            <input type="text" placeholder="詳細" className="w-full text-sm bg-transparent border-none outline-none mb-3" value={newTaskDetails} onChange={(e) => setNewTaskDetails(e.target.value)} />
+                                            <div className="flex justify-between mt-2">
+                                                <input type="date" className="text-xs bg-gray-50 border rounded px-2 py-1" value={newTaskDate} onChange={(e) => setNewTaskDate(e.target.value)} />
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => { setIsInputExpanded(false); setNewTaskTitle(''); }} className="text-sm text-gray-500 px-4 py-2">キャンセル</button>
+                                                    <button onClick={handleAddTask} disabled={!newTaskTitle.trim()} className="text-sm text-blue-600 font-medium px-4 py-2 disabled:opacity-50">完了</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* タスク一覧 */}
+                                <div className="py-2">
+                                    {incomplete.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} />)}
+                                </div>
+                                {completed.length > 0 && (
+                                    <div className="border-t border-gray-100">
+                                        <button onClick={() => setShowCompleted(!showCompleted)} className="w-full flex items-center px-4 py-3 hover:bg-gray-50">
+                                            {showCompleted ? <ChevronDown size={18} /> : <ChevronRight size={18} />} <span className="ml-2 text-sm text-gray-600">完了 ({completed.length})</span>
+                                        </button>
+                                        {showCompleted && <div className="bg-gray-50/50 pb-4">{completed.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} />)}</div>}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 詳細パネル (PC用) */}
+                        {selectedTaskId && !isMobile && (
+                            <div className="hidden lg:flex w-80 bg-white border-l border-gray-200 flex-col shadow-xl z-20 absolute right-0 top-0 h-full p-6">
+                                <div className="flex justify-between mb-6"><span className="text-sm text-gray-500">詳細</span><IconButton icon={X} onClick={() => setSelectedTaskId(null)} /></div>
+                                {(() => {
+                                    const t = tasks.find(task => task.id === selectedTaskId);
+                                    if (!t) return null;
+                                    return (
+                                        <>
+                                            <input className="text-xl font-medium mb-4 outline-none border-b border-transparent focus:border-blue-500" value={t.title} onChange={(e) => updateTask(t.id, { title: e.target.value })} />
+                                            <textarea className="w-full text-sm text-gray-600 resize-none outline-none min-h-[100px] mb-4" placeholder="詳細を追加" value={t.details || ''} onChange={(e) => updateTask(t.id, { details: e.target.value })} />
+                                            <input type="date" className="text-sm text-gray-600 outline-none" value={t.dueDate || ''} onChange={(e) => updateTask(t.id, { dueDate: e.target.value })} />
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
