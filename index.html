@@ -4,8 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToDoリスト</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Roboto', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        google: {
+                            blue: '#1a73e8',
+                            red: '#ea4335',
+                            yellow: '#fbbc04',
+                            green: '#34a853',
+                            gray: '#f1f3f4',
+                            text: '#202124',
+                            textSec: '#5f6368',
+                            hover: '#f8f9fa',
+                            selected: '#e8f0fe',
+                            selectedText: '#1967d2'
+                        }
+                    },
+                    boxShadow: {
+                        'card': '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)',
+                        'float': '0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15)',
+                    }
+                }
+            }
+        }
+    </script>
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -13,18 +44,45 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
+        body {
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* 紙吹雪のアニメーション */
         @keyframes confetti-explode {
             0% { transform: translate(0, 0) scale(1); opacity: 1; }
             60% { opacity: 1; }
             100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
         }
+        /* 画面フラッシュのアニメーション (2回点滅、強度85%) */
+        @keyframes flash-screen {
+            0% { opacity: 0; }
+            10% { opacity: 0.85; }   /* 1回目：最大発光 (85%) */
+            35% { opacity: 0.2; }    /* 間隔 */
+            60% { opacity: 0.85; }   /* 2回目：最大発光 (85%) */
+            100% { opacity: 0; }
+        }
+        /* イナズマのアニメーション */
+        @keyframes lightning-strike {
+            0% { opacity: 0; transform: scaleY(0) translateX(0); }
+            5% { opacity: 1; transform: scaleY(1) translateX(-5px); }
+            10% { opacity: 0; transform: scaleY(1) translateX(5px); }
+            15% { opacity: 1; transform: scaleY(1) translateX(-2px); }
+            20% { opacity: 0; }
+            30% { opacity: 1; transform: scaleY(1) translateX(0); }
+            100% { opacity: 0; transform: scaleY(1) translateX(0); }
+        }
         /* スクロールバーのカスタマイズ */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 20px; }
+        ::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: #bdc1c6; }
+        
+        .task-enter { opacity: 0; transform: translateY(-10px); }
+        .task-enter-active { opacity: 1; transform: translateY(0); transition: opacity 200ms, transform 200ms; }
     </style>
 </head>
-<body class="bg-gray-50 h-screen overflow-hidden text-gray-800 font-sans">
+<body class="bg-white h-screen overflow-hidden text-google-text">
     <div id="root" class="h-full"></div>
 
     <script type="text/babel">
@@ -37,18 +95,23 @@
             </svg>
         );
 
-        const Menu = (p) => <SvgIcon {...p}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></SvgIcon>;
-        const Plus = (p) => <SvgIcon {...p}><path d="M5 12h14"/><path d="M12 5v14"/></SvgIcon>;
+        const MenuIcon = (p) => <SvgIcon {...p}><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></SvgIcon>;
+        const Plus = (p) => <SvgIcon {...p}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></SvgIcon>;
         const Check = (p) => <SvgIcon {...p}><polyline points="20 6 9 17 4 12"/></SvgIcon>;
-        const Trash2 = (p) => <SvgIcon {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-1 1-1h6c0 0 1 0 1 1v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></SvgIcon>;
-        const Calendar = (p) => <SvgIcon {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></SvgIcon>;
-        const Star = (p) => <SvgIcon {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></SvgIcon>;
-        const MoreVertical = (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></SvgIcon>;
-        const ChevronDown = (p) => <SvgIcon {...p}><path d="m6 9 6 6 6-6"/></SvgIcon>;
-        const ListIcon = (p) => <SvgIcon {...p}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></SvgIcon>;
-        const X = (p) => <SvgIcon {...p}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></SvgIcon>;
-        const CheckCircle = (p) => <SvgIcon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></SvgIcon>;
-        const ChevronRight = (p) => <SvgIcon {...p}><path d="m9 18 6-6-6-6"/></SvgIcon>;
+        const Trash2 = (p) => <SvgIcon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></SvgIcon>;
+        const Calendar = (p) => <SvgIcon {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></SvgIcon>;
+        const Star = (p) => <SvgIcon {...p} fill={p.active ? "currentColor" : "none"}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></SvgIcon>;
+        const MoreVertical = (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></SvgIcon>;
+        const ChevronDown = (p) => <SvgIcon {...p}><polyline points="6 9 12 15 18 9"></polyline></SvgIcon>;
+        const ChevronRight = (p) => <SvgIcon {...p}><polyline points="9 18 15 12 9 6"></polyline></SvgIcon>;
+        const ListIcon = (p) => <SvgIcon {...p}><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></SvgIcon>;
+        const X = (p) => <SvgIcon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></SvgIcon>;
+        
+        const TaskCheckCircle = ({ completed }) => (
+            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${completed ? 'bg-google-blue border-google-blue' : 'border-gray-500 hover:border-google-blue hover:bg-google-selected'}`}>
+                {completed && <Check size={14} className="text-white" strokeWidth={3} />}
+            </div>
+        );
 
         // --- ユーティリティ ---
         const formatDate = (dateString) => {
@@ -63,25 +126,26 @@
         };
 
         // --- UIコンポーネント ---
-        const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20 }) => (
+        const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20, color="text-google-textSec" }) => (
             <button 
                 onClick={onClick}
-                className={`p-2 rounded-full transition-colors duration-200 ${active ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-100'} ${className}`}
+                className={`p-2 rounded-full transition-colors duration-200 outline-none ${active ? 'text-google-blue bg-google-selected' : `${color} hover:bg-google-hover`} ${className}`}
             >
-                <Icon size={size} strokeWidth={2} />
+                <Icon size={size} strokeWidth={2} active={active} />
             </button>
         );
 
+        // 紙吹雪コンポーネント
         const ConfettiExplosion = ({ type }) => {
             const colors = ['bg-[#4285F4]', 'bg-[#EA4335]', 'bg-[#FBBC05]', 'bg-[#34A853]'];
             const isBig = type === 'big';
-            const count = isBig ? 40 : 8;
-            const duration = isBig ? '0.9s' : '0.6s';
+            const count = isBig ? 40 : 12;
+            const duration = isBig ? '0.9s' : '0.7s';
 
             const particles = Array.from({ length: count }).map((_, i) => {
                 const angle = Math.random() * 360;
-                const velocity = (isBig ? 40 : 12) + Math.random() * (isBig ? 60 : 10);
-                const size = (isBig ? 4 : 2) + Math.random() * (isBig ? 4 : 2);
+                const velocity = (isBig ? 50 : 20) + Math.random() * (isBig ? 60 : 20);
+                const size = (isBig ? 5 : 3) + Math.random() * (isBig ? 4 : 2);
                 const color = colors[Math.floor(Math.random() * colors.length)];
                 const tx = Math.cos(angle * Math.PI / 180) * velocity;
                 const ty = Math.sin(angle * Math.PI / 180) * velocity;
@@ -89,7 +153,7 @@
             });
 
             return (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 overflow-visible">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 overflow-visible">
                     {particles.map((p) => (
                         <div key={p.id} className={`absolute rounded-full ${p.color}`} style={{
                             width: `${p.size}px`, height: `${p.size}px`,
@@ -101,62 +165,191 @@
             );
         };
 
+        // 画面フラッシュエフェクト（大当たり用・調整版）
+        const FlashEffect = () => (
+            <div 
+                className="fixed inset-0 pointer-events-none z-[100]"
+                style={{
+                    backgroundColor: 'white',
+                    background: 'radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,240,0.8) 100%)',
+                    animation: 'flash-screen 0.6s ease-out forwards'
+                }}
+            />
+        );
+
+        // イナズマエフェクト（大当たり用）
+        const LightningEffect = () => {
+            const bolts = Array.from({ length: 3 }).map((_, i) => {
+                const left = 20 + Math.random() * 60; // 画面中央付近に集中
+                const delay = Math.random() * 0.1; // わずかな時間差
+                const scale = 0.8 + Math.random() * 0.4;
+                const rotation = (Math.random() - 0.5) * 40; // 少し傾ける
+                
+                return (
+                    <div 
+                        key={i}
+                        className="fixed top-0 pointer-events-none z-[101]"
+                        style={{
+                            left: `${left}%`,
+                            height: '100%',
+                            width: '200px',
+                            transform: `translateX(-50%) rotate(${rotation}deg) scale(${scale})`,
+                            animation: `lightning-strike 0.5s ease-out forwards ${delay}s`
+                        }}
+                    >
+                        <svg viewBox="0 0 100 200" preserveAspectRatio="none" className="w-full h-full drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] filter">
+                             <defs>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <path 
+                                d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" 
+                                fill="none" 
+                                stroke="#FFFF00" 
+                                strokeWidth="4"
+                                strokeLinejoin="round"
+                                filter="url(#glow)"
+                            />
+                            <path 
+                                d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" 
+                                fill="none" 
+                                stroke="#FFFFFF" 
+                                strokeWidth="1.5"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                    </div>
+                );
+            });
+
+            return <>{bolts}</>;
+        };
+
         const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
+            const [showConfetti, setShowConfetti] = useState(false); // 紙吹雪の表示タイミング制御用
 
             const handleToggle = (e) => {
                 e.stopPropagation();
                 if (task.completed) { onToggle(task); return; }
                 if (isCompleting) return;
 
+                // 確率計算
                 const rand = Math.random();
                 let type = null;
-                if (rand < 0.07) type = 'big';
-                else if (rand < 0.27) type = 'small';
+                if (rand < 0.07) {
+                    type = 'big'; // 大当たり (7%)
+                } else if (rand < 0.27) {
+                    type = 'small'; // 小当たり (20%)
+                }
+                // なし (73%)
 
                 setConfettiType(type);
                 setIsCompleting(true);
-                setTimeout(() => {
-                    onToggle(task);
-                    setIsCompleting(false);
-                    setConfettiType(null);
-                }, 600);
+
+                if (type === 'big') {
+                    // 大当たりの場合:
+                    // 1. 最初はイナズマ&フラッシュのみ (showConfetti = false)
+                    setShowConfetti(false);
+
+                    // 2. 0.6秒後(イナズマ終了後)に紙吹雪開始
+                    setTimeout(() => {
+                        setShowConfetti(true);
+
+                        // 3. さらに0.9秒後(紙吹雪終了後)に完了
+                        setTimeout(() => {
+                            finishCompletion();
+                        }, 900);
+                    }, 600);
+
+                } else if (type === 'small') {
+                    // 小当たりの場合: 即座に紙吹雪
+                    setShowConfetti(true);
+                    setTimeout(() => {
+                        finishCompletion();
+                    }, 700);
+                } else {
+                    // なし
+                    setShowConfetti(false);
+                    setTimeout(() => {
+                        finishCompletion();
+                    }, 300);
+                }
+            };
+
+            const finishCompletion = () => {
+                onToggle(task);
+                setIsCompleting(false);
+                setConfettiType(null);
+                setShowConfetti(false);
             };
 
             const isVisuallyCompleted = task.completed || isCompleting;
 
             return (
-                <div onClick={onSelect} className={`group flex items-start p-3 pl-4 border-b border-gray-100 cursor-pointer transition-colors duration-300 ${isVisuallyCompleted ? 'bg-gray-50' : 'bg-white hover:bg-gray-50'} ${isSelected ? 'bg-blue-50 hover:bg-blue-50' : ''}`}>
-                    <div className="pt-1 pr-3 flex-shrink-0 relative flex items-center justify-center">
-                        {isCompleting && confettiType && <ConfettiExplosion type={confettiType} />}
-                        <button onClick={handleToggle} className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 z-10 relative ${isVisuallyCompleted ? 'bg-blue-600 border-blue-600 scale-100' : 'border-gray-400 hover:border-blue-600 hover:bg-blue-50'}`}>
-                            <Check size={14} className={`text-white transition-all duration-500 transform ${isVisuallyCompleted ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-45'}`} strokeWidth={3} />
-                        </button>
-                    </div>
-                    <div className="flex-grow min-w-0 pr-2">
-                        <div className={`text-base font-normal truncate transition-all duration-500 ${isVisuallyCompleted ? 'text-gray-500 line-through opacity-60' : 'text-gray-800'}`}>{task.title}</div>
-                        <div className={`flex flex-wrap items-center gap-2 mt-1 transition-opacity duration-300 ${isVisuallyCompleted ? 'opacity-60' : 'opacity-100'}`}>
-                            {task.details && <span className="text-xs text-gray-500 truncate">{task.details}</span>}
-                            {task.dueDate && <span className={`flex items-center text-xs px-2 py-0.5 rounded-full border ${isVisuallyCompleted ? 'text-gray-400 border-gray-200' : 'text-blue-600 border-blue-100 bg-blue-50'}`}><Calendar size={10} className="mr-1" />{formatDate(task.dueDate)}</span>}
+                <>
+                    {/* 大当たり演出制御: showConfettiがfalseの間だけイナズマとフラッシュを出す */}
+                    {isCompleting && confettiType === 'big' && !showConfetti && (
+                        <>
+                            <FlashEffect />
+                            <LightningEffect />
+                        </>
+                    )}
+
+                    <div 
+                        onClick={onSelect} 
+                        className={`group flex items-start py-3 px-4 cursor-pointer transition-colors duration-200
+                            ${isSelected ? 'bg-google-selected' : 'hover:bg-google-hover bg-white'}
+                            ${isVisuallyCompleted ? '' : ''}
+                        `}
+                    >
+                        <div className="pt-0.5 pr-4 flex-shrink-0 relative flex items-center justify-center" onClick={handleToggle}>
+                            {/* 紙吹雪は showConfetti が true になってから表示 */}
+                            {isCompleting && confettiType && showConfetti && <ConfettiExplosion type={confettiType} />}
+                            <TaskCheckCircle completed={isVisuallyCompleted} />
+                        </div>
+                        
+                        <div className="flex-grow min-w-0 pr-2 pt-0.5">
+                            <div className={`text-[15px] font-normal leading-5 transition-all duration-300 ${isVisuallyCompleted ? 'text-google-textSec line-through' : 'text-google-text'}`}>
+                                {task.title}
+                            </div>
+                            <div className={`flex flex-wrap items-center gap-2 mt-1 ${isVisuallyCompleted ? 'opacity-60' : 'opacity-100'}`}>
+                                {task.details && <span className="text-xs text-google-textSec truncate max-w-full">{task.details}</span>}
+                                {task.dueDate && (
+                                    <span className={`flex items-center text-xs px-2 py-0.5 rounded-full border ${isVisuallyCompleted ? 'text-gray-400 border-gray-200' : 'text-google-blue border-transparent bg-google-selected'}`}>
+                                        <Calendar size={12} className="mr-1" />{formatDate(task.dueDate)}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 md:opacity-0 opacity-100 transition-opacity">
+                            <IconButton icon={Star} size={20} active={task.isStarred} onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
+                            <div className="relative group/menu">
+                                <IconButton icon={Trash2} size={18} className="hover:text-google-red" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 md:opacity-0 opacity-100">
-                        <IconButton icon={Star} size={18} active={task.isStarred} onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
-                        <IconButton icon={Trash2} size={18} className="hover:text-red-600" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
-                    </div>
-                </div>
+                </>
             );
         };
 
         // --- Main App ---
         const App = () => {
-            const [tasks, setTasks] = useState(() => {
-                try { return JSON.parse(localStorage.getItem('gt_tasks')) || []; } catch { return []; }
-            });
-            const [lists, setLists] = useState(() => {
-                try { return JSON.parse(localStorage.getItem('gt_lists')) || [{ id: 'default', title: 'マイタスク', icon: 'check' }, { id: 'starred', title: 'スター付き', icon: 'star' }]; } catch { return [{ id: 'default', title: 'マイタスク', icon: 'check' }]; }
-            });
+            // LocalStorage helpers
+            const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
+            
+            const [tasks, setTasks] = useState(() => load('gt_tasks', []));
+            const [lists, setLists] = useState(() => load('gt_lists', [
+                { id: 'default', title: 'マイタスク', icon: 'check' }, 
+                { id: 'starred', title: 'スター付き', icon: 'star' }
+            ]));
             
             const [activeListId, setActiveListId] = useState('default');
             const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
@@ -175,7 +368,8 @@
                 const handleResize = () => {
                     const mobile = window.innerWidth < 768;
                     setIsMobile(mobile);
-                    setIsSidebarOpen(!mobile);
+                    // Desktop keeps previous state, mobile defaults to closed
+                    if(mobile) setIsSidebarOpen(false);
                 };
                 window.addEventListener('resize', handleResize);
                 return () => window.removeEventListener('resize', handleResize);
@@ -203,7 +397,12 @@
                 setTasks(tasks.filter(t => t.id !== id));
                 if (selectedTaskId === id) setSelectedTaskId(null);
             };
+            const addList = () => {
+                const t = prompt("新しいリストの名前:"); 
+                if(t) setLists([...lists, {id: Date.now().toString(), title: t, icon:'list'}]);
+            };
 
+            // Filtering
             const visibleTasks = tasks
                 .filter(t => activeListId === 'starred' ? t.isStarred : (t.listId === activeListId || (!t.listId && activeListId === 'default')))
                 .sort((a, b) => (a.completed === b.completed) ? b.createdAt - a.createdAt : (a.completed ? 1 : -1));
@@ -212,87 +411,180 @@
             const completed = visibleTasks.filter(t => t.completed);
 
             return (
-                <div className="flex h-screen w-full bg-white font-sans text-gray-800 overflow-hidden">
-                    {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/30 z-10" onClick={() => setIsSidebarOpen(false)} />}
+                <div className="flex h-screen w-full bg-white font-sans text-google-text overflow-hidden selection:bg-google-selected selection:text-google-blue">
+                    {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setIsSidebarOpen(false)} />}
                     
                     {/* サイドバー */}
-                    <div className={`fixed md:relative z-20 h-full bg-white flex flex-col transition-all duration-300 border-r border-gray-200 ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full md:w-0 overflow-hidden'}`}>
-                        <div className="p-4 flex items-center justify-between">
-                            <span className="text-xl font-medium text-gray-700 flex items-center gap-2">
-                                <span className="bg-blue-600 text-white rounded p-1"><Check size={16} strokeWidth={3}/></span> ToDoリスト
+                    <div className={`fixed md:relative z-50 h-full bg-white flex flex-col transition-all duration-300 shadow-[1px_0_0_0_#dadce0] ${isSidebarOpen ? 'w-[280px] translate-x-0' : 'w-0 -translate-x-full md:w-0 overflow-hidden'}`}>
+                        <div className="h-16 flex items-center px-4 mb-2">
+                             <span className="text-[22px] text-google-textSec font-normal pl-2 flex items-center gap-1">
+                                <span className="text-google-blue font-bold">ToDo</span>リスト
                             </span>
-                            {isMobile && <IconButton icon={X} onClick={() => setIsSidebarOpen(false)} />}
+                            {isMobile && <div className="ml-auto"><IconButton icon={X} onClick={() => setIsSidebarOpen(false)} /></div>}
                         </div>
-                        <div className="flex-1 overflow-y-auto py-2">
+                        <div className="flex-1 overflow-y-auto px-2">
                             {lists.map(list => (
-                                <div key={list.id} onClick={() => { setActiveListId(list.id); if(isMobile) setIsSidebarOpen(false); }} className={`flex items-center px-6 py-3 cursor-pointer text-sm font-medium transition-colors ${activeListId === list.id ? 'bg-blue-50 text-blue-800 rounded-r-full mr-2' : 'text-gray-700 hover:bg-gray-100 rounded-r-full mr-2'}`}>
-                                    {list.icon === 'star' ? <Star size={18} className="mr-4"/> : <CheckCircle size={18} className="mr-4"/>}
-                                    <span className="truncate">{list.title}</span>
+                                <div 
+                                    key={list.id} 
+                                    onClick={() => { setActiveListId(list.id); if(isMobile) setIsSidebarOpen(false); }} 
+                                    className={`flex items-center px-4 py-2 mb-1 rounded-r-full cursor-pointer text-[15px] font-medium transition-colors 
+                                    ${activeListId === list.id ? 'bg-google-selected text-google-selectedText' : 'text-google-text hover:bg-google-hover'}`}
+                                >
+                                    <div className="mr-4 text-google-textSec">
+                                        {list.icon === 'star' ? <Star size={20} /> : list.icon === 'check' ? <Check size={20} /> : <ListIcon size={20} />}
+                                    </div>
+                                    <span className="truncate flex-1">{list.title}</span>
+                                    {list.id === activeListId && <span className="text-xs font-bold ml-2">{visibleTasks.length > 0 ? visibleTasks.length : ''}</span>}
                                 </div>
                             ))}
-                            <div onClick={() => { const t = prompt("リスト名:"); if(t) setLists([...lists, {id: Date.now().toString(), title: t, icon:'list'}]) }} className="flex items-center px-6 py-3 cursor-pointer text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-r-full mr-2 mt-2">
-                                <Plus size={18} className="mr-4"/> 新しいリスト
+                            <div className="border-t border-gray-200 my-2 mx-2"></div>
+                            <div onClick={addList} className="flex items-center px-4 py-2 rounded-r-full cursor-pointer text-[15px] font-medium text-google-text hover:bg-google-hover">
+                                <Plus size={20} className="mr-4 text-google-textSec"/> 新しいリストを作成
                             </div>
                         </div>
                     </div>
 
                     {/* メインエリア */}
-                    <div className="flex-1 flex flex-col h-full min-w-0 bg-white md:bg-gray-50/50">
-                        <header className="h-16 flex items-center px-4 bg-white md:bg-transparent flex-shrink-0">
-                            {!isSidebarOpen && <IconButton icon={Menu} onClick={() => setIsSidebarOpen(true)} className="mr-2" />}
-                            <h1 className="text-2xl text-gray-700 ml-2 truncate">{lists.find(l => l.id === activeListId)?.title}</h1>
+                    <div className="flex-1 flex flex-col h-full min-w-0 bg-white">
+                        <header className="h-16 flex items-center px-4 flex-shrink-0">
+                            {!isSidebarOpen && <IconButton icon={MenuIcon} onClick={() => setIsSidebarOpen(true)} className="mr-4" />}
+                            <h1 className="text-2xl text-google-text pb-1 ml-2 truncate font-normal">
+                                {lists.find(l => l.id === activeListId)?.title}
+                            </h1>
+                            <div className="ml-auto">
+                                <IconButton icon={MoreVertical} />
+                            </div>
                         </header>
 
-                        <div className="flex-1 overflow-y-auto px-2 md:px-8 pb-20">
-                            <div className="max-w-3xl mx-auto bg-white min-h-[calc(100vh-8rem)] shadow-sm rounded-xl md:mt-2">
-                                {/* 入力エリア */}
-                                <div className={`p-4 border-b border-gray-100 transition-all ${isInputExpanded ? 'shadow-lg rounded-xl m-2 border' : ''}`}>
-                                    <div className="flex items-center gap-3 text-gray-500 cursor-text" onClick={() => { setIsInputExpanded(true); setTimeout(() => inputRef.current?.focus(), 10); }}>
-                                        {isInputExpanded ? <div className="w-5 h-5 rounded-full border-2 border-gray-300"/> : <Plus size={24} className="text-blue-600"/>}
-                                        <input ref={inputRef} type="text" placeholder="タスクを追加" className="flex-1 bg-transparent border-none outline-none text-gray-800 h-10" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddTask()} />
+                        <div className="flex-1 overflow-y-auto px-4 md:px-12 pb-20">
+                            <div className="max-w-4xl mx-auto h-full flex flex-col">
+                                {/* タスク追加エリア */}
+                                <div className={`mb-6 transition-all duration-300 ${isInputExpanded ? 'shadow-float rounded-lg bg-white p-4 my-4' : 'rounded-t-lg pt-2'}`}>
+                                    <div 
+                                        className={`flex items-center gap-4 cursor-text ${!isInputExpanded && 'hover:bg-google-hover p-3 rounded-full'}`}
+                                        onClick={() => { setIsInputExpanded(true); setTimeout(() => inputRef.current?.focus(), 10); }}
+                                    >
+                                        {isInputExpanded ? (
+                                             <div className="w-5 h-5 ml-1 mt-1 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                                        ) : (
+                                            <div className="text-google-blue bg-transparent p-1"><Plus size={24} strokeWidth={2.5}/></div>
+                                        )}
+                                        
+                                        <input 
+                                            ref={inputRef} 
+                                            type="text" 
+                                            placeholder="タスクを追加" 
+                                            className={`flex-1 bg-transparent border-none outline-none text-google-text placeholder-google-textSec h-10 ${isInputExpanded ? 'text-base font-medium' : 'text-[15px] font-medium'}`}
+                                            value={newTaskTitle} 
+                                            onChange={(e) => setNewTaskTitle(e.target.value)} 
+                                            onKeyDown={(e) => e.key === 'Enter' && handleAddTask()} 
+                                        />
                                     </div>
+
                                     {isInputExpanded && (
-                                        <div className="mt-3 pl-8">
-                                            <input type="text" placeholder="詳細" className="w-full text-sm bg-transparent border-none outline-none mb-3" value={newTaskDetails} onChange={(e) => setNewTaskDetails(e.target.value)} />
-                                            <div className="flex justify-between mt-2">
-                                                <input type="date" className="text-xs bg-gray-50 border rounded px-2 py-1" value={newTaskDate} onChange={(e) => setNewTaskDate(e.target.value)} />
+                                        <div className="mt-2 pl-10 animate-[fadeIn_0.2s_ease-out]">
+                                            <input 
+                                                type="text" 
+                                                placeholder="詳細を追加" 
+                                                className="w-full text-[13px] bg-transparent border-none outline-none mb-4 text-google-textSec font-medium" 
+                                                value={newTaskDetails} 
+                                                onChange={(e) => setNewTaskDetails(e.target.value)} 
+                                            />
+                                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => { setIsInputExpanded(false); setNewTaskTitle(''); }} className="text-sm text-gray-500 px-4 py-2">キャンセル</button>
-                                                    <button onClick={handleAddTask} disabled={!newTaskTitle.trim()} className="text-sm text-blue-600 font-medium px-4 py-2 disabled:opacity-50">完了</button>
+                                                    <div className="relative group">
+                                                        <input 
+                                                            type="date" 
+                                                            className="opacity-0 absolute inset-0 w-8 h-8 cursor-pointer z-10" 
+                                                            onChange={(e) => setNewTaskDate(e.target.value)} 
+                                                        />
+                                                        <IconButton icon={Calendar} className={newTaskDate ? "text-google-blue bg-google-selected" : ""} />
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => { setIsInputExpanded(false); setNewTaskTitle(''); }} className="text-sm text-google-textSec font-medium px-4 py-2 hover:bg-google-hover rounded">キャンセル</button>
+                                                    <button onClick={handleAddTask} disabled={!newTaskTitle.trim()} className="text-sm text-google-blue font-medium px-6 py-2 disabled:opacity-50 hover:bg-google-selected rounded">完了</button>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* タスク一覧 */}
-                                <div className="py-2">
+                                {/* 未完了タスク */}
+                                <div className="pb-4">
                                     {incomplete.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} />)}
                                 </div>
+
+                                {/* 完了タスク */}
                                 {completed.length > 0 && (
-                                    <div className="border-t border-gray-100">
-                                        <button onClick={() => setShowCompleted(!showCompleted)} className="w-full flex items-center px-4 py-3 hover:bg-gray-50">
-                                            {showCompleted ? <ChevronDown size={18} /> : <ChevronRight size={18} />} <span className="ml-2 text-sm text-gray-600">完了 ({completed.length})</span>
+                                    <div className="border-t border-gray-200 mt-2 pt-2">
+                                        <button 
+                                            onClick={() => setShowCompleted(!showCompleted)} 
+                                            className="w-full flex items-center px-4 py-3 hover:bg-google-hover rounded transition-colors group"
+                                        >
+                                            <span className="text-google-textSec group-hover:text-google-text transition-colors">{showCompleted ? <ChevronDown size={20} /> : <ChevronRight size={20} />}</span>
+                                            <span className="ml-4 text-[15px] font-medium text-google-textSec group-hover:text-google-text">完了 ({completed.length})</span>
                                         </button>
-                                        {showCompleted && <div className="bg-gray-50/50 pb-4">{completed.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} />)}</div>}
+                                        
+                                        {showCompleted && (
+                                            <div className="pb-4 animate-[fadeIn_0.2s_ease-out]">
+                                                {completed.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} />)}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        {/* 詳細パネル (PC用) */}
+                        {/* 詳細パネル (PC用 - 右側スライドイン) */}
                         {selectedTaskId && !isMobile && (
-                            <div className="hidden lg:flex w-80 bg-white border-l border-gray-200 flex-col shadow-xl z-20 absolute right-0 top-0 h-full p-6">
-                                <div className="flex justify-between mb-6"><span className="text-sm text-gray-500">詳細</span><IconButton icon={X} onClick={() => setSelectedTaskId(null)} /></div>
+                            <div className="hidden lg:flex w-[360px] bg-white shadow-[-5px_0_15px_-5px_rgba(0,0,0,0.1)] z-40 absolute right-4 bottom-4 top-20 rounded-lg flex-col border border-[#dadce0] animate-[slideIn_0.2s_ease-out]">
+                                <div className="flex items-center justify-between p-2 pl-4 border-b border-gray-100">
+                                    <span className="text-xs font-medium text-google-textSec"></span>
+                                    <IconButton icon={X} onClick={() => setSelectedTaskId(null)} size={18} />
+                                </div>
                                 {(() => {
                                     const t = tasks.find(task => task.id === selectedTaskId);
                                     if (!t) return null;
                                     return (
-                                        <>
-                                            <input className="text-xl font-medium mb-4 outline-none border-b border-transparent focus:border-blue-500" value={t.title} onChange={(e) => updateTask(t.id, { title: e.target.value })} />
-                                            <textarea className="w-full text-sm text-gray-600 resize-none outline-none min-h-[100px] mb-4" placeholder="詳細を追加" value={t.details || ''} onChange={(e) => updateTask(t.id, { details: e.target.value })} />
-                                            <input type="date" className="text-sm text-gray-600 outline-none" value={t.dueDate || ''} onChange={(e) => updateTask(t.id, { dueDate: e.target.value })} />
-                                        </>
+                                        <div className="p-5 flex-1 overflow-y-auto">
+                                            <div className="flex items-start gap-3 mb-6">
+                                                <div className="mt-1"><TaskCheckCircle completed={t.completed} /></div>
+                                                <input 
+                                                    className="w-full text-xl text-google-text font-normal outline-none border-b border-transparent focus:border-google-blue pb-1 transition-colors bg-transparent" 
+                                                    value={t.title} 
+                                                    onChange={(e) => updateTask(t.id, { title: e.target.value })} 
+                                                />
+                                            </div>
+                                            
+                                            <div className="flex items-start gap-4 mb-6 pl-1">
+                                                <div className="text-google-textSec mt-1"><ListIcon size={20} /></div>
+                                                <textarea 
+                                                    className="w-full text-[14px] text-google-textSec resize-none outline-none min-h-[100px] bg-transparent leading-6" 
+                                                    placeholder="詳細を追加" 
+                                                    value={t.details || ''} 
+                                                    onChange={(e) => updateTask(t.id, { details: e.target.value })} 
+                                                />
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-4 mb-6 pl-1">
+                                                <div className="text-google-textSec"><Calendar size={20} /></div>
+                                                <div className="flex items-center gap-2 hover:bg-google-hover px-3 py-1.5 rounded cursor-pointer border border-gray-200 hover:border-gray-300 transition-all">
+                                                     <input 
+                                                        type="date" 
+                                                        className="text-[13px] text-google-text outline-none bg-transparent cursor-pointer" 
+                                                        value={t.dueDate || ''} 
+                                                        onChange={(e) => updateTask(t.id, { dueDate: e.target.value })} 
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-end pt-10">
+                                                <button onClick={() => deleteTask(t.id)} className="text-xs text-google-textSec hover:text-google-red flex items-center gap-1 transition-colors p-2 rounded hover:bg-google-hover">
+                                                    <Trash2 size={14} /> タスクを削除
+                                                </button>
+                                            </div>
+                                        </div>
                                     );
                                 })()}
                             </div>
