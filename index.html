@@ -280,10 +280,17 @@
             };
 
             const finishCompletion = () => {
-                onToggle(task);
+                // 1. ローカルの演出を終了させてDOMをクリーンにする
                 setIsCompleting(false);
                 setConfettiType(null);
                 setShowConfetti(false);
+
+                // 2. 少し待ってから親の状態を更新し、タスクを移動させる
+                // これにより、演出用要素(Flash/Lightning)の削除と、タスク自体の移動が
+                // 競合してエラーになるのを防ぐ
+                setTimeout(() => {
+                    onToggle(task);
+                }, 50);
             };
 
             const isVisuallyCompleted = task.completed || isCompleting;
@@ -390,6 +397,7 @@
                 };
                 setTasks([newTask, ...tasks]);
                 setNewTaskTitle(''); setNewTaskDetails(''); setNewTaskDate('');
+                setIsInputExpanded(false); // 入力エリアを閉じる
             };
 
             const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
