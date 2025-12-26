@@ -54,15 +54,15 @@
             60% { opacity: 1; }
             100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
         }
-        /* 画面フラッシュ (成功時: 2回点滅、強度85%) */
+        /* 画面フラッシュ */
         @keyframes flash-screen {
             0% { opacity: 0; }
-            10% { opacity: 0.85; }   /* 1回目 */
-            35% { opacity: 0.2; }    /* 間隔 */
-            60% { opacity: 0.85; }   /* 2回目 */
+            10% { opacity: 0.85; }
+            35% { opacity: 0.2; }
+            60% { opacity: 0.85; }
             100% { opacity: 0; }
         }
-        /* イナズマ (成功時: 最後まで走る) */
+        /* イナズマ */
         @keyframes lightning-strike {
             0% { opacity: 0; transform: scaleY(0) translateX(0); }
             5% { opacity: 1; transform: scaleY(1) translateX(-5px); }
@@ -73,7 +73,7 @@
             100% { opacity: 0; transform: scaleY(1) translateX(0); }
         }
 
-        /* スクロールバーのカスタマイズ */
+        /* スクロールバー */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
@@ -81,6 +81,15 @@
         
         .task-enter { opacity: 0; transform: translateY(-10px); }
         .task-enter-active { opacity: 1; transform: translateY(0); transition: opacity 200ms, transform 200ms; }
+        
+        /* ドラッグ中のスタイル */
+        .dragging {
+            opacity: 0.4;
+            background-color: #f1f3f4;
+        }
+        .drag-over {
+            border-top: 2px solid #1a73e8;
+        }
     </style>
 </head>
 <body class="bg-white h-screen overflow-hidden text-google-text">
@@ -107,6 +116,7 @@
         const ChevronRight = (p) => <SvgIcon {...p}><polyline points="9 18 15 12 9 6"></polyline></SvgIcon>;
         const ListIcon = (p) => <SvgIcon {...p}><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></SvgIcon>;
         const X = (p) => <SvgIcon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></SvgIcon>;
+        const GripVertical = (p) => <SvgIcon {...p}><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></SvgIcon>;
         
         const TaskCheckCircle = ({ completed }) => (
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${completed ? 'bg-google-blue border-google-blue' : 'border-gray-500 hover:border-google-blue hover:bg-google-selected'}`}>
@@ -127,10 +137,11 @@
         };
 
         // --- UIコンポーネント ---
-        const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20, color="text-google-textSec" }) => (
+        const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20, color="text-google-textSec", ...props }) => (
             <button 
                 onClick={onClick}
                 className={`p-2 rounded-full transition-colors duration-200 outline-none ${active ? 'text-google-blue bg-google-selected' : `${color} hover:bg-google-hover`} ${className}`}
+                {...props}
             >
                 <Icon size={size} strokeWidth={2} active={active} />
             </button>
@@ -166,7 +177,7 @@
             );
         };
 
-        // 画面フラッシュエフェクト
+        // 画面フラッシュ
         const FlashEffect = () => (
             <div 
                 className="fixed inset-0 pointer-events-none z-[100]"
@@ -178,60 +189,27 @@
             />
         );
 
-        // イナズマエフェクト
+        // イナズマ
         const LightningEffect = () => {
             const bolts = Array.from({ length: 3 }).map((_, i) => {
                 const left = 20 + Math.random() * 60; 
                 const delay = Math.random() * 0.1; 
                 const scale = 0.8 + Math.random() * 0.4;
                 const rotation = (Math.random() - 0.5) * 40; 
-                
                 return (
-                    <div 
-                        key={i}
-                        className="fixed top-0 pointer-events-none z-[101]"
-                        style={{
-                            left: `${left}%`,
-                            height: '100%',
-                            width: '200px',
-                            transform: `translateX(-50%) rotate(${rotation}deg) scale(${scale})`,
-                            animation: `lightning-strike 0.5s ease-out forwards ${delay}s`
-                        }}
-                    >
+                    <div key={i} className="fixed top-0 pointer-events-none z-[101]" style={{ left: `${left}%`, height: '100%', width: '200px', transform: `translateX(-50%) rotate(${rotation}deg) scale(${scale})`, animation: `lightning-strike 0.5s ease-out forwards ${delay}s` }}>
                         <svg viewBox="0 0 100 200" preserveAspectRatio="none" className="w-full h-full drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] filter">
-                             <defs>
-                                <filter id="glow">
-                                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
-                                    <feMerge>
-                                        <feMergeNode in="coloredBlur"/>
-                                        <feMergeNode in="SourceGraphic"/>
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            <path 
-                                d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" 
-                                fill="none" 
-                                stroke="#FFFF00" 
-                                strokeWidth="4"
-                                strokeLinejoin="round"
-                                filter="url(#glow)"
-                            />
-                            <path 
-                                d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" 
-                                fill="none" 
-                                stroke="#FFFFFF" 
-                                strokeWidth="1.5"
-                                strokeLinejoin="round"
-                            />
+                             <defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+                            <path d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" fill="none" stroke="#FFFF00" strokeWidth="4" strokeLinejoin="round" filter="url(#glow)" />
+                            <path d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinejoin="round" />
                         </svg>
                     </div>
                 );
             });
-
             return <>{bolts}</>;
         };
 
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect }) => {
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect, dragHandlers, index }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [showConfetti, setShowConfetti] = useState(false); 
@@ -241,84 +219,70 @@
                 if (task.completed) { onToggle(task); return; }
                 if (isCompleting) return;
 
-                // --- 確率判定ロジック (7%, 20%, 73%) ---
                 const rand = Math.random();
                 let type = null;
-
-                if (rand < 0.07) {
-                    type = 'big';   // 大当たり (7%)
-                } else if (rand < 0.27) {
-                    type = 'small'; // 小当たり (20%)
-                }
-                // それ以外はハズレ (73%)
+                if (rand < 0.07) { type = 'big'; } 
+                else if (rand < 0.27) { type = 'small'; }
 
                 setConfettiType(type);
                 setIsCompleting(true);
 
                 if (type === 'big') {
-                    // 大当たり: フラッシュ＆イナズマ -> 遅れて紙吹雪 -> 完了
                     setShowConfetti(false);
-                    setTimeout(() => {
-                        setShowConfetti(true);
-                        setTimeout(() => { finishCompletion(); }, 900);
-                    }, 600);
-
+                    setTimeout(() => { setShowConfetti(true); setTimeout(() => { finishCompletion(); }, 900); }, 600);
                 } else if (type === 'small') {
-                    // 小当たり: 即座に紙吹雪 -> 完了 (フラッシュなし)
                     setShowConfetti(true);
-                    setTimeout(() => {
-                        finishCompletion(); 
-                    }, 600); 
-
+                    setTimeout(() => { finishCompletion(); }, 600); 
                 } else {
-                    // なし
                     setShowConfetti(false);
-                    setTimeout(() => {
-                        finishCompletion();
-                    }, 300);
+                    setTimeout(() => { finishCompletion(); }, 300);
                 }
             };
 
             const finishCompletion = () => {
-                // 1. ローカルの演出を終了させてDOMをクリーンにする
                 setIsCompleting(false);
                 setConfettiType(null);
                 setShowConfetti(false);
-
-                // 2. 少し待ってから親の状態を更新し、タスクを移動させる
-                // これにより、演出用要素(Flash/Lightning)の削除と、タスク自体の移動が
-                // 競合してエラーになるのを防ぐ
-                setTimeout(() => {
-                    onToggle(task);
-                }, 50);
+                setTimeout(() => { onToggle(task); }, 50);
             };
 
             const isVisuallyCompleted = task.completed || isCompleting;
 
+            // ドラッグ関連のプロパティ（未完了タスクのみ有効）
+            const dragProps = (!task.completed && dragHandlers) ? {
+                draggable: true,
+                onDragStart: (e) => dragHandlers.onDragStart(e, index),
+                onDragEnter: (e) => dragHandlers.onDragEnter(e, index),
+                onDragEnd: dragHandlers.onDragEnd,
+                onDragOver: (e) => e.preventDefault(), // 必須
+            } : {};
+
             return (
                 <>
-                    {/* 演出制御 */}
                     {isCompleting && (
                         <>
-                            {/* 大当たり: 紙吹雪が出るまではイナズマとフラッシュ */}
-                            {confettiType === 'big' && !showConfetti && (
-                                <>
-                                    <FlashEffect />
-                                    <LightningEffect />
-                                </>
-                            )}
+                            {confettiType === 'big' && !showConfetti && (<><FlashEffect /><LightningEffect /></>)}
                         </>
                     )}
 
                     <div 
                         onClick={onSelect} 
-                        className={`group flex items-start py-3 px-4 cursor-pointer transition-colors duration-200
+                        className={`group flex items-start py-3 px-2 cursor-pointer transition-colors duration-200
                             ${isSelected ? 'bg-google-selected' : 'hover:bg-google-hover bg-white'}
                             ${isVisuallyCompleted ? '' : ''}
                         `}
+                        {...dragProps}
                     >
+                        {/* グリップアイコン (未完了タスクのみ表示) */}
+                        {!task.completed && (
+                            <div className="pt-1 px-1 text-gray-300 cursor-grab hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <GripVertical size={16} />
+                            </div>
+                        )}
+                        {/* 完了タスクの場合はインデント合わせ */}
+                        {task.completed && <div className="w-6"></div>}
+
                         <div className="pt-0.5 pr-4 flex-shrink-0 relative flex items-center justify-center" onClick={handleToggle}>
-                            {/* 紙吹雪の表示制御 */}
                             {isCompleting && confettiType && showConfetti && <ConfettiExplosion type={confettiType} />}
                             <TaskCheckCircle completed={isVisuallyCompleted} />
                         </div>
@@ -350,7 +314,6 @@
 
         // --- Main App ---
         const App = () => {
-            // LocalStorage helpers
             const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
             
             const [tasks, setTasks] = useState(() => load('gt_tasks', []));
@@ -370,13 +333,16 @@
             const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
             const inputRef = useRef(null);
 
+            // Drag references
+            const dragItem = useRef();
+            const dragOverItem = useRef();
+
             useEffect(() => localStorage.setItem('gt_tasks', JSON.stringify(tasks)), [tasks]);
             useEffect(() => localStorage.setItem('gt_lists', JSON.stringify(lists)), [lists]);
             useEffect(() => {
                 const handleResize = () => {
                     const mobile = window.innerWidth < 768;
                     setIsMobile(mobile);
-                    // Desktop keeps previous state, mobile defaults to closed
                     if(mobile) setIsSidebarOpen(false);
                 };
                 window.addEventListener('resize', handleResize);
@@ -397,7 +363,7 @@
                 };
                 setTasks([newTask, ...tasks]);
                 setNewTaskTitle(''); setNewTaskDetails(''); setNewTaskDate('');
-                setIsInputExpanded(false); // 入力エリアを閉じる
+                setIsInputExpanded(false);
             };
 
             const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
@@ -412,12 +378,52 @@
             };
 
             // Filtering
-            const visibleTasks = tasks
-                .filter(t => activeListId === 'starred' ? t.isStarred : (t.listId === activeListId || (!t.listId && activeListId === 'default')))
-                .sort((a, b) => (a.completed === b.completed) ? b.createdAt - a.createdAt : (a.completed ? 1 : -1));
+            // 並び替えを実現するため、自動ソート（createdAt順）を削除し、配列の順序を維持する
+            const visibleTasks = tasks.filter(t => activeListId === 'starred' ? t.isStarred : (t.listId === activeListId || (!t.listId && activeListId === 'default')));
             
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
+
+            // Drag Handlers
+            const onDragStart = (e, index) => {
+                dragItem.current = index;
+                e.target.classList.add('dragging');
+            };
+
+            const onDragEnter = (e, index) => {
+                dragOverItem.current = index;
+                const dragIdx = dragItem.current;
+                
+                // 同じ要素の場合は何もしない
+                if (dragIdx === undefined || dragIdx === index) return;
+
+                // 配列を並び替え
+                const newIncomplete = [...incomplete];
+                const draggedItem = newIncomplete[dragIdx];
+                
+                // 削除して新しい位置に挿入
+                newIncomplete.splice(dragIdx, 1);
+                newIncomplete.splice(index, 0, draggedItem);
+
+                // 全体のtasks配列に反映させるための再構築
+                // incompleteに含まれないタスク（完了済み、別リストなど）を維持しつつ、
+                // incompleteの部分だけ順序を更新する
+                const visibleIncompleteIds = new Set(newIncomplete.map(t => t.id));
+                const otherTasks = tasks.filter(t => !visibleIncompleteIds.has(t.id));
+                
+                // 先頭に並び替えたincomplete、後ろにその他（完了済み等）を結合
+                // ※これでリスト内の順序は保たれる
+                setTasks([...newIncomplete, ...otherTasks]);
+                
+                // インデックスを更新して連続ドラッグに対応
+                dragItem.current = index;
+            };
+
+            const onDragEnd = (e) => {
+                e.target.classList.remove('dragging');
+                dragItem.current = null;
+                dragOverItem.current = null;
+            };
 
             return (
                 <div className="flex h-screen w-full bg-white font-sans text-google-text overflow-hidden selection:bg-google-selected selection:text-google-blue">
@@ -519,9 +525,21 @@
                                     )}
                                 </div>
 
-                                {/* 未完了タスク */}
+                                {/* 未完了タスク (ドラッグ可能) */}
                                 <div className="pb-4">
-                                    {incomplete.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} />)}
+                                    {incomplete.map((t, index) => (
+                                        <TaskItem 
+                                            key={t.id} 
+                                            index={index}
+                                            task={t} 
+                                            onToggle={toggleTask} 
+                                            onUpdate={updateTask} 
+                                            onDelete={deleteTask} 
+                                            isSelected={selectedTaskId === t.id} 
+                                            onSelect={() => setSelectedTaskId(t.id)}
+                                            dragHandlers={{onDragStart, onDragEnter, onDragEnd}}
+                                        />
+                                    ))}
                                 </div>
 
                                 {/* 完了タスク */}
