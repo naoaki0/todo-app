@@ -234,9 +234,9 @@
             return <>{bolts}</>;
         };
 
-        // ポモドーロタイマーコンポーネント (機能拡張版)
+        // ポモドーロタイマーコンポーネント (サイズ復元版・幅微調整)
         const PomodoroTimer = ({ onBreakComplete }) => {
-            const [timeLeft, setTimeLeft] = useState(5); // 初期値：集中モード5秒
+            const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isActive, setIsActive] = useState(false);
             const [mode, setMode] = useState('work'); // 'work' or 'break'
             const [isAlarmActive, setIsAlarmActive] = useState(false);
@@ -292,13 +292,13 @@
 
                     setTimeout(() => setIsAlarmActive(false), 3000);
 
-                    // 自動切替
+                    // 自動切替 (時間設定: 集中25分, 休憩5分)
                     if (mode === 'work') {
                         setMode('break');
-                        setTimeLeft(3); 
+                        setTimeLeft(5 * 60); 
                     } else {
                         setMode('work');
-                        setTimeLeft(5); 
+                        setTimeLeft(25 * 60); 
                     }
 
                 } else {
@@ -316,13 +316,13 @@
             
             const resetTimer = () => {
                 setIsActive(false);
-                setTimeLeft(mode === 'work' ? 5 : 3);
+                setTimeLeft(mode === 'work' ? 25 * 60 : 5 * 60);
             };
 
             const switchMode = (newMode) => {
                 setMode(newMode);
                 setIsActive(false);
-                setTimeLeft(newMode === 'work' ? 5 : 3);
+                setTimeLeft(newMode === 'work' ? 25 * 60 : 5 * 60);
             };
 
             const formatTime = (seconds) => {
@@ -331,11 +331,12 @@
                 return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             };
 
-            const denominator = mode === 'work' ? 5 : 3;
+            const denominator = mode === 'work' ? 25 * 60 : 5 * 60;
             const progress = (timeLeft / denominator) * 100;
 
+            // サイズ調整: 横幅を少し短く (mx-1 -> mx-auto w-[92%])
             return (
-                <div className={`mt-8 mb-8 mx-1 p-6 bg-white rounded-lg shadow-card border border-gray-200 transition-colors duration-500 ${isAlarmActive ? 'alarm-active' : ''}`}>
+                <div className={`mt-8 mb-8 mx-auto w-[92%] p-6 bg-white rounded-lg shadow-card border border-gray-200 transition-colors duration-500 ${isAlarmActive ? 'alarm-active' : ''}`}>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
                             <button 
@@ -373,16 +374,16 @@
                     <div className="flex justify-center">
                         <button 
                             onClick={toggleTimer}
-                            className={`flex items-center justify-center w-14 h-14 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 ${isActive ? 'bg-white text-google-text border border-gray-200' : 'bg-google-blue text-white'}`}
+                            className={`flex items-center justify-center w-12 h-12 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 ${isActive ? 'bg-white text-google-text border border-gray-200' : 'bg-google-blue text-white'}`}
                         >
-                            {isActive ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
+                            {isActive ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
                         </button>
                     </div>
                 </div>
             );
         };
 
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect, dragHandlers, index, isDoubleChance, onConsumeChance }) => {
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect, dragHandlers, index, isDoubleChance, onConsumeChance, isDeadlineView }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [showConfetti, setShowConfetti] = useState(false); 
@@ -395,17 +396,25 @@
                 const rand = Math.random();
                 let type = null;
                 
-                // --- 確率判定ロジック (フィーバー時2倍) ---
-                let bigThreshold = 0.07;
-                let smallThreshold = 0.27; // 0.07 + 0.20
+                // --- 確率判定ロジック ---
+                if (task.listId === 'deadline') {
+                    // 締切リストの特別確率: 50%大当たり、50%なし
+                    if (rand < 0.5) {
+                        type = 'big';
+                    }
+                } else {
+                    // 通常確率 (フィーバー時2倍)
+                    let bigThreshold = 0.07;
+                    let smallThreshold = 0.27; // 0.07 + 0.20
 
-                if (isDoubleChance) {
-                    bigThreshold = 0.14; // 14%
-                    smallThreshold = 0.54; // 14% + 40% = 54%
+                    if (isDoubleChance) {
+                        bigThreshold = 0.14; // 14%
+                        smallThreshold = 0.54; // 14% + 40% = 54%
+                    }
+
+                    if (rand < bigThreshold) { type = 'big'; } 
+                    else if (rand < smallThreshold) { type = 'small'; }
                 }
-
-                if (rand < bigThreshold) { type = 'big'; } 
-                else if (rand < smallThreshold) { type = 'small'; }
                 // ----------------------------------------
 
                 setConfettiType(type);
@@ -429,7 +438,7 @@
                 setShowConfetti(false);
                 setTimeout(() => { 
                     onToggle(task); 
-                    if (isDoubleChance && onConsumeChance) onConsumeChance(); // 確率2倍消費
+                    if (isDoubleChance && onConsumeChance && task.listId !== 'deadline') onConsumeChance(); 
                 }, 50);
             };
 
@@ -472,17 +481,35 @@
                         </div>
                         
                         <div className="flex-grow min-w-0 pr-2 pt-0.5">
-                            <div className={`text-[15px] font-normal leading-5 transition-all duration-300 ${isVisuallyCompleted ? 'text-google-textSec line-through' : 'text-google-text'}`}>
-                                {task.title}
-                            </div>
-                            <div className={`flex flex-wrap items-center gap-2 mt-1 ${isVisuallyCompleted ? 'opacity-60' : 'opacity-100'}`}>
-                                {task.details && <span className="text-xs text-google-textSec truncate max-w-full">{task.details}</span>}
-                                {task.dueDate && (
-                                    <span className={`flex items-center text-xs px-2 py-0.5 rounded-full border ${isVisuallyCompleted ? 'text-gray-400 border-gray-200' : 'text-google-blue border-transparent bg-google-selected'}`}>
-                                        <Calendar size={12} className="mr-1" />{formatDate(task.dueDate)}
-                                    </span>
-                                )}
-                            </div>
+                            {isDeadlineView ? (
+                                /* 締切リスト表示用: 日付を大きく、タイトルを小さく */
+                                <div className="flex flex-col">
+                                    {task.dueDate && (
+                                        <div className={`text-base font-bold mb-0.5 transition-colors duration-300 ${isVisuallyCompleted ? 'text-gray-400' : 'text-google-red'}`}>
+                                            {formatDate(task.dueDate)}
+                                        </div>
+                                    )}
+                                    <div className={`text-sm font-normal leading-5 transition-all duration-300 ${isVisuallyCompleted ? 'text-google-textSec line-through' : 'text-google-text'}`}>
+                                        {task.title}
+                                    </div>
+                                    {task.details && <div className="text-xs text-google-textSec truncate mt-0.5">{task.details}</div>}
+                                </div>
+                            ) : (
+                                /* 通常表示 */
+                                <>
+                                    <div className={`text-[15px] font-normal leading-5 transition-all duration-300 ${isVisuallyCompleted ? 'text-google-textSec line-through' : 'text-google-text'}`}>
+                                        {task.title}
+                                    </div>
+                                    <div className={`flex flex-wrap items-center gap-2 mt-1 ${isVisuallyCompleted ? 'opacity-60' : 'opacity-100'}`}>
+                                        {task.details && <span className="text-xs text-google-textSec truncate max-w-full">{task.details}</span>}
+                                        {task.dueDate && (
+                                            <span className={`flex items-center text-xs px-2 py-0.5 rounded-full border ${isVisuallyCompleted ? 'text-gray-400 border-gray-200' : 'text-google-blue border-transparent bg-google-selected'}`}>
+                                                <Calendar size={12} className="mr-1" />{formatDate(task.dueDate)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </div>
                         
                         <div className="flex items-center opacity-0 group-hover:opacity-100 md:opacity-0 opacity-100 transition-opacity">
@@ -501,10 +528,22 @@
             const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
             
             const [tasks, setTasks] = useState(() => load('gt_tasks', []));
-            const [lists, setLists] = useState(() => load('gt_lists', [
-                { id: 'default', title: 'マイタスク', icon: 'check' }, 
-                { id: 'starred', title: 'スター付き', icon: 'star' }
-            ]));
+            
+            // リスト初期化
+            const [lists, setLists] = useState(() => {
+                let loaded = load('gt_lists', [
+                    { id: 'default', title: 'マイタスク', icon: 'check' },
+                    { id: 'deadline', title: '締切', icon: 'calendar' },
+                    { id: 'starred', title: 'スター付き', icon: 'star' }
+                ]);
+                if (!loaded.find(l => l.id === 'deadline')) {
+                    const defaultIdx = loaded.findIndex(l => l.id === 'default');
+                    const insertIdx = defaultIdx !== -1 ? defaultIdx + 1 : 0;
+                    loaded.splice(insertIdx, 0, { id: 'deadline', title: '締切', icon: 'calendar' });
+                }
+                return loaded;
+            });
+
             const [isDoubleChance, setIsDoubleChance] = useState(false); // 確率2倍フラグ
             
             const [activeListId, setActiveListId] = useState('default');
@@ -521,6 +560,9 @@
             // Drag references
             const dragItem = useRef();
             const dragOverItem = useRef();
+            // List Drag References
+            const dragListItem = useRef();
+            const dragOverListItem = useRef();
 
             useEffect(() => localStorage.setItem('gt_tasks', JSON.stringify(tasks)), [tasks]);
             useEffect(() => localStorage.setItem('gt_lists', JSON.stringify(lists)), [lists]);
@@ -536,12 +578,23 @@
 
             const handleAddTask = () => {
                 if (!newTaskTitle.trim()) return;
+                
+                // 「締切」リストで追加した場合のみ自動日付設定
+                let initialDate = newTaskDate;
+                if (!initialDate && activeListId === 'deadline') {
+                    initialDate = new Date().toISOString().split('T')[0];
+                }
+
+                // 締切リストなら 'deadline' ID、スター付きなら 'default'、それ以外はそのリストID
+                // これにより、締切リストで作ったものは独立する
+                const targetListId = activeListId === 'starred' ? 'default' : activeListId;
+
                 const newTask = {
                     id: Date.now().toString(),
                     title: newTaskTitle,
                     details: newTaskDetails,
-                    dueDate: newTaskDate,
-                    listId: activeListId === 'starred' ? 'default' : activeListId,
+                    dueDate: initialDate,
+                    listId: targetListId,
                     isStarred: activeListId === 'starred',
                     completed: false,
                     createdAt: Date.now(),
@@ -570,8 +623,14 @@
                 setIsDoubleChance(false);
             };
 
-            // Filtering
-            const visibleTasks = tasks.filter(t => activeListId === 'starred' ? t.isStarred : (t.listId === activeListId || (!t.listId && activeListId === 'default')));
+            // Filtering (独立性を確保)
+            const visibleTasks = tasks.filter(t => {
+                if (activeListId === 'starred') return t.isStarred;
+                if (activeListId === 'default') return !t.listId || t.listId === 'default'; // defaultのみ表示
+                if (activeListId === 'deadline') return t.listId === 'deadline'; // deadlineのみ表示（独立）
+                return t.listId === activeListId;
+            });
+            
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
 
@@ -601,6 +660,34 @@
                 dragOverItem.current = null;
             };
 
+            // List Drag Handlers
+            const onListDragStart = (e, index) => {
+                dragListItem.current = index;
+            };
+
+            const onListDragEnter = (e, index) => {
+                dragOverListItem.current = index;
+                const dragIdx = dragListItem.current;
+                
+                if (dragIdx === undefined || dragIdx === index) return;
+                // 固定リスト（0: default, 1: deadline, 2: starred）は移動不可＆割り込み不可
+                if (dragIdx < 3 || index < 3) return;
+
+                const newLists = [...lists];
+                const draggedItem = newLists[dragIdx];
+                
+                newLists.splice(dragIdx, 1);
+                newLists.splice(index, 0, draggedItem);
+                
+                setLists(newLists);
+                dragListItem.current = index;
+            };
+
+            const onListDragEnd = (e) => {
+                dragListItem.current = null;
+                dragOverListItem.current = null;
+            };
+
             return (
                 <div className="flex h-screen w-full bg-white font-sans text-google-text overflow-hidden selection:bg-google-selected selection:text-google-blue">
                     {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setIsSidebarOpen(false)} />}
@@ -614,20 +701,40 @@
                             {isMobile && <div className="ml-auto"><IconButton icon={X} onClick={() => setIsSidebarOpen(false)} /></div>}
                         </div>
                         <div className="flex-1 overflow-y-auto px-2">
-                            {lists.map(list => (
+                            {lists.map((list, index) => {
+                                // 固定リスト判定
+                                const isFixed = list.id === 'default' || list.id === 'starred' || list.id === 'deadline';
+                                const listDragProps = !isFixed ? {
+                                    draggable: true,
+                                    onDragStart: (e) => onListDragStart(e, index),
+                                    onDragEnter: (e) => onListDragEnter(e, index),
+                                    onDragEnd: onListDragEnd,
+                                    onDragOver: (e) => e.preventDefault(),
+                                } : {};
+
+                                return (
                                 <div 
                                     key={list.id} 
                                     onClick={() => { setActiveListId(list.id); if(isMobile) setIsSidebarOpen(false); }} 
-                                    className={`flex items-center px-4 py-2 mb-1 rounded-r-full cursor-pointer text-[15px] font-medium transition-colors 
+                                    className={`group flex items-center px-4 py-2 mb-1 rounded-r-full cursor-pointer text-[15px] font-medium transition-colors 
                                     ${activeListId === list.id ? 'bg-google-selected text-google-selectedText' : 'text-google-text hover:bg-google-hover'}`}
+                                    {...listDragProps}
                                 >
-                                    <div className="mr-4 text-google-textSec">
-                                        {list.icon === 'star' ? <Star size={20} /> : list.icon === 'check' ? <Check size={20} /> : <ListIcon size={20} />}
+                                    {/* リスト用グリップ (固定リスト以外に表示) */}
+                                    {!isFixed && (
+                                        <div className="mr-2 text-gray-300 cursor-grab hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <GripVertical size={14} />
+                                        </div>
+                                    )}
+                                    <div className={`${!isFixed ? 'mr-2' : 'mr-4'} text-google-textSec`}>
+                                        {list.icon === 'star' ? <Star size={20} /> : 
+                                         list.icon === 'calendar' ? <Calendar size={20} /> :
+                                         list.icon === 'check' ? <Check size={20} /> : <ListIcon size={20} />}
                                     </div>
                                     <span className="truncate flex-1">{list.title}</span>
                                     {list.id === activeListId && <span className="text-xs font-bold ml-2">{visibleTasks.length > 0 ? visibleTasks.length : ''}</span>}
                                 </div>
-                            ))}
+                            )})}
                             <div className="border-t border-gray-200 my-2 mx-2"></div>
                             <div onClick={addList} className="flex items-center px-4 py-2 rounded-r-full cursor-pointer text-[15px] font-medium text-google-text hover:bg-google-hover">
                                 <Plus size={20} className="mr-4 text-google-textSec"/> 新しいリストを作成
@@ -647,8 +754,8 @@
                             </div>
                         </header>
 
-                        <div className="flex-1 overflow-y-auto px-4 md:px-12 pb-20">
-                            <div className="max-w-4xl mx-auto h-full flex flex-col">
+                        <div className="flex-1 overflow-y-auto px-4 md:px-12 pb-40">
+                            <div className="max-w-4xl mx-auto flex flex-col">
                                 {/* タスク追加エリア */}
                                 <div className={`mb-6 transition-all duration-300 ${isInputExpanded ? 'shadow-float rounded-lg bg-white p-4 my-4' : 'rounded-t-lg pt-2'}`}>
                                     <div 
@@ -716,6 +823,7 @@
                                             dragHandlers={{onDragStart, onDragEnter, onDragEnd}}
                                             isDoubleChance={isDoubleChance}
                                             onConsumeChance={handleConsumeChance}
+                                            isDeadlineView={activeListId === 'deadline'}
                                         />
                                     ))}
                                 </div>
@@ -733,14 +841,14 @@
                                         
                                         {showCompleted && (
                                             <div className="pb-4 animate-[fadeIn_0.2s_ease-out]">
-                                                {completed.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} />)}
+                                                {completed.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} isDeadlineView={activeListId === 'deadline'} />)}
                                             </div>
                                         )}
                                     </div>
                                 )}
 
-                                {/* フィーバータイムのお知らせ表示 */}
-                                {isDoubleChance && (
+                                {/* フィーバータイムのお知らせ表示 (マイタスクのみ) */}
+                                {activeListId === 'default' && isDoubleChance && (
                                     <div className="mt-4 mx-1 p-3 rounded-lg flex items-center justify-center gap-2 fever-mode text-sm font-bold text-yellow-800 shadow-sm animate-pulse">
                                         <Zap size={18} className="text-yellow-600" fill="currentColor" />
                                         <span>フィーバータイム！次のタスク完了で大当たり確率2倍！</span>
@@ -748,8 +856,10 @@
                                     </div>
                                 )}
 
-                                {/* ポモドーロタイマー (タスクリストの下に追加) */}
-                                <PomodoroTimer onBreakComplete={handleBreakComplete} />
+                                {/* ポモドーロタイマー (マイタスクのみ) */}
+                                {activeListId === 'default' && (
+                                    <PomodoroTimer onBreakComplete={handleBreakComplete} />
+                                )}
                             </div>
                         </div>
 
