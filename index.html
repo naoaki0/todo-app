@@ -615,6 +615,17 @@
                 if(t) setLists([...lists, {id: Date.now().toString(), title: t, icon:'list'}]);
             };
 
+            // リスト削除関数
+            const deleteList = (listId) => {
+                if (window.confirm('このリストを削除しますか？含まれるタスクも削除されます。')) {
+                    setLists(lists.filter(l => l.id !== listId));
+                    setTasks(tasks.filter(t => t.listId !== listId));
+                    if (activeListId === listId) {
+                        setActiveListId('default');
+                    }
+                }
+            };
+
             // フィーバー管理
             const handleBreakComplete = () => {
                 setIsDoubleChance(true);
@@ -732,6 +743,18 @@
                                          list.icon === 'check' ? <Check size={20} /> : <ListIcon size={20} />}
                                     </div>
                                     <span className="truncate flex-1">{list.title}</span>
+
+                                    {/* 削除ボタン (ホバー時のみ表示、固定リスト以外) */}
+                                    {!isFixed && (
+                                        <div 
+                                            className="ml-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => { e.stopPropagation(); deleteList(list.id); }}
+                                            title="リストを削除"
+                                        >
+                                            <Trash2 size={14} />
+                                        </div>
+                                    )}
+
                                     {list.id === activeListId && <span className="text-xs font-bold ml-2">{visibleTasks.length > 0 ? visibleTasks.length : ''}</span>}
                                 </div>
                             )})}
