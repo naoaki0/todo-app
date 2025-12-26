@@ -72,6 +72,24 @@
             30% { opacity: 1; transform: scaleY(1) translateX(0); }
             100% { opacity: 0; transform: scaleY(1) translateX(0); }
         }
+        /* タイマー終了時の点滅 */
+        @keyframes timer-alarm {
+            0%, 100% { background-color: white; }
+            50% { background-color: #fce8e6; }
+        }
+        .alarm-active {
+            animation: timer-alarm 1s infinite;
+        }
+        /* フィーバータイムのキラキラ */
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+        .fever-mode {
+            animation: sparkle 2s infinite;
+            background: linear-gradient(45deg, #fff9c4, #fff);
+            border: 1px solid #fbc02d;
+        }
 
         /* スクロールバー */
         ::-webkit-scrollbar { width: 8px; }
@@ -96,7 +114,7 @@
     <div id="root" class="h-full"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
 
         // --- アイコンコンポーネント ---
         const SvgIcon = ({ children, size = 20, className = "", ...props }) => (
@@ -117,6 +135,13 @@
         const ListIcon = (p) => <SvgIcon {...p}><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></SvgIcon>;
         const X = (p) => <SvgIcon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></SvgIcon>;
         const GripVertical = (p) => <SvgIcon {...p}><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></SvgIcon>;
+        const Play = (p) => <SvgIcon {...p}><polygon points="5 3 19 12 5 21 5 3"></polygon></SvgIcon>;
+        const Pause = (p) => <SvgIcon {...p}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></SvgIcon>;
+        const RotateCcw = (p) => <SvgIcon {...p}><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></SvgIcon>;
+        const Coffee = (p) => <SvgIcon {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></SvgIcon>;
+        const Brain = (p) => <SvgIcon {...p}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path></SvgIcon>;
+        const Zap = (p) => <SvgIcon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></SvgIcon>;
+
         
         const TaskCheckCircle = ({ completed }) => (
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${completed ? 'bg-google-blue border-google-blue' : 'border-gray-500 hover:border-google-blue hover:bg-google-selected'}`}>
@@ -209,7 +234,155 @@
             return <>{bolts}</>;
         };
 
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect, dragHandlers, index }) => {
+        // ポモドーロタイマーコンポーネント (機能拡張版)
+        const PomodoroTimer = ({ onBreakComplete }) => {
+            const [timeLeft, setTimeLeft] = useState(5); // 初期値：集中モード5秒
+            const [isActive, setIsActive] = useState(false);
+            const [mode, setMode] = useState('work'); // 'work' or 'break'
+            const [isAlarmActive, setIsAlarmActive] = useState(false);
+            
+            const timerRef = useRef(null);
+            const audioCtx = useMemo(() => new (window.AudioContext || window.webkitAudioContext)(), []);
+
+            const playAlarm = () => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.1); // A4
+                
+                // 音量設定: 0.2
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            };
+
+            useEffect(() => {
+                if (isActive && timeLeft > 0) {
+                    timerRef.current = setInterval(() => {
+                        setTimeLeft((prev) => prev - 1);
+                    }, 1000);
+                } else if (timeLeft === 0 && isActive) {
+                    // タイマー終了処理
+                    setIsActive(false);
+                    clearInterval(timerRef.current);
+                    setIsAlarmActive(true);
+                    
+                    if ("Notification" in window && Notification.permission === "granted") {
+                        const title = mode === 'work' ? "休憩の時間です！" : "集中の時間です！";
+                        const options = {
+                            body: mode === 'work' ? "集中時間が終わりました。休憩しましょう！" : "休憩終了！集中モードに切り替わりました。",
+                        };
+                        const notification = new Notification(title, options);
+                        notification.onclick = () => { window.focus(); notification.close(); };
+                    }
+
+                    // 休憩終了時のみ音を鳴らす & 親へ通知
+                    if (mode === 'break') {
+                        playAlarm();
+                        if (onBreakComplete) onBreakComplete(); // 確率2倍トリガー
+                    }
+
+                    setTimeout(() => setIsAlarmActive(false), 3000);
+
+                    // 自動切替
+                    if (mode === 'work') {
+                        setMode('break');
+                        setTimeLeft(3); 
+                    } else {
+                        setMode('work');
+                        setTimeLeft(5); 
+                    }
+
+                } else {
+                    clearInterval(timerRef.current);
+                }
+                return () => clearInterval(timerRef.current);
+            }, [isActive, timeLeft, mode, audioCtx, onBreakComplete]);
+
+            const toggleTimer = () => {
+                if (!isActive && "Notification" in window && Notification.permission === "default") {
+                    Notification.requestPermission();
+                }
+                setIsActive(!isActive);
+            };
+            
+            const resetTimer = () => {
+                setIsActive(false);
+                setTimeLeft(mode === 'work' ? 5 : 3);
+            };
+
+            const switchMode = (newMode) => {
+                setMode(newMode);
+                setIsActive(false);
+                setTimeLeft(newMode === 'work' ? 5 : 3);
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const denominator = mode === 'work' ? 5 : 3;
+            const progress = (timeLeft / denominator) * 100;
+
+            return (
+                <div className={`mt-8 mb-8 mx-1 p-6 bg-white rounded-lg shadow-card border border-gray-200 transition-colors duration-500 ${isAlarmActive ? 'alarm-active' : ''}`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                            <button 
+                                onClick={() => switchMode('work')}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mode === 'work' ? 'bg-white text-google-blue shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <div className="flex items-center gap-1"><Brain size={14} /> 集中</div>
+                            </button>
+                            <button 
+                                onClick={() => switchMode('break')}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mode === 'break' ? 'bg-white text-google-green shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                <div className="flex items-center gap-1"><Coffee size={14} /> 休憩</div>
+                            </button>
+                        </div>
+                        <IconButton icon={RotateCcw} onClick={resetTimer} size={18} />
+                    </div>
+
+                    <div className="text-center mb-6">
+                        <div className="text-5xl font-mono font-medium text-google-text tracking-wider">
+                            {formatTime(timeLeft)}
+                        </div>
+                        <div className="text-xs text-google-textSec mt-1">
+                            {isActive ? (mode === 'work' ? '集中しましょう' : 'リラックスタイム') : '待機中'}
+                        </div>
+                    </div>
+
+                    <div className="w-full h-1.5 bg-gray-100 rounded-full mb-6 overflow-hidden">
+                        <div 
+                            className={`h-full transition-all duration-1000 ease-linear ${mode === 'work' ? 'bg-google-blue' : 'bg-google-green'}`}
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button 
+                            onClick={toggleTimer}
+                            className={`flex items-center justify-center w-14 h-14 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 ${isActive ? 'bg-white text-google-text border border-gray-200' : 'bg-google-blue text-white'}`}
+                        >
+                            {isActive ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect, dragHandlers, index, isDoubleChance, onConsumeChance }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [showConfetti, setShowConfetti] = useState(false); 
@@ -221,8 +394,19 @@
 
                 const rand = Math.random();
                 let type = null;
-                if (rand < 0.07) { type = 'big'; } 
-                else if (rand < 0.27) { type = 'small'; }
+                
+                // --- 確率判定ロジック (フィーバー時2倍) ---
+                let bigThreshold = 0.07;
+                let smallThreshold = 0.27; // 0.07 + 0.20
+
+                if (isDoubleChance) {
+                    bigThreshold = 0.14; // 14%
+                    smallThreshold = 0.54; // 14% + 40% = 54%
+                }
+
+                if (rand < bigThreshold) { type = 'big'; } 
+                else if (rand < smallThreshold) { type = 'small'; }
+                // ----------------------------------------
 
                 setConfettiType(type);
                 setIsCompleting(true);
@@ -243,18 +427,20 @@
                 setIsCompleting(false);
                 setConfettiType(null);
                 setShowConfetti(false);
-                setTimeout(() => { onToggle(task); }, 50);
+                setTimeout(() => { 
+                    onToggle(task); 
+                    if (isDoubleChance && onConsumeChance) onConsumeChance(); // 確率2倍消費
+                }, 50);
             };
 
             const isVisuallyCompleted = task.completed || isCompleting;
 
-            // ドラッグ関連のプロパティ（未完了タスクのみ有効）
             const dragProps = (!task.completed && dragHandlers) ? {
                 draggable: true,
                 onDragStart: (e) => dragHandlers.onDragStart(e, index),
                 onDragEnter: (e) => dragHandlers.onDragEnter(e, index),
                 onDragEnd: dragHandlers.onDragEnd,
-                onDragOver: (e) => e.preventDefault(), // 必須
+                onDragOver: (e) => e.preventDefault(),
             } : {};
 
             return (
@@ -273,13 +459,11 @@
                         `}
                         {...dragProps}
                     >
-                        {/* グリップアイコン (未完了タスクのみ表示) */}
                         {!task.completed && (
                             <div className="pt-1 px-1 text-gray-300 cursor-grab hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <GripVertical size={16} />
                             </div>
                         )}
-                        {/* 完了タスクの場合はインデント合わせ */}
                         {task.completed && <div className="w-6"></div>}
 
                         <div className="pt-0.5 pr-4 flex-shrink-0 relative flex items-center justify-center" onClick={handleToggle}>
@@ -321,6 +505,7 @@
                 { id: 'default', title: 'マイタスク', icon: 'check' }, 
                 { id: 'starred', title: 'スター付き', icon: 'star' }
             ]));
+            const [isDoubleChance, setIsDoubleChance] = useState(false); // 確率2倍フラグ
             
             const [activeListId, setActiveListId] = useState('default');
             const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
@@ -377,10 +562,16 @@
                 if(t) setLists([...lists, {id: Date.now().toString(), title: t, icon:'list'}]);
             };
 
+            // フィーバー管理
+            const handleBreakComplete = () => {
+                setIsDoubleChance(true);
+            };
+            const handleConsumeChance = () => {
+                setIsDoubleChance(false);
+            };
+
             // Filtering
-            // 並び替えを実現するため、自動ソート（createdAt順）を削除し、配列の順序を維持する
             const visibleTasks = tasks.filter(t => activeListId === 'starred' ? t.isStarred : (t.listId === activeListId || (!t.listId && activeListId === 'default')));
-            
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
 
@@ -393,29 +584,14 @@
             const onDragEnter = (e, index) => {
                 dragOverItem.current = index;
                 const dragIdx = dragItem.current;
-                
-                // 同じ要素の場合は何もしない
                 if (dragIdx === undefined || dragIdx === index) return;
-
-                // 配列を並び替え
                 const newIncomplete = [...incomplete];
                 const draggedItem = newIncomplete[dragIdx];
-                
-                // 削除して新しい位置に挿入
                 newIncomplete.splice(dragIdx, 1);
                 newIncomplete.splice(index, 0, draggedItem);
-
-                // 全体のtasks配列に反映させるための再構築
-                // incompleteに含まれないタスク（完了済み、別リストなど）を維持しつつ、
-                // incompleteの部分だけ順序を更新する
                 const visibleIncompleteIds = new Set(newIncomplete.map(t => t.id));
                 const otherTasks = tasks.filter(t => !visibleIncompleteIds.has(t.id));
-                
-                // 先頭に並び替えたincomplete、後ろにその他（完了済み等）を結合
-                // ※これでリスト内の順序は保たれる
                 setTasks([...newIncomplete, ...otherTasks]);
-                
-                // インデックスを更新して連続ドラッグに対応
                 dragItem.current = index;
             };
 
@@ -538,6 +714,8 @@
                                             isSelected={selectedTaskId === t.id} 
                                             onSelect={() => setSelectedTaskId(t.id)}
                                             dragHandlers={{onDragStart, onDragEnter, onDragEnd}}
+                                            isDoubleChance={isDoubleChance}
+                                            onConsumeChance={handleConsumeChance}
                                         />
                                     ))}
                                 </div>
@@ -560,6 +738,18 @@
                                         )}
                                     </div>
                                 )}
+
+                                {/* フィーバータイムのお知らせ表示 */}
+                                {isDoubleChance && (
+                                    <div className="mt-4 mx-1 p-3 rounded-lg flex items-center justify-center gap-2 fever-mode text-sm font-bold text-yellow-800 shadow-sm animate-pulse">
+                                        <Zap size={18} className="text-yellow-600" fill="currentColor" />
+                                        <span>フィーバータイム！次のタスク完了で大当たり確率2倍！</span>
+                                        <Zap size={18} className="text-yellow-600" fill="currentColor" />
+                                    </div>
+                                )}
+
+                                {/* ポモドーロタイマー (タスクリストの下に追加) */}
+                                <PomodoroTimer onBreakComplete={handleBreakComplete} />
                             </div>
                         </div>
 
