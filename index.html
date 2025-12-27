@@ -114,7 +114,7 @@
     <div id="root" class="h-full"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
         // --- アイコンコンポーネント ---
         const SvgIcon = ({ children, size = 20, className = "", ...props }) => (
@@ -234,15 +234,22 @@
             return <>{bolts}</>;
         };
 
-        // ポモドーロタイマーコンポーネント (25分/5分)
+        // ポモドーロタイマーコンポーネント (タイマー精度修正版)
         const PomodoroTimer = ({ onBreakComplete }) => {
-            const [timeLeft, setTimeLeft] = useState(25 * 60); // 初期値：集中モード25分
+            const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isActive, setIsActive] = useState(false);
             const [mode, setMode] = useState('work'); // 'work' or 'break'
             const [isAlarmActive, setIsAlarmActive] = useState(false);
             
             const timerRef = useRef(null);
             const audioCtx = useMemo(() => new (window.AudioContext || window.webkitAudioContext)(), []);
+
+            // 現在のモードと完了時コールバックをRefで保持（useEffect内での参照用）
+            const modeRef = useRef(mode);
+            const onBreakCompleteRef = useRef(onBreakComplete);
+
+            useEffect(() => { modeRef.current = mode; }, [mode]);
+            useEffect(() => { onBreakCompleteRef.current = onBreakComplete; }, [onBreakComplete]);
 
             const playAlarm = () => {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -264,50 +271,62 @@
                 oscillator.stop(audioCtx.currentTime + 0.5);
             };
 
-            useEffect(() => {
-                if (isActive && timeLeft > 0) {
-                    timerRef.current = setInterval(() => {
-                        setTimeLeft((prev) => prev - 1);
-                    }, 1000);
-                } else if (timeLeft === 0 && isActive) {
-                    // タイマー終了処理
-                    setIsActive(false);
-                    clearInterval(timerRef.current);
-                    setIsAlarmActive(true);
-                    
-                    if ("Notification" in window && Notification.permission === "granted") {
-                        const title = mode === 'work' ? "休憩の時間です！" : "集中の時間です！";
-                        const options = {
-                            body: mode === 'work' ? "集中時間が終わりました。休憩しましょう！" : "休憩終了！集中モードに切り替わりました。",
-                        };
-                        const notification = new Notification(title, options);
-                        notification.onclick = () => { window.focus(); notification.close(); };
-                    }
+            const handleTimerComplete = () => {
+                const currentMode = modeRef.current;
 
-                    // アラーム再生（集中・休憩ともに）
-                    playAlarm();
-
-                    // 休憩終了時のみ確率2倍トリガー
-                    if (mode === 'break') {
-                        if (onBreakComplete) onBreakComplete(); 
-                    }
-
-                    setTimeout(() => setIsAlarmActive(false), 3000);
-
-                    // 自動切替 (25分 / 5分)
-                    if (mode === 'work') {
-                        setMode('break');
-                        setTimeLeft(5 * 60); 
-                    } else {
-                        setMode('work');
-                        setTimeLeft(25 * 60); 
-                    }
-
-                } else {
-                    clearInterval(timerRef.current);
+                setIsAlarmActive(true);
+                
+                if ("Notification" in window && Notification.permission === "granted") {
+                    const title = currentMode === 'work' ? "休憩の時間です！" : "集中の時間です！";
+                    const options = {
+                        body: currentMode === 'work' ? "集中時間が終わりました。休憩しましょう！" : "休憩終了！集中モードに切り替わりました。",
+                    };
+                    const notification = new Notification(title, options);
+                    notification.onclick = () => { window.focus(); notification.close(); };
                 }
+
+                // アラーム再生
+                playAlarm();
+
+                // 休憩終了時のみ確率2倍トリガー
+                if (currentMode === 'break') {
+                    if (onBreakCompleteRef.current) onBreakCompleteRef.current(); 
+                }
+
+                setTimeout(() => setIsAlarmActive(false), 3000);
+
+                // 自動切替 (25分 / 5分)
+                if (currentMode === 'work') {
+                    setMode('break');
+                    setTimeLeft(5 * 60); 
+                } else {
+                    setMode('work');
+                    setTimeLeft(25 * 60); 
+                }
+            };
+
+            useEffect(() => {
+                if (!isActive) return;
+
+                // タイマーロジック: 開始予定時刻を基準にする（ドリフト防止）
+                const endTime = Date.now() + timeLeft * 1000;
+                
+                timerRef.current = setInterval(() => {
+                    const now = Date.now();
+                    const secondsLeft = Math.ceil((endTime - now) / 1000);
+                    
+                    if (secondsLeft <= 0) {
+                        clearInterval(timerRef.current);
+                        setTimeLeft(0);
+                        setIsActive(false);
+                        handleTimerComplete();
+                    } else {
+                        setTimeLeft(secondsLeft);
+                    }
+                }, 100); // UI更新のために頻繁にチェック
+
                 return () => clearInterval(timerRef.current);
-            }, [isActive, timeLeft, mode, audioCtx, onBreakComplete]);
+            }, [isActive]); // timeLeftを依存配列に入れないことで、再レンダリング時のリセットを防ぐ
 
             const toggleTimer = () => {
                 if (!isActive && "Notification" in window && Notification.permission === "default") {
@@ -336,7 +355,6 @@
             const denominator = mode === 'work' ? 25 * 60 : 5 * 60;
             const progress = (timeLeft / denominator) * 100;
 
-            // サイズ調整: 横幅を少し短く (mx-1 -> mx-auto w-[92%])
             return (
                 <div className={`mt-8 mb-8 mx-auto w-[92%] p-6 bg-white rounded-lg shadow-card border border-gray-200 transition-colors duration-500 ${isAlarmActive ? 'alarm-active' : ''}`}>
                     <div className="flex items-center justify-between mb-4">
