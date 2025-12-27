@@ -234,7 +234,7 @@
             return <>{bolts}</>;
         };
 
-        // ポモドーロタイマーコンポーネント (サイズ復元版・幅微調整)
+        // ポモドーロタイマーコンポーネント
         const PomodoroTimer = ({ onBreakComplete }) => {
             const [timeLeft, setTimeLeft] = useState(25 * 60);
             const [isActive, setIsActive] = useState(false);
@@ -253,8 +253,8 @@
                 oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
                 oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.1); // A4
                 
-                // 音量設定: 0.2
-                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                // 音量設定: 0.35 (35%)
+                gainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
                 
                 oscillator.connect(gainNode);
@@ -284,15 +284,17 @@
                         notification.onclick = () => { window.focus(); notification.close(); };
                     }
 
-                    // 休憩終了時のみ音を鳴らす & 親へ通知
+                    // アラーム再生（集中・休憩ともに）
+                    playAlarm();
+
+                    // 休憩終了時のみ確率2倍トリガー
                     if (mode === 'break') {
-                        playAlarm();
-                        if (onBreakComplete) onBreakComplete(); // 確率2倍トリガー
+                        if (onBreakComplete) onBreakComplete(); 
                     }
 
                     setTimeout(() => setIsAlarmActive(false), 3000);
 
-                    // 自動切替 (時間設定: 集中25分, 休憩5分)
+                    // 自動切替
                     if (mode === 'work') {
                         setMode('break');
                         setTimeLeft(5 * 60); 
