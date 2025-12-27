@@ -234,9 +234,9 @@
             return <>{bolts}</>;
         };
 
-        // ポモドーロタイマーコンポーネント
+        // ポモドーロタイマーコンポーネント (25分/5分)
         const PomodoroTimer = ({ onBreakComplete }) => {
-            const [timeLeft, setTimeLeft] = useState(25 * 60);
+            const [timeLeft, setTimeLeft] = useState(25 * 60); // 初期値：集中モード25分
             const [isActive, setIsActive] = useState(false);
             const [mode, setMode] = useState('work'); // 'work' or 'break'
             const [isAlarmActive, setIsAlarmActive] = useState(false);
@@ -294,7 +294,7 @@
 
                     setTimeout(() => setIsAlarmActive(false), 3000);
 
-                    // 自動切替
+                    // 自動切替 (25分 / 5分)
                     if (mode === 'work') {
                         setMode('break');
                         setTimeLeft(5 * 60); 
