@@ -260,13 +260,14 @@
             return <>{bolts}</>;
         };
 
-        // ポモドーロタイマーコンポーネント (永続化強化版)
+        // ポモドーロタイマーコンポーネント (永続化強化版・時間変更済み)
         const PomodoroTimer = ({ onBreakComplete }) => {
             // LocalStorage helper
             const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
 
             const [mode, setMode] = useState(() => load('gt_timer_mode', 'work'));
             const [timeLeft, setTimeLeft] = useState(() => {
+                // 初期化時に保存された状態を復元
                 const savedEndTime = localStorage.getItem('gt_timer_end_time');
                 const savedPaused = localStorage.getItem('gt_timer_paused_left');
                 const savedMode = load('gt_timer_mode', 'work');
@@ -276,19 +277,20 @@
                     if (diff > 0) {
                         return diff;
                     } else {
-                        return 0; // 時間切れ (useEffectで処理)
+                        // 時間切れ
+                        return 0; 
                     }
                 } else if (savedPaused) {
                     return parseInt(savedPaused, 10);
                 } else {
-                    return savedMode === 'work' ? 25 * 60 : 5 * 60;
+                    // 初期状態: 52分 / 17分
+                    return savedMode === 'work' ? 52 * 60 : 17 * 60;
                 }
             });
             
             const [isActive, setIsActive] = useState(() => !!localStorage.getItem('gt_timer_end_time'));
             const [isAlarmActive, setIsAlarmActive] = useState(false);
             
-            // 残り時間をRefでも保持してクロージャ問題を回避
             const timeLeftRef = useRef(timeLeft);
             useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
@@ -303,13 +305,11 @@
             // タイマー開始/停止時の保存処理
             useEffect(() => {
                 if (isActive) {
-                    // 開始: 終了予定時刻を保存
                     const currentLeft = timeLeftRef.current;
                     const endTime = Date.now() + currentLeft * 1000;
                     localStorage.setItem('gt_timer_end_time', endTime.toString());
                     localStorage.removeItem('gt_timer_paused_left');
                 } else {
-                    // 停止: 終了予定時刻を削除、残り時間を保存
                     localStorage.removeItem('gt_timer_end_time');
                     const currentLeft = timeLeftRef.current;
                     if (currentLeft > 0) {
@@ -328,6 +328,7 @@
                 oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
                 oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.1); // A4
                 
+                // 音量設定: 0.35
                 gainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
                 
@@ -361,12 +362,13 @@
 
                 setTimeout(() => setIsAlarmActive(false), 3000);
 
+                // 自動切替 (52分 / 17分)
                 if (currentMode === 'work') {
                     setMode('break');
-                    setTimeLeft(5 * 60); 
+                    setTimeLeft(17 * 60); 
                 } else {
                     setMode('work');
-                    setTimeLeft(25 * 60); 
+                    setTimeLeft(52 * 60); 
                 }
                 setIsActive(false); 
             };
@@ -408,7 +410,7 @@
                 setIsActive(false);
                 localStorage.removeItem('gt_timer_end_time');
                 localStorage.removeItem('gt_timer_paused_left');
-                setTimeLeft(mode === 'work' ? 25 * 60 : 5 * 60);
+                setTimeLeft(mode === 'work' ? 52 * 60 : 17 * 60);
             };
 
             const switchMode = (newMode) => {
@@ -416,7 +418,7 @@
                 setIsActive(false);
                 localStorage.removeItem('gt_timer_end_time');
                 localStorage.removeItem('gt_timer_paused_left');
-                setTimeLeft(newMode === 'work' ? 25 * 60 : 5 * 60);
+                setTimeLeft(newMode === 'work' ? 52 * 60 : 17 * 60);
             };
 
             const formatTime = (seconds) => {
@@ -425,7 +427,7 @@
                 return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             };
 
-            const denominator = mode === 'work' ? 25 * 60 : 5 * 60;
+            const denominator = mode === 'work' ? 52 * 60 : 17 * 60;
             const progress = (timeLeft / denominator) * 100;
 
             return (
@@ -537,20 +539,26 @@
                 const rand = Math.random();
                 let type = null;
                 
+                // --- 確率判定ロジック ---
                 if (task.listId === 'deadline') {
-                    if (rand < 0.5) { type = 'big'; }
+                    // 締切リストの特別確率: 50%大当たり、50%なし
+                    if (rand < 0.5) {
+                        type = 'big';
+                    }
                 } else {
+                    // 通常確率 (フィーバー時2倍)
                     let bigThreshold = 0.07;
-                    let smallThreshold = 0.27;
+                    let smallThreshold = 0.27; // 0.07 + 0.20
 
                     if (isDoubleChance) {
-                        bigThreshold = 0.14;
-                        smallThreshold = 0.54;
+                        bigThreshold = 0.14; // 14%
+                        smallThreshold = 0.54; // 14% + 40% = 54%
                     }
 
                     if (rand < bigThreshold) { type = 'big'; } 
                     else if (rand < smallThreshold) { type = 'small'; }
                 }
+                // ----------------------------------------
 
                 setConfettiType(type);
                 setIsCompleting(true);
@@ -617,6 +625,7 @@
                         
                         <div className="flex-grow min-w-0 pr-2 pt-0.5">
                             {isDeadlineView ? (
+                                /* 締切リスト表示用: 日付を大きく、タイトルを小さく */
                                 <div className="flex flex-col">
                                     {task.dueDate && (
                                         <div className={`text-base font-bold mb-0.5 transition-colors duration-300 ${isVisuallyCompleted ? 'text-gray-400' : 'text-google-red'}`}>
@@ -629,6 +638,7 @@
                                     {task.details && <div className="text-xs text-google-textSec truncate mt-0.5">{task.details}</div>}
                                 </div>
                             ) : (
+                                /* 通常表示 */
                                 <>
                                     <div className={`text-[15px] font-normal leading-5 transition-all duration-300 ${isVisuallyCompleted ? 'text-google-textSec line-through' : 'text-google-text'}`}>
                                         {task.title}
@@ -661,6 +671,8 @@
             const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
             
             const [tasks, setTasks] = useState(() => load('gt_tasks', []));
+            
+            // リスト初期化
             const [lists, setLists] = useState(() => {
                 let loaded = load('gt_lists', [
                     { id: 'default', title: 'マイタスク', icon: 'check' },
@@ -716,10 +728,14 @@
             const handleAddTask = () => {
                 if (!newTaskTitle.trim()) return;
                 
+                // 「締切」リストで追加した場合のみ自動日付設定
                 let initialDate = newTaskDate;
                 if (!initialDate && activeListId === 'deadline') {
                     initialDate = new Date().toISOString().split('T')[0];
                 }
+
+                // 締切リストなら 'deadline' ID、スター付きなら 'default'、それ以外はそのリストID
+                // これにより、締切リストで作ったものは独立する
                 const targetListId = activeListId === 'starred' ? 'default' : activeListId;
 
                 const newTask = {
@@ -740,6 +756,7 @@
 
             const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
             
+            // toggleTask修正：完了日時の記録
             const toggleTask = (task) => {
                 const isNowCompleted = !task.completed;
                 updateTask(task.id, { 
@@ -757,28 +774,42 @@
                 if(t) setLists([...lists, {id: Date.now().toString(), title: t, icon:'list'}]);
             };
 
+            // リスト削除関数
             const deleteList = (listId) => {
                 if (window.confirm('このリストを削除しますか？含まれるタスクも削除されます。')) {
                     setLists(lists.filter(l => l.id !== listId));
                     setTasks(tasks.filter(t => t.listId !== listId));
-                    if (activeListId === listId) setActiveListId('default');
+                    if (activeListId === listId) {
+                        setActiveListId('default');
+                    }
                 }
             };
 
-            const handleBreakComplete = () => setIsDoubleChance(true);
-            const handleConsumeChance = () => setIsDoubleChance(false);
+            // フィーバー管理
+            const handleBreakComplete = () => {
+                setIsDoubleChance(true);
+            };
+            const handleConsumeChance = () => {
+                setIsDoubleChance(false);
+            };
 
+            // Filtering (独立性を確保)
             const visibleTasks = tasks.filter(t => {
                 if (activeListId === 'starred') return t.isStarred;
-                if (activeListId === 'default') return !t.listId || t.listId === 'default'; 
-                if (activeListId === 'deadline') return t.listId === 'deadline'; 
+                if (activeListId === 'default') return !t.listId || t.listId === 'default'; // defaultのみ表示
+                if (activeListId === 'deadline') return t.listId === 'deadline'; // deadlineのみ表示（独立）
                 return t.listId === activeListId;
             });
             
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
 
-            const onDragStart = (e, index) => { dragItem.current = index; e.target.classList.add('dragging'); };
+            // Drag Handlers
+            const onDragStart = (e, index) => {
+                dragItem.current = index;
+                e.target.classList.add('dragging');
+            };
+
             const onDragEnter = (e, index) => {
                 dragOverItem.current = index;
                 const dragIdx = dragItem.current;
@@ -792,25 +823,43 @@
                 setTasks([...newIncomplete, ...otherTasks]);
                 dragItem.current = index;
             };
-            const onDragEnd = (e) => { e.target.classList.remove('dragging'); dragItem.current = null; dragOverItem.current = null; };
 
-            const onListDragStart = (e, index) => { dragListItem.current = index; };
+            const onDragEnd = (e) => {
+                e.target.classList.remove('dragging');
+                dragItem.current = null;
+                dragOverItem.current = null;
+            };
+
+            // List Drag Handlers
+            const onListDragStart = (e, index) => {
+                dragListItem.current = index;
+            };
+
             const onListDragEnter = (e, index) => {
                 dragOverListItem.current = index;
                 const dragIdx = dragListItem.current;
+                
                 if (dragIdx === undefined || dragIdx === index) return;
+                // 固定リスト（0: default, 1: deadline, 2: starred）は移動不可＆割り込み不可
                 if (dragIdx < 3 || index < 3) return;
+
                 const newLists = [...lists];
                 const draggedItem = newLists[dragIdx];
+                
                 newLists.splice(dragIdx, 1);
                 newLists.splice(index, 0, draggedItem);
+                
                 setLists(newLists);
                 dragListItem.current = index;
             };
-            const onListDragEnd = (e) => { dragListItem.current = null; dragOverListItem.current = null; };
+
+            const onListDragEnd = (e) => {
+                dragListItem.current = null;
+                dragOverListItem.current = null;
+            };
 
             return (
-                <div className="flex h-screen w-full bg-white font-sans text-google-text overflow-hidden selection:bg-google-selected selection:text-google-blue relative">
+                <div className="flex h-screen w-full bg-white font-sans text-google-text overflow-hidden selection:bg-google-selected selection:text-google-blue">
                     {/* 今日の成果モーダル */}
                     {showDailyModal && <DailyAchievementModal tasks={tasks} onClose={() => setShowDailyModal(false)} />}
                     
@@ -835,6 +884,7 @@
                         </div>
                         <div className="flex-1 overflow-y-auto px-2">
                             {lists.map((list, index) => {
+                                // 固定リスト判定
                                 const isFixed = list.id === 'default' || list.id === 'starred' || list.id === 'deadline';
                                 const listDragProps = !isFixed ? {
                                     draggable: true,
@@ -852,6 +902,7 @@
                                     ${activeListId === list.id ? 'bg-google-selected text-google-selectedText' : 'text-google-text hover:bg-google-hover'}`}
                                     {...listDragProps}
                                 >
+                                    {/* リスト用グリップ (固定リスト以外に表示) */}
                                     {!isFixed && (
                                         <div className="mr-2 text-gray-300 cursor-grab hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <GripVertical size={14} />
@@ -863,6 +914,8 @@
                                          list.icon === 'check' ? <Check size={20} /> : <ListIcon size={20} />}
                                     </div>
                                     <span className="truncate flex-1">{list.title}</span>
+
+                                    {/* 削除ボタン (ホバー時のみ表示、固定リスト以外) */}
                                     {!isFixed && (
                                         <div 
                                             className="ml-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -872,6 +925,7 @@
                                             <Trash2 size={14} />
                                         </div>
                                     )}
+
                                     {list.id === activeListId && <span className="text-xs font-bold ml-2">{visibleTasks.length > 0 ? visibleTasks.length : ''}</span>}
                                 </div>
                             )})}
@@ -948,7 +1002,7 @@
                                     )}
                                 </div>
 
-                                {/* 未完了タスク */}
+                                {/* 未完了タスク (ドラッグ可能) */}
                                 <div className="pb-4">
                                     {incomplete.map((t, index) => (
                                         <TaskItem 
@@ -987,24 +1041,23 @@
                                     </div>
                                 )}
 
-                                {/* フィーバータイムのお知らせ表示 (マイタスクのみ) - CSSで表示制御 */}
-                                <div className={activeListId === 'default' && isDoubleChance ? '' : 'hidden'}>
+                                {/* フィーバータイムのお知らせ表示 (マイタスクのみ) */}
+                                {activeListId === 'default' && isDoubleChance && (
                                     <div className="mt-4 mx-1 p-3 rounded-lg flex items-center justify-center gap-2 fever-mode text-sm font-bold text-yellow-800 shadow-sm animate-pulse">
                                         <Zap size={18} className="text-yellow-600" fill="currentColor" />
                                         <span>フィーバータイム！次のタスク完了で大当たり確率2倍！</span>
                                         <Zap size={18} className="text-yellow-600" fill="currentColor" />
                                     </div>
-                                </div>
+                                )}
 
-                                {/* ポモドーロタイマー (マイタスクのみ) - CSSで表示制御して常駐させる */}
-                                <div className={activeListId === 'default' ? '' : 'hidden'}>
+                                {/* ポモドーロタイマー (マイタスクのみ) */}
+                                {activeListId === 'default' && (
                                     <PomodoroTimer onBreakComplete={handleBreakComplete} />
-                                </div>
-
+                                )}
                             </div>
                         </div>
 
-                        {/* 詳細パネル */}
+                        {/* 詳細パネル (PC用 - 右側スライドイン) */}
                         {selectedTaskId && !isMobile && (
                             <div className="hidden lg:flex w-[360px] bg-white shadow-[-5px_0_15px_-5px_rgba(0,0,0,0.1)] z-40 absolute right-4 bottom-4 top-20 rounded-lg flex-col border border-[#dadce0] animate-[slideIn_0.2s_ease-out]">
                                 <div className="flex items-center justify-between p-2 pl-4 border-b border-gray-100">
