@@ -715,13 +715,26 @@
                 localStorage.setItem('gt_fever_active', JSON.stringify(isDoubleChance));
             }, [isDoubleChance]);
 
-            // -------------------------------------------
-            // ★ AI Agent連携用: URLからタスクを追加する機能
+           // -------------------------------------------
+            // ★ AI Agent連携用: URL連携 & タブ間同期 & 自動クローズ (Ver.2)
             // -------------------------------------------
             useEffect(() => {
+                // 1. 他のタブでの変更を検知して同期（リロード不要機能）
+                const handleStorageChange = (e) => {
+                    if (e.key === 'gt_tasks') {
+                        try {
+                            const newTasks = JSON.parse(e.newValue || '[]');
+                            setTasks(newTasks);
+                        } catch (err) {
+                            console.error('Sync error:', err);
+                        }
+                    }
+                };
+                window.addEventListener('storage', handleStorageChange);
+                // 2. URLからのタスク追加処理
                 const params = new URLSearchParams(window.location.search);
                 const automaticTask = params.get('add_task');
-                
+                const shouldClose = params.get('autoclose') === 'true'; // 自動クローズフラグ
                 if (automaticTask) {
                     const newTask = {
                         id: Date.now().toString(),
@@ -730,20 +743,30 @@
                         dueDate: '',
                         listId: 'default',
                         isStarred: false,
-                        completed: false,
+                        completed: false, 
                         createdAt: Date.now(),
                         completedAt: null,
                     };
                     
                     // タスクを追加
-                    setTasks(prev => [newTask, ...prev]);
+                    setTasks(prev => {
+                        const updated = [newTask, ...prev];
+                        // 即座に保存してイベントを発火させる（重要）
+                        localStorage.setItem('gt_tasks', JSON.stringify(updated));
+                        return updated;
+                    });
                     
-                    // 追加完了後、URLをクリーンにする（リロード時の重複防止）
+                    // URLクリーンアップ
                     window.history.replaceState({}, '', window.location.pathname);
-                    
-                    // ユーザーに通知（任意）
-                    console.log(`[AI Sync] Task added: ${automaticTask}`);
+                    // 自動クローズモードなら、処理後にウィンドウを閉じる
+                    if (shouldClose) {
+                        setTimeout(() => {
+                            window.close();
+                        }, 500); // 0.5秒後に閉じる
+                    }
                 }
+                
+                return () => window.removeEventListener('storage', handleStorageChange);
             }, []);
             // -------------------------------------------
             
@@ -1152,4 +1175,5 @@
     </script>
 </body>
 </html>
+
 
