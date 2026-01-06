@@ -715,6 +715,38 @@
                 localStorage.setItem('gt_fever_active', JSON.stringify(isDoubleChance));
             }, [isDoubleChance]);
 
+            // -------------------------------------------
+            // ★ AI Agent連携用: URLからタスクを追加する機能
+            // -------------------------------------------
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const automaticTask = params.get('add_task');
+                
+                if (automaticTask) {
+                    const newTask = {
+                        id: Date.now().toString(),
+                        title: decodeURIComponent(automaticTask),
+                        details: 'AI Agentによる自動追加',
+                        dueDate: '',
+                        listId: 'default',
+                        isStarred: false,
+                        completed: false,
+                        createdAt: Date.now(),
+                        completedAt: null,
+                    };
+                    
+                    // タスクを追加
+                    setTasks(prev => [newTask, ...prev]);
+                    
+                    // 追加完了後、URLをクリーンにする（リロード時の重複防止）
+                    window.history.replaceState({}, '', window.location.pathname);
+                    
+                    // ユーザーに通知（任意）
+                    console.log(`[AI Sync] Task added: ${automaticTask}`);
+                }
+            }, []);
+            // -------------------------------------------
+            
             useEffect(() => {
                 const handleResize = () => {
                     const mobile = window.innerWidth < 768;
@@ -1120,3 +1152,4 @@
     </script>
 </body>
 </html>
+
