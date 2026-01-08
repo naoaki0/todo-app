@@ -344,7 +344,6 @@
                     const diff = task.challengeEndTime - Date.now();
                     const sec = diff <= 0 ? 0 : Math.ceil(diff / 1000);
                     setChallengeTimeLeft(sec);
-                    if (sec === 0 && !task.completed) AudioEngine.play([220, 196, 174], 'sawtooth', 0.1, 0.15);
                 };
                 update();
                 const timer = setInterval(update, 1000);
