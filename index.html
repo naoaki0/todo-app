@@ -455,18 +455,20 @@
         const App = () => {
             const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
             const [tasks, setTasks] = useState(() => load('duo_v18_tasks', []));
-            const [stats, setStats] = useState(() => load('duo_v18_stats', { 
-                xp: 0, level: 1, gems: 100, streak: 0, lastDate: null, streakFreeze: 0, 
+            const [stats, setStats] = useState(() => load('duo_v18_stats', {
+                xp: 0, level: 1, gems: 100, streak: 0, lastDate: null, streakFreeze: 0,
                 wager: { active: false },
-                focusPotion: false, 
+                focusPotion: false,
                 resurrectionTickets: 0,
                 themes: ['default'], currentTheme: 'default',
                 streakBroken: false, savedStreak: 0,
                 completedSections: 0,
                 devLogs: [],
-                mvpScrutinizerActive: false, // New Item
-                devOathActive: false, // New Item
-                flowCapacitorEndTime: 0, // New Item
+                mvpScrutinizerActive: true, // デフォルトで有効
+                devOathActive: false,
+                flowCapacitorEndTime: 0,
+                tasksCreated: 0,
+                tasksPurged: 0,
             }));
             
             const SECTION_SIZE = 4;
@@ -602,15 +604,24 @@
             const purgeTask = () => {
                 if (!contextMenu) return;
                 const taskToPurge = contextMenu.task;
-                
+
                 // タスクを末尾へ移動
                 const newTasks = tasks.filter(t => t.id !== taskToPurge.id);
                 newTasks.push(taskToPurge);
-                
+
                 setTasks(newTasks);
                 setContextMenu(null);
-                setToastMessage("タスクをPost-MVPへパージしました🗑️");
-                AudioEngine.play([150, 100], 'sawtooth', 0.1, 0.1);
+
+                // パージ報酬: MVP最適化行動なので高報酬
+                const purgeReward = 25;
+                setStats(s => ({
+                    ...s,
+                    gems: s.gems + purgeReward,
+                    tasksPurged: s.tasksPurged + 1
+                }));
+
+                setToastMessage(`✨ MVP最適化！+${purgeReward}💎`);
+                AudioEngine.play([400, 600, 800], 'sine', 0.15, 0.08);
             };
 
             const checkSectionCompletion = (completedTaskId) => {
@@ -643,17 +654,29 @@
                 const now = new Date();
                 const currentHour = now.getHours();
 
+                // Section 1判定
+                let section1Tasks = [];
+                for (let t of tasks) {
+                    if (section1Tasks.length > 0 && t.isSectionHead) break;
+                    section1Tasks.push(t);
+                }
+                const isSection1Task = section1Tasks.some(t => t.id === task.id);
+
                 // 1. Determine Reward Type & Amount
                 let rewardAmount = 2; // Default: Focus (Normal)
-                let rewardType = 'normal'; // normal, velocity, morning, milestone
+                let rewardType = 'normal'; // normal, velocity, morning, milestone, mvpSprint
                 let logText = "";
 
-                // Milestone (50💎): Section Complete
+                // Milestone (100💎): Section 1 Complete - 最高報酬
                 const isSectionComplete = checkSectionCompletion(task.id);
-                if (isSectionComplete) {
+                if (isSectionComplete && isSection1Task) {
+                    rewardAmount = 100;
+                    rewardType = 'milestone';
+                    logText = "[🚀 MVP SPRINT] Section 1クリア！MVP機能が完成しました。";
+                } else if (isSectionComplete) {
                     rewardAmount = 50;
                     rewardType = 'milestone';
-                    logText = "[Milestone] Section クリア。MVPのリリース準備率が大きく前進。";
+                    logText = "[Milestone] Section クリア。";
                 }
 
                 // Morning Ignition (30💎): Before 13PM & First Task
@@ -664,15 +687,23 @@
                     logText = `[Early Bird] 朝の着火成功。${task.title} を完了。`;
                 }
 
-                // High Velocity (15💎): Challenge Timer Active & Not Expired
+                // High Velocity (20💎 for Section 1, 15💎 for others)
                 const isChallenge = task.challengeEndTime && task.challengeEndTime > Date.now();
-                // Flow Capacitor Check
                 const isFlowActive = Date.now() < stats.flowCapacitorEndTime;
-                
+
                 if ((isChallenge || isFlowActive) && rewardAmount < 15) {
-                    rewardAmount = 15;
+                    rewardAmount = isSection1Task ? 20 : 15;
                     rewardType = 'velocity';
-                    logText = `[High Velocity] タイムアタック成功。${task.title} を最短工数で完遂しました。`;
+                    logText = isSection1Task
+                        ? `[⚡ MVP Focus] ${task.title} を最速で完遂。リリースが近づいています。`
+                        : `[High Velocity] タイムアタック成功。${task.title} を最短工数で完遂しました。`;
+                }
+
+                // MVP Task Bonus: Section 1のタスクは基礎報酬増加
+                if (isSection1Task && rewardAmount < 10) {
+                    rewardAmount = 10;
+                    rewardType = 'mvpFocus';
+                    logText = `[MVP Task] ${task.title} 完了。MVP開発を前進させました。`;
                 }
 
                 // Normal log if not specified
@@ -757,8 +788,12 @@
                     let floatColor = "text-slate-400 text-sm";
                     let floatScale = "scale-100";
                     let floatText = `+${rewardAmount}💎`;
-                    
-                    if (rewardAmount >= 50) {
+
+                    if (rewardAmount >= 100) {
+                        floatColor = "text-yellow-400 font-black";
+                        floatScale = "scale-[2] animate-bounce-hard";
+                        floatText = `🚀 +${rewardAmount}💎`;
+                    } else if (rewardAmount >= 50) {
                         floatColor = "text-fuchsia-500 font-black";
                         floatScale = "scale-150 animate-bounce-hard";
                     } else if (rewardAmount >= 30) {
@@ -767,16 +802,19 @@
                     } else if (rewardAmount >= 15) {
                         floatColor = "text-cyan-400 font-bold";
                         floatScale = "scale-110";
+                    } else if (rewardAmount >= 10) {
+                        floatColor = "text-blue-400 font-bold";
+                        floatScale = "scale-105";
                     }
 
                     // Log Logic
                     let newLogs = prev.devLogs || [];
                     // Log Color based on reward type for display logic later
-                    // We'll store type in the log object
                     let logColorClass = "text-gray-600";
-                    if (rewardType === 'milestone') logColorClass = "text-fuchsia-600 font-bold";
+                    if (rewardType === 'milestone') logColorClass = "text-yellow-600 font-black";
                     else if (rewardType === 'morning') logColorClass = "text-amber-600 font-bold";
                     else if (rewardType === 'velocity') logColorClass = "text-cyan-600 font-bold";
+                    else if (rewardType === 'mvpFocus') logColorClass = "text-blue-600 font-bold";
 
                     // Prepend timestamp to text for simple display or store structure
                     const logEntry = { 
@@ -979,6 +1017,26 @@
                                 <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'deadline' ? 'bg-duo-pink/10 text-duo-pink border-duo-pink/20' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('deadline'); if(isMobile) setIsSidebarOpen(false); }}><Icons.Calendar size={24} />締切リスト</button>
                             </div>
 
+                            {/* MVP Stats */}
+                            <div className="mb-4">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-2">MVP開発指標</h3>
+                                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200 space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-bold text-gray-600">🎯 作成タスク数</span>
+                                        <span className="text-sm font-black text-blue-600">{stats.tasksCreated || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-bold text-gray-600">✨ 最適化回数</span>
+                                        <span className="text-sm font-black text-purple-600">{stats.tasksPurged || 0}</span>
+                                    </div>
+                                    <div className="mt-3 pt-2 border-t border-blue-200">
+                                        <div className="text-[10px] font-bold text-gray-500 text-center">
+                                            {stats.tasksPurged >= 3 ? "🏆 マスター級の最適化！" : stats.tasksPurged >= 1 ? "👍 MVP思考が身についています" : "💡 不要なタスクはパージしよう"}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Dev Log Moved Here (Above Gem Shop) */}
                             <div>
                                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-2">開発ログ</h3>
@@ -1075,7 +1133,26 @@
                                 <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 flex items-center shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
                                     <div className="w-full h-full flex items-center px-3 py-2 gap-2">
                                         <Icons.Plus className="text-gray-400 opacity-80" size={20} />
-                                        <input className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400" placeholder="新しいタスクを追加" onKeyDown={(e) => { if (e.key === 'Enter' && e.target.value.trim()) { setTasks([...tasks, { id: Date.now().toString(), title: e.target.value, completed: false, listId: activeListId, createdAt: Date.now(), isSectionHead: tasks.length === 0 }]); e.target.value = ''; } }} />
+                                        <input className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400" placeholder="MVP必須機能のみを追加" onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && e.target.value.trim()) {
+                                                // Section 1のタスク数をカウント
+                                                let section1Count = 0;
+                                                for (let t of tasks) {
+                                                    if (!t.completed && section1Count > 0 && t.isSectionHead) break;
+                                                    if (!t.completed) section1Count++;
+                                                }
+
+                                                // Section 1が5つ以上の場合は警告
+                                                if (section1Count >= 5) {
+                                                    setToastMessage("⚠️ MVP開発はシンプルに！タスクを減らすと集中力UP");
+                                                    AudioEngine.play([200, 150], 'sawtooth', 0.1, 0.1);
+                                                }
+
+                                                setTasks([...tasks, { id: Date.now().toString(), title: e.target.value, completed: false, listId: activeListId, createdAt: Date.now(), isSectionHead: tasks.length === 0 }]);
+                                                setStats(s => ({...s, tasksCreated: s.tasksCreated + 1}));
+                                                e.target.value = '';
+                                            }
+                                        }} />
                                     </div>
                                 </div>
 
@@ -1091,10 +1168,16 @@
 
                                             return (
                                                 <React.Fragment key={t.id}>
-                                                    <div className="py-4 flex items-center justify-center">
-                                                        <div className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest ${sectionNum === 1 ? 'bg-[#8ba4c9] text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                                    <div className="py-4 flex items-center justify-center gap-2">
+                                                        <div className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest ${sectionNum === 1 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-gray-200 text-gray-500'}`}>
                                                             Section {sectionNum}
                                                         </div>
+                                                        {sectionNum === 1 && (
+                                                            <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
+                                                                <span className="text-lg">🚀</span>
+                                                                <span className="text-[10px] font-black text-yellow-700 uppercase tracking-wider">MVP Focus</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <TaskItem 
                                                         task={t} 
