@@ -1066,22 +1066,20 @@
                     {/* Main Area */}
                     <main className={`flex-1 pt-20 transition-all duration-300 ${isSidebarOpen && !isMobile ? 'pl-[300px]' : 'pl-0'}`}>
                         <div className="h-full overflow-y-auto px-6 md:px-20 lg:px-32 pb-40">
-                            <div className="max-w-3xl mx-auto pt-8">
-                                <div className="max-w-lg mx-auto mb-8">
-                                    <h1 className="text-xl font-black tracking-tight text-duo-text">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
+                            <div className="max-w-2xl mx-auto pt-8">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <h1 className="text-3xl font-black tracking-tight text-duo-text">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
                                 </div>
 
                                 {/* タスク入力エリア */}
-                                <div className="mb-10 max-w-lg mx-auto">
-                                    <div className={`bg-duo-green border-duo-border rounded-lg p-1 flex items-center shadow-lg h-[50px] ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
-                                        <div className="w-full h-full flex items-center px-3 gap-2">
-                                            <Icons.Plus className="text-white opacity-80" size={20} />
-                                            <input className="bg-transparent outline-none flex-1 font-black text-sm text-white placeholder-green-200" placeholder="新しいタスクを追加" onKeyDown={(e) => { if (e.key === 'Enter' && e.target.value.trim()) { setTasks([...tasks, { id: Date.now().toString(), title: e.target.value, completed: false, listId: activeListId, createdAt: Date.now(), isSectionHead: tasks.length === 0 }]); e.target.value = ''; } }} />
-                                        </div>
+                                <div className={`mb-10 bg-duo-green border-duo-border rounded-2xl p-1 flex items-center shadow-lg ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
+                                    <div className="w-full h-full flex items-center px-4 py-3 gap-3">
+                                        <Icons.Plus className="text-white opacity-80" size={28} />
+                                        <input className="bg-transparent outline-none flex-1 font-black text-xl text-white placeholder-green-200" placeholder="新しいタスクを追加" onKeyDown={(e) => { if (e.key === 'Enter' && e.target.value.trim()) { setTasks([...tasks, { id: Date.now().toString(), title: e.target.value, completed: false, listId: activeListId, createdAt: Date.now(), isSectionHead: tasks.length === 0 }]); e.target.value = ''; } }} />
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 relative max-w-lg mx-auto">
+                                <div className="space-y-3 relative">
                                     {incomplete.map((t, index) => {
                                         const isFirst = index === 0;
                                         const showSectionHeader = isFirst || t.isSectionHead;
