@@ -3,1169 +3,1184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToDoリスト</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS -->
+    <title>ToDoリスト Pro - Focus Layout</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Roboto:wght@400;500;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
+                    fontFamily: { 
                         sans: ['Roboto', 'Noto Sans JP', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'] 
                     },
                     colors: {
                         google: {
-                            blue: '#1a73e8',
-                            red: '#ea4335',
-                            yellow: '#fbbc04',
-                            green: '#34a853',
-                            gray: '#f1f3f4',
-                            text: '#202124',
-                            textSec: '#5f6368',
-                            hover: '#f8f9fa',
-                            selected: '#e8f0fe',
-                            selectedText: '#1967d2'
+                            blue: '#1a73e8', red: '#ea4335', yellow: '#fbbc04', green: '#34a853',
+                            gray: '#f1f3f4', text: '#202124', textSec: '#5f6368', hover: '#f8f9fa',
+                            selected: '#e8f0fe', selectedText: '#1967d2'
+                        },
+                        duo: {
+                            green: '#58cc02', border: '#46a302', greenHighlight: '#89e219',
+                            blue: '#1cb0f6', blueBorder: '#1899d6',
+                            orange: '#ff9600', orangeBorder: '#cc7900',
+                            pink: '#ff4b4b', pinkBorder: '#d42c2c',
+                            gray: '#e5e5e5', lightGray: '#f7f7f7', text: '#4b4b4b',
+                            gold: '#FFD700', silver: '#C0C0C0'
                         }
                     },
                     boxShadow: {
-                        'card': '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)',
-                        'float': '0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15)',
+                        'card': '0 2px 0 0 #e5e5e5',
+                        'duo': '0 4px 0 0 #e5e5e5',
                         'floating': '0 6px 16px 0 rgba(0,0,0,0.2)',
+                        'glow': '0 0 15px rgba(255, 255, 255, 0.8)',
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-soft': 'bounce-soft 2s infinite',
+                        'toast-in': 'toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                        'float-up': 'float-up 1s ease-out forwards',
+                        'spring': 'spring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'chest-open': 'chest-open 0.5s forwards',
+                        'light-burst': 'light-burst 1s ease-out infinite',
+                        'ignition': 'ignition 1.5s ease-out forwards',
+                        'flame-grow': 'flame-grow 0.5s ease-out forwards',
+                        'scale-in': 'scale-in 0.2s ease-out forwards',
+                        'tech-slide': 'tech-slide 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'log-fade': 'log-fade 3s ease-out forwards',
+                        'checkbox-pop': 'checkbox-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        'bounce-hard': 'bounce-hard 0.5s infinite',
+                    },
+                    keyframes: {
+                        shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+                        'bounce-soft': { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        'bounce-hard': { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px) scale(1.1)' } },
+                        'toast-in': { '0%': { transform: 'translate(-50%, 100%)', opacity: 0 }, '100%': { transform: 'translate(-50%, 0)', opacity: 1 } },
+                        'float-up': { '0%': { transform: 'translateY(0) scale(1)', opacity: 1 }, '100%': { transform: 'translateY(-60px) scale(1.1)', opacity: 0 } },
+                        'spring': { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(0.95)' }, '100%': { transform: 'scale(1)' } },
+                        'shake': { '10%, 90%': { transform: 'translate3d(-2px, 0, 0) rotate(-2deg)' }, '20%, 80%': { transform: 'translate3d(4px, 0, 0) rotate(4deg)' }, '30%, 50%, 70%': { transform: 'translate3d(-8px, 0, 0) rotate(-8deg)' }, '40%, 60%': { transform: 'translate3d(8px, 0, 0) rotate(8deg)' } },
+                        'chest-open': { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.2)' }, '100%': { transform: 'scale(0) opacity(0)' } },
+                        'light-burst': { '0%': { transform: 'scale(1)', opacity: 0.5 }, '100%': { transform: 'scale(1.5)', opacity: 0 } },
+                        'ignition': { '0%': { opacity: 0, transform: 'scale(0.8)' }, '20%': { opacity: 1, transform: 'scale(1.2)' }, '100%': { opacity: 0, transform: 'scale(2)' } },
+                        'flame-grow': { '0%': { transform: 'scale(1)', color: '#e5e5e5' }, '50%': { transform: 'scale(1.5)', color: '#ff9600' }, '100%': { transform: 'scale(1)', color: '#ff9600' } },
+                        'scale-in': { '0%': { transform: 'scale(0.8)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
+                        'tech-slide': { '0%': { transform: 'translateX(-20px)', opacity: 0 }, '100%': { transform: 'translateX(0)', opacity: 1 } },
+                        'log-fade': { '0%': { color: '#FFD700', transform: 'translateX(-10px)' }, '20%': { color: '#FFD700', transform: 'translateX(0)' }, '100%': { color: '#4b5563' } },
+                        'checkbox-pop': { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.5)' }, '100%': { transform: 'scale(1)' } }
                     }
                 }
             }
         }
     </script>
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel (JSX変換用) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
     <style>
-        body {
-            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
-        /* 紙吹雪のアニメーション */
-        @keyframes confetti-explode {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            60% { opacity: 1; }
-            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-        }
-        /* 画面フラッシュ */
-        @keyframes flash-screen {
-            0% { opacity: 0; }
-            10% { opacity: 0.85; }
-            35% { opacity: 0.2; }
-            60% { opacity: 0.85; }
-            100% { opacity: 0; }
-        }
-        /* イナズマ */
-        @keyframes lightning-strike {
-            0% { opacity: 0; transform: scaleY(0) translateX(0); }
-            5% { opacity: 1; transform: scaleY(1) translateX(-5px); }
-            10% { opacity: 0; transform: scaleY(1) translateX(5px); }
-            15% { opacity: 1; transform: scaleY(1) translateX(-2px); }
-            20% { opacity: 0; }
-            30% { opacity: 1; transform: scaleY(1) translateX(0); }
-            100% { opacity: 0; transform: scaleY(1) translateX(0); }
-        }
-        /* タイマー終了時の点滅 */
-        @keyframes timer-alarm {
-            0%, 100% { background-color: white; }
-            50% { background-color: #fce8e6; }
-        }
-        .alarm-active {
-            animation: timer-alarm 1s infinite;
-        }
-        /* フィーバータイムのキラキラ */
-        @keyframes sparkle {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.1); }
-        }
-        .fever-mode {
-            animation: sparkle 2s infinite;
-            background: linear-gradient(45deg, #fff9c4, #fff);
-            border: 1px solid #fbc02d;
-        }
-
-        /* モーダル表示アニメーション */
-        @keyframes modal-fade-in {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .modal-content {
-            animation: modal-fade-in 0.2s ease-out forwards;
-        }
-
-        /* スクロールバー */
+        body { font-family: 'Roboto', 'Noto Sans JP', sans-serif; -webkit-font-smoothing: antialiased; }
+        @keyframes confetti-explode { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 60% { opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+        @keyframes cherry-fall { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: 0; } }
+        
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background-color: #bdc1c6; }
-        
-        .task-enter { opacity: 0; transform: translateY(-10px); }
-        .task-enter-active { opacity: 1; transform: translateY(0); transition: opacity 200ms, transform 200ms; }
-        
-        /* ドラッグ中のスタイル */
-        .dragging {
-            opacity: 0.4;
-            background-color: #f1f3f4;
-        }
-        .drag-over {
-            border-top: 2px solid #1a73e8;
-        }
+
+        .progress-glow { filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8)) brightness(1.2); }
+        .fire-active { animation: flame-grow 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     </style>
 </head>
-<body class="bg-white h-screen overflow-hidden text-google-text">
+<body class="bg-white h-screen overflow-hidden text-duo-text">
     <div id="root" class="h-full"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- アイコンコンポーネント ---
+        // --- 音響エンジン ---
+        const AudioEngine = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(freqs, type = 'sine', volume = 0.1, interval = 0.08) {
+                this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const now = this.ctx.currentTime;
+                freqs.forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(f, now + i * interval);
+                    gain.gain.setValueAtTime(0, now + i * interval);
+                    gain.gain.linearRampToValueAtTime(volume, now + i * interval + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * interval + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * interval);
+                    osc.stop(now + i * interval + 0.3);
+                });
+            }
+        };
+
+        // --- Icons ---
         const SvgIcon = ({ children, size = 20, className = "", ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
-                {children}
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+        const Icons = {
+            Menu: (p) => <SvgIcon {...p}><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></SvgIcon>,
+            Plus: (p) => <SvgIcon {...p}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></SvgIcon>,
+            Check: (p) => <SvgIcon {...p}><polyline points="20 6 9 17 4 12"/></SvgIcon>,
+            Trash2: (p) => <SvgIcon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></SvgIcon>,
+            Calendar: (p) => <SvgIcon {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></SvgIcon>,
+            Flame: (p) => <SvgIcon {...p}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.1.2-2.2.6-3.3a1 1 0 0 1 .9 3.8z"/></SvgIcon>,
+            Gem: (p) => <SvgIcon {...p}><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3v18"/><path d="M6 3l5 6 5-6"/><path d="M2 9h20"/></SvgIcon>,
+            ShoppingBag: (p) => <SvgIcon {...p}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></SvgIcon>,
+            ChevronDown: (p) => <SvgIcon {...p}><polyline points="6 9 12 15 18 9"/></SvgIcon>,
+            ChevronRight: (p) => <SvgIcon {...p}><polyline points="9 18 15 12 9 6"/></SvgIcon>,
+            Star: (p) => <SvgIcon {...p} fill={p.active ? "currentColor" : "none"}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></SvgIcon>,
+            Play: (p) => <SvgIcon {...p}><polygon points="5 3 19 12 5 21 5 3"/></SvgIcon>,
+            Pause: (p) => <SvgIcon {...p}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></SvgIcon>,
+            AlertCircle: (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></SvgIcon>,
+            Potion: (p) => <SvgIcon {...p}><path d="M8.5 2h7"/><path d="M12 2v4"/><path d="M16.5 10a4.5 4.5 0 0 0-9 0l-.5 8h10l-.5-8Z"/><line x1="12" y1="12" x2="12" y2="14"/><line x1="10" y1="15" x2="10.5" y2="15"/></SvgIcon>,
+            Ticket: (p) => <SvgIcon {...p}><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></SvgIcon>,
+            Sparkles: (p) => <SvgIcon {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 7h4"/><path d="M3 5h4"/></SvgIcon>,
+            Cherry: (p) => <SvgIcon {...p}><path d="M2 8a5 5 0 0 0 10 0c0-2.76-2.5-5-5-5-2.5 0-5 2.24-5 5Z"/><path d="M12 8a5 5 0 0 0 10 0c0-2.76-2.5-5-5-5-2.5 0-5 2.24-5 5Z"/><path d="M7 3c2.5-1.5 5 0 10 2"/></SvgIcon>,
+            Snowflake: (p) => <SvgIcon {...p}><line x1="12" y1="2" x2="12" y2="22"/><line x1="20" y1="12" x2="4" y2="12"/><line x1="17.66" y1="6.34" x2="6.34" y2="17.66"/><line x1="17.66" y1="17.66" x2="6.34" y2="6.34"/></SvgIcon>,
+            Chest: (p) => <SvgIcon {...p}><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A2.5 2.5 0 0 1 12 5.5V8"/><path d="M16.5 8a2.5 2.5 0 0 1 0-5A2.5 2.5 0 0 1 12 5.5V8"/></SvgIcon>,
+            Gift: (p) => <SvgIcon {...p}><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5A2.5 2.5 0 0 1 12 5.5V8" /><path d="M16.5 8a2.5 2.5 0 0 1 0-5A2.5 2.5 0 0 1 12 5.5V8" /></SvgIcon>,
+            Clock: (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></SvgIcon>,
+            Rocket: (p) => <SvgIcon {...p}><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></SvgIcon>,
+            Divide: (p) => <SvgIcon {...p}><circle cx="12" cy="6" r="2" /><line x1="5" y1="12" x2="19" y2="12" /><circle cx="12" cy="18" r="2" /></SvgIcon>,
+            Merge: (p) => <SvgIcon {...p}><path d="m8 6 4-4 4 4"/><path d="M12 2v10.3"/><path d="M12 12.3v8.2"/><path d="m8 18 4 4 4-4"/></SvgIcon>,
+            Terminal: (p) => <SvgIcon {...p}><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></SvgIcon>,
+            Search: (p) => <SvgIcon {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></SvgIcon>,
+            Shield: (p) => <SvgIcon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></SvgIcon>,
+            Zap: (p) => <SvgIcon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></SvgIcon>,
+            Trash: (p) => <SvgIcon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></SvgIcon>,
+        };
+
+        // --- 共通UI部品 ---
+        const juicyBtnClass = "transition-all duration-150 transform hover:scale-105 active:scale-95 active:translate-y-1";
+
+        const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20, color="text-google-textSec", ...props }) => (
+            <button onClick={onClick} className={`p-2 rounded-full flex items-center justify-center hover:bg-google-hover ${active ? 'bg-google-selected text-google-blue' : color} ${className} ${juicyBtnClass}`} {...props}>
+                <Icon size={size} active={active} />
+            </button>
         );
 
-        const MenuIcon = (p) => <SvgIcon {...p}><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></SvgIcon>;
-        const Plus = (p) => <SvgIcon {...p}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></SvgIcon>;
-        const Check = (p) => <SvgIcon {...p}><polyline points="20 6 9 17 4 12"/></SvgIcon>;
-        const Trash2 = (p) => <SvgIcon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></SvgIcon>;
-        const Calendar = (p) => <SvgIcon {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></SvgIcon>;
-        const Star = (p) => <SvgIcon {...p} fill={p.active ? "currentColor" : "none"}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></SvgIcon>;
-        const MoreVertical = (p) => <SvgIcon {...p}><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></SvgIcon>;
-        const ChevronDown = (p) => <SvgIcon {...p}><polyline points="6 9 12 15 18 9"></polyline></SvgIcon>;
-        const ChevronRight = (p) => <SvgIcon {...p}><polyline points="9 18 15 12 9 6"></polyline></SvgIcon>;
-        const ListIcon = (p) => <SvgIcon {...p}><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></SvgIcon>;
-        const X = (p) => <SvgIcon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></SvgIcon>;
-        const GripVertical = (p) => <SvgIcon {...p}><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></SvgIcon>;
-        const Play = (p) => <SvgIcon {...p}><polygon points="5 3 19 12 5 21 5 3"></polygon></SvgIcon>;
-        const Pause = (p) => <SvgIcon {...p}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></SvgIcon>;
-        const RotateCcw = (p) => <SvgIcon {...p}><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></SvgIcon>;
-        const Coffee = (p) => <SvgIcon {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></SvgIcon>;
-        const Brain = (p) => <SvgIcon {...p}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path></SvgIcon>;
-        const Zap = (p) => <SvgIcon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></SvgIcon>;
-        const Trophy = (p) => <SvgIcon {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></SvgIcon>;
+        const Toast = ({ message, onClose }) => {
+            useEffect(() => { const timer = setTimeout(onClose, 3000); return () => clearTimeout(timer); }, [onClose]);
+            return (
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-2xl shadow-floating z-[120] flex items-center gap-3 animate-toast-in font-black whitespace-nowrap border-b-4 border-red-700">
+                    <Icons.AlertCircle size={24} /><span>{message}</span>
+                </div>
+            );
+        };
 
-        
-        const TaskCheckCircle = ({ completed }) => (
-            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-200 ${completed ? 'bg-google-blue border-google-blue' : 'border-gray-500 hover:border-google-blue hover:bg-google-selected'}`}>
-                {completed && <Check size={14} className="text-white" strokeWidth={3} />}
+        const FloatingText = ({ x, y, text, color, scale }) => (
+            <div className={`fixed z-[150] pointer-events-none flex items-center gap-1 animate-float-up drop-shadow-md whitespace-nowrap ${color} ${scale}`} style={{ left: x, top: y }}>
+                {text}
+            </div>
+        );
+
+        const IgnitionModal = () => (
+            <div className="fixed inset-0 pointer-events-none z-[200] flex items-center justify-center">
+                <div className="absolute inset-0 bg-orange-500/20 animate-ignition"></div>
+                <div className="text-9xl text-duo-orange animate-ignition flex items-center justify-center drop-shadow-2xl">
+                    🔥
+                </div>
+                <div className="absolute top-1/3 text-4xl font-black text-white animate-ignition drop-shadow-lg uppercase tracking-widest">
+                    STREAK IGNITED!
+                </div>
+            </div>
+        );
+
+        // --- Context Menu ---
+        const ContextMenu = ({ x, y, onDivide, onMerge, onPurge, showMerge, showPurge }) => (
+            <div className="fixed z-[9999] bg-white border-2 border-gray-200 rounded-xl shadow-floating py-1 w-56 animate-scale-in" style={{ left: x, top: y }}>
+                <button onClick={onDivide} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                    <Icons.Divide size={16} /> ここで区切る
+                </button>
+                {showMerge && (
+                    <button onClick={onMerge} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 font-bold text-gray-600 text-sm">
+                        <Icons.Merge size={16} /> 区切りを削除
+                    </button>
+                )}
+                {showPurge && (
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button onClick={onPurge} className="w-full text-left px-4 py-3 hover:bg-red-50 flex items-center gap-2 font-bold text-red-500 text-sm">
+                            <Icons.Trash size={16} /> Post-MVPへパージ
+                        </button>
+                    </div>
+                )}
             </div>
         );
 
         // --- ユーティリティ ---
-        const formatDate = (dateString) => {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return '';
-            const now = new Date();
-            const isThisYear = date.getFullYear() === now.getFullYear();
-            const options = { month: 'short', day: 'numeric', weekday: 'short' };
-            if (!isThisYear) options.year = 'numeric';
-            return date.toLocaleDateString('ja-JP', options);
+        const getAdjustedToday = () => {
+            const d = new Date(); d.setHours(d.getHours() - 3); return d.toISOString().split('T')[0];
         };
 
-        // AM3:00 切り替えの日付判定
-        const isToday = (timestamp) => {
-            if (!timestamp) return false;
-            const date = new Date(timestamp);
-            const now = new Date();
+        const Confetti = ({ type, theme }) => {
+            const performanceColors = ['bg-yellow-400', 'bg-yellow-300', 'bg-gray-300', 'bg-gray-200'];
+            const colors = performanceColors; 
             
-            // 3時間引いて判定する（AM0:00〜2:59を前日扱いにするため）
-            const adjustedDate = new Date(date.getTime() - 3 * 60 * 60 * 1000);
-            const adjustedNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+            // Checkbox Ignition (Small Confetti)
+            const isSmall = type === 'ignition';
+            const particlesCount = isSmall ? 8 : (type === 'big' || type === 'performance' ? 45 : 12);
             
-            return adjustedDate.getDate() === adjustedNow.getDate() &&
-                   adjustedDate.getMonth() === adjustedNow.getMonth() &&
-                   adjustedDate.getFullYear() === adjustedNow.getFullYear();
-        };
-
-        // --- UIコンポーネント ---
-        const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20, color="text-google-textSec", ...props }) => (
-            <button 
-                onClick={onClick}
-                className={`p-2 rounded-full transition-colors duration-200 outline-none ${active ? 'text-google-blue bg-google-selected' : `${color} hover:bg-google-hover`} ${className}`}
-                {...props}
-            >
-                <Icon size={size} strokeWidth={2} active={active} />
-            </button>
-        );
-
-        // 紙吹雪コンポーネント
-        const ConfettiExplosion = ({ type }) => {
-            const colors = ['bg-[#4285F4]', 'bg-[#EA4335]', 'bg-[#FBBC05]', 'bg-[#34A853]'];
-            const isBig = type === 'big';
-            const count = isBig ? 40 : 12;
-            const duration = isBig ? '0.9s' : '0.6s';
-
-            const particles = Array.from({ length: count }).map((_, i) => {
-                const angle = Math.random() * 360;
-                const velocity = (isBig ? 50 : 20) + Math.random() * (isBig ? 60 : 20);
-                const size = (isBig ? 5 : 3) + Math.random() * (isBig ? 4 : 2);
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const tx = Math.cos(angle * Math.PI / 180) * velocity;
-                const ty = Math.sin(angle * Math.PI / 180) * velocity;
-                return { id: i, tx, ty, size, color };
-            });
+            const particles = Array.from({ length: particlesCount }).map((_, i) => ({
+                id: i, 
+                tx: (Math.random()-0.5)*(isSmall ? 60 : 240), 
+                ty: (Math.random()-0.5)*(isSmall ? 60 : 240), 
+                size: Math.random()*(isSmall ? 3 : 7)+2, 
+                color: colors[Math.floor(Math.random()*colors.length)],
+                rotation: Math.random() * 360
+            }));
 
             return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 overflow-visible">
-                    {particles.map((p) => (
-                        <div key={p.id} className={`absolute rounded-full ${p.color}`} style={{
-                            width: `${p.size}px`, height: `${p.size}px`,
-                            '--tx': `${p.tx}px`, '--ty': `${p.ty}px`,
-                            animation: `confetti-explode ${duration} ease-out forwards`,
-                        }} />
+                    {particles.map(p => (
+                        <div key={p.id} className={`absolute rounded-full ${p.color}`} 
+                            style={{ 
+                                width: p.size, 
+                                height: p.size, 
+                                '--tx': `${p.tx}px`, '--ty': `${p.ty}px`,
+                                animation: 'confetti-explode 0.4s ease-out forwards',
+                            }} 
+                        />
                     ))}
                 </div>
             );
         };
 
-        // 画面フラッシュ
-        const FlashEffect = () => (
-            <div 
-                className="fixed inset-0 pointer-events-none z-[100]"
-                style={{
-                    backgroundColor: 'white',
-                    background: 'radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,240,0.8) 100%)',
-                    animation: 'flash-screen 0.6s ease-out forwards'
-                }}
-            />
-        );
+        // --- 宝箱モーダル ---
+        const ChestModal = ({ onClose, onReward }) => {
+            const [state, setState] = useState('idle');
+            const [reward, setReward] = useState(null);
 
-        // イナズマ
-        const LightningEffect = () => {
-            const bolts = Array.from({ length: 3 }).map((_, i) => {
-                const left = 20 + Math.random() * 60; 
-                const delay = Math.random() * 0.1; 
-                const scale = 0.8 + Math.random() * 0.4;
-                const rotation = (Math.random() - 0.5) * 40; 
-                return (
-                    <div key={i} className="fixed top-0 pointer-events-none z-[101]" style={{ left: `${left}%`, height: '100%', width: '200px', transform: `translateX(-50%) rotate(${rotation}deg) scale(${scale})`, animation: `lightning-strike 0.5s ease-out forwards ${delay}s` }}>
-                        <svg viewBox="0 0 100 200" preserveAspectRatio="none" className="w-full h-full drop-shadow-[0_0_10px_rgba(255,255,0,0.8)] filter">
-                             <defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-                            <path d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" fill="none" stroke="#FFFF00" strokeWidth="4" strokeLinejoin="round" filter="url(#glow)" />
-                            <path d="M50,0 L35,40 L60,45 L20,90 L70,95 L10,140 L80,145 L40,200" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinejoin="round" />
-                        </svg>
-                    </div>
-                );
-            });
-            return <>{bolts}</>;
-        };
+            const handleOpen = () => {
+                if (state !== 'idle') return;
+                setState('shaking');
+                AudioEngine.play([200, 250, 300], 'sawtooth', 0.1, 0.05);
+                
+                setTimeout(() => {
+                    const roll = Math.random() * 100;
+                    console.log("Chest Roll:", roll);
+                    let result = {};
 
-        // ポモドーロタイマーコンポーネント (永続化強化版・時間変更済み)
-        const PomodoroTimer = ({ onBreakComplete }) => {
-            // LocalStorage helper
-            const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
-
-            const [mode, setMode] = useState(() => load('gt_timer_mode', 'work'));
-            const [timeLeft, setTimeLeft] = useState(() => {
-                // 初期化時に保存された状態を復元
-                const savedEndTime = localStorage.getItem('gt_timer_end_time');
-                const savedPaused = localStorage.getItem('gt_timer_paused_left');
-                const savedMode = load('gt_timer_mode', 'work');
-
-                if (savedEndTime) {
-                    const diff = Math.ceil((parseInt(savedEndTime, 10) - Date.now()) / 1000);
-                    if (diff > 0) {
-                        return diff;
-                    } else {
-                        // 時間切れ
-                        return 0; 
+                    if (roll < 70) { 
+                        result = { type: 'gems', amount: 10, text: '10 Gems', icon: Icons.Gem }; 
+                    } else if (roll < 90) { 
+                        result = { type: 'gems', amount: 40, text: '40 Gems!', icon: Icons.Gem }; 
+                    } else if (roll < 99) { 
+                        if (Math.random() < 0.5) {
+                             result = { type: 'gems', amount: 100, text: '100 Gems!!', icon: Icons.Gem };
+                        } else {
+                             result = { type: 'item', itemId: 'freeze', text: '連続フリーズ', icon: Icons.Snowflake };
+                        }
+                    } else { 
+                        result = { type: 'item', itemId: 'ticket', text: '蘇生チケット', icon: Icons.Ticket }; 
                     }
-                } else if (savedPaused) {
-                    return parseInt(savedPaused, 10);
-                } else {
-                    // 初期状態: 52分 / 17分
-                    return savedMode === 'work' ? 52 * 60 : 17 * 60;
-                }
-            });
-            
-            const [isActive, setIsActive] = useState(() => !!localStorage.getItem('gt_timer_end_time'));
-            const [isAlarmActive, setIsAlarmActive] = useState(false);
-            
-            const timeLeftRef = useRef(timeLeft);
-            useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
-            const timerRef = useRef(null);
-            const audioCtx = useMemo(() => new (window.AudioContext || window.webkitAudioContext)(), []);
-
-            // 状態保存
-            useEffect(() => {
-                localStorage.setItem('gt_timer_mode', mode);
-            }, [mode]);
-
-            // タイマー開始/停止時の保存処理
-            useEffect(() => {
-                if (isActive) {
-                    const currentLeft = timeLeftRef.current;
-                    const endTime = Date.now() + currentLeft * 1000;
-                    localStorage.setItem('gt_timer_end_time', endTime.toString());
-                    localStorage.removeItem('gt_timer_paused_left');
-                } else {
-                    localStorage.removeItem('gt_timer_end_time');
-                    const currentLeft = timeLeftRef.current;
-                    if (currentLeft > 0) {
-                        localStorage.setItem('gt_timer_paused_left', currentLeft.toString());
-                    }
-                }
-            }, [isActive]);
-
-
-            const playAlarm = () => {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.1); // A4
-                
-                // 音量設定: 0.35
-                gainNode.gain.setValueAtTime(0.35, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.5);
+                    setReward(result);
+                    setState('opened');
+                    AudioEngine.play([400, 600, 800, 1200], 'sine', 0.2, 0.1);
+                    onReward(result);
+                }, 800);
             };
-
-            const handleTimerComplete = (currentMode) => {
-                localStorage.removeItem('gt_timer_end_time');
-                localStorage.removeItem('gt_timer_paused_left');
-
-                setIsAlarmActive(true);
-                
-                if ("Notification" in window && Notification.permission === "granted") {
-                    const title = currentMode === 'work' ? "休憩の時間です！" : "集中の時間です！";
-                    const options = {
-                        body: currentMode === 'work' ? "集中時間が終わりました。休憩しましょう！" : "休憩終了！集中モードに切り替わりました。",
-                    };
-                    const notification = new Notification(title, options);
-                    notification.onclick = () => { window.focus(); notification.close(); };
-                }
-
-                playAlarm();
-
-                if (currentMode === 'break') {
-                    if (onBreakComplete) onBreakComplete(); 
-                }
-
-                setTimeout(() => setIsAlarmActive(false), 3000);
-
-                // 自動切替 (52分 / 17分)
-                if (currentMode === 'work') {
-                    setMode('break');
-                    setTimeLeft(17 * 60); 
-                } else {
-                    setMode('work');
-                    setTimeLeft(52 * 60); 
-                }
-                setIsActive(false); 
-            };
-
-            useEffect(() => {
-                if (!isActive) return;
-
-                let endTime = parseInt(localStorage.getItem('gt_timer_end_time'), 10);
-                if (!endTime) {
-                    endTime = Date.now() + timeLeft * 1000;
-                    localStorage.setItem('gt_timer_end_time', endTime.toString());
-                }
-                
-                timerRef.current = setInterval(() => {
-                    const now = Date.now();
-                    const secondsLeft = Math.ceil((endTime - now) / 1000);
-                    
-                    if (secondsLeft <= 0) {
-                        clearInterval(timerRef.current);
-                        setTimeLeft(0);
-                        setIsActive(false); 
-                        handleTimerComplete(mode); 
-                    } else {
-                        setTimeLeft(secondsLeft);
-                    }
-                }, 200); 
-
-                return () => clearInterval(timerRef.current);
-            }, [isActive, mode]);
-
-            const toggleTimer = () => {
-                if (!isActive && "Notification" in window && Notification.permission === "default") {
-                    Notification.requestPermission();
-                }
-                setIsActive(!isActive);
-            };
-            
-            const resetTimer = () => {
-                setIsActive(false);
-                localStorage.removeItem('gt_timer_end_time');
-                localStorage.removeItem('gt_timer_paused_left');
-                setTimeLeft(mode === 'work' ? 52 * 60 : 17 * 60);
-            };
-
-            const switchMode = (newMode) => {
-                setMode(newMode);
-                setIsActive(false);
-                localStorage.removeItem('gt_timer_end_time');
-                localStorage.removeItem('gt_timer_paused_left');
-                setTimeLeft(newMode === 'work' ? 52 * 60 : 17 * 60);
-            };
-
-            const formatTime = (seconds) => {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            };
-
-            const denominator = mode === 'work' ? 52 * 60 : 17 * 60;
-            const progress = (timeLeft / denominator) * 100;
 
             return (
-                <div className={`mt-8 mb-8 mx-auto w-[92%] p-6 bg-white rounded-lg shadow-card border border-gray-200 transition-colors duration-500 ${isAlarmActive ? 'alarm-active' : ''}`}>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-                            <button 
-                                onClick={() => switchMode('work')}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mode === 'work' ? 'bg-white text-google-blue shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                <div className="flex items-center gap-1"><Brain size={14} /> 集中</div>
-                            </button>
-                            <button 
-                                onClick={() => switchMode('break')}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mode === 'break' ? 'bg-white text-google-green shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                <div className="flex items-center gap-1"><Coffee size={14} /> 休憩</div>
-                            </button>
-                        </div>
-                        <IconButton icon={RotateCcw} onClick={resetTimer} size={18} />
-                    </div>
-
-                    <div className="text-center mb-6">
-                        <div className="text-5xl font-mono font-medium text-google-text tracking-wider">
-                            {formatTime(timeLeft)}
-                        </div>
-                        <div className="text-xs text-google-textSec mt-1">
-                            {isActive ? (mode === 'work' ? '集中しましょう' : 'リラックスタイム') : '待機中'}
-                        </div>
-                    </div>
-
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full mb-6 overflow-hidden">
-                        <div 
-                            className={`h-full transition-all duration-1000 ease-linear ${mode === 'work' ? 'bg-google-blue' : 'bg-google-green'}`}
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
-
-                    <div className="flex justify-center">
-                        <button 
-                            onClick={toggleTimer}
-                            className={`flex items-center justify-center w-12 h-12 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 ${isActive ? 'bg-white text-google-text border border-gray-200' : 'bg-google-blue text-white'}`}
-                        >
-                            {isActive ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
-                        </button>
-                    </div>
-                </div>
-            );
-        };
-
-        // 今日の成果モーダル
-        const DailyAchievementModal = ({ tasks, onClose }) => {
-            const todayCompletedTasks = tasks.filter(t => t.completed && isToday(t.completedAt));
-            const count = todayCompletedTasks.length;
-
-            return (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="bg-google-blue p-6 text-center text-white relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-                                <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-[spin_20s_linear_infinite]" 
-                                     style={{background: 'conic-gradient(from 0deg, transparent 0deg 30deg, white 30deg 60deg, transparent 60deg 90deg, white 90deg 120deg, transparent 120deg 150deg, white 150deg 180deg, transparent 180deg 210deg, white 210deg 240deg, transparent 240deg 270deg, white 270deg 300deg, transparent 300deg 330deg, white 330deg 360deg)'}}></div>
-                            </div>
-                            <h2 className="text-2xl font-bold relative z-10">今日の成果</h2>
-                            <div className="text-6xl font-bold mt-4 relative z-10">{count}</div>
-                            <div className="text-sm opacity-90 mt-1 relative z-10">タスク完了！</div>
-                        </div>
-                        <div className="p-6 max-h-[60vh] overflow-y-auto">
-                            {count === 0 ? (
-                                <div className="text-center text-gray-500 py-8">
-                                    まだ完了したタスクはありません。<br/>今日も一日頑張りましょう！
+                <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in">
+                    <div className="flex flex-col items-center">
+                        <div className="relative mb-8 cursor-pointer group" onClick={handleOpen}>
+                            {state === 'idle' && (
+                                <div className="text-[120px] animate-bounce-soft transition-transform group-hover:scale-110 drop-shadow-2xl">🎁</div>
+                            )}
+                            {state === 'shaking' && (
+                                <div className="text-[120px] animate-shake drop-shadow-2xl">🎁</div>
+                            )}
+                            {state === 'opened' && (
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-yellow-400 blur-3xl opacity-50 animate-light-burst"></div>
+                                    <div className="text-[120px] animate-chest-open">📦</div>
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform scale-150 animate-float-up flex flex-col items-center gap-2">
+                                        <div className="text-6xl drop-shadow-md">
+                                            {reward?.icon && <reward.icon size={64} className="text-white" fill={reward.type==='gems'?"currentColor":"none"} />}
+                                        </div>
+                                    </div>
                                 </div>
-                            ) : (
-                                <ul className="space-y-3">
-                                    {todayCompletedTasks.map(t => (
-                                        <li key={t.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                                            <div className="mt-1 text-google-green"><Check size={16} strokeWidth={3} /></div>
-                                            <div className="flex-1">
-                                                <div className="text-sm font-medium text-gray-800 line-through decoration-gray-400 opacity-80">{t.title}</div>
-                                                <div className="text-xs text-gray-400 mt-0.5">
-                                                    {new Date(t.completedAt).toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'})}
-                                                </div>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
                             )}
                         </div>
-                        <div className="p-4 border-t border-gray-100 flex justify-center">
-                            <button onClick={onClose} className="px-8 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors">
-                                閉じる
-                            </button>
+
+                        <div className="text-white text-center min-h-[100px]">
+                            {state === 'idle' && <p className="text-2xl font-black animate-pulse">セクション完了！<br/>宝箱を開ける</p>}
+                            {state === 'shaking' && <p className="text-2xl font-black text-yellow-300">ゴゴゴゴ...</p>}
+                            {state === 'opened' && (
+                                <div className="animate-in zoom-in slide-in-from-bottom duration-500">
+                                    <p className="text-yellow-300 text-sm font-bold uppercase tracking-widest mb-1">GET REWARD</p>
+                                    <p className="text-4xl font-black mb-6">{reward?.text}</p>
+                                    <button onClick={onClose} className="bg-white text-duo-green px-8 py-3 rounded-2xl font-black text-xl border-b-4 border-gray-200 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105">
+                                        受け取る
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             );
         };
 
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isSelected, onSelect, dragHandlers, index, isDoubleChance, onConsumeChance, isDeadlineView }) => {
+
+        // --- タスク部品 ---
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
-            const [showConfetti, setShowConfetti] = useState(false); 
+            const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
+            const [animateCheckbox, setAnimateCheckbox] = useState(false);
+            const buttonRef = useRef(null);
+
+            useEffect(() => {
+                if (!task.challengeEndTime || task.completed) { setChallengeTimeLeft(null); return; }
+                const update = () => {
+                    const diff = task.challengeEndTime - Date.now();
+                    const sec = diff <= 0 ? 0 : Math.ceil(diff / 1000);
+                    setChallengeTimeLeft(sec);
+                    if (sec === 0 && !task.completed) AudioEngine.play([220, 196, 174], 'sawtooth', 0.1, 0.15);
+                };
+                update();
+                const timer = setInterval(update, 1000);
+                return () => clearInterval(timer);
+            }, [task.challengeEndTime, task.completed]);
 
             const handleToggle = (e) => {
-                e.stopPropagation();
-                if (task.completed) { onToggle(task); return; }
-                if (isCompleting) return;
-
-                const rand = Math.random();
-                let type = null;
+                e.stopPropagation(); // チェックボックスクリック時のみ発火させるため必須
+                if (task.completed || isCompleting) return onToggle(task);
                 
-                // --- 確率判定ロジック ---
-                if (task.listId === 'deadline') {
-                    // 締切リストの特別確率: 50%大当たり、50%なし
-                    if (rand < 0.5) {
-                        type = 'big';
-                    }
+                const rect = buttonRef.current ? buttonRef.current.getBoundingClientRect() : null;
+                const isChallenge = task.challengeEndTime && task.challengeEndTime > Date.now();
+                
+                // Checkbox Ignition Logic
+                setAnimateCheckbox(true);
+                // "Kakin!" High pitch sound
+                AudioEngine.play([1200, 1800], 'square', 0.1, 0.05);
+
+                const shouldShowConfetti = isChallenge || isLastInSection;
+
+                if (shouldShowConfetti) {
+                    setConfettiType('performance');
+                    setIsCompleting(true);
+                    AudioEngine.play([523.25, 659.25, 783.99, 1046.50], 'triangle', 0.12, 0.06);
                 } else {
-                    // 通常確率 (フィーバー時2倍)
-                    let bigThreshold = 0.07;
-                    let smallThreshold = 0.27; // 0.07 + 0.20
-
-                    if (isDoubleChance) {
-                        bigThreshold = 0.14; // 14%
-                        smallThreshold = 0.54; // 14% + 40% = 54%
-                    }
-
-                    if (rand < bigThreshold) { type = 'big'; } 
-                    else if (rand < smallThreshold) { type = 'small'; }
+                     // Small sparks for normal completion
+                     setConfettiType('ignition');
                 }
-                // ----------------------------------------
-
-                setConfettiType(type);
-                setIsCompleting(true);
-
-                if (type === 'big') {
-                    setShowConfetti(false);
-                    setTimeout(() => { setShowConfetti(true); setTimeout(() => { finishCompletion(); }, 900); }, 600);
-                } else if (type === 'small') {
-                    setShowConfetti(true);
-                    setTimeout(() => { finishCompletion(); }, 600); 
-                } else {
-                    setShowConfetti(false);
-                    setTimeout(() => { finishCompletion(); }, 300);
-                }
-            };
-
-            const finishCompletion = () => {
-                setIsCompleting(false);
-                setConfettiType(null);
-                setShowConfetti(false);
+                
                 setTimeout(() => { 
+                    setIsCompleting(false);
+                    setAnimateCheckbox(false);
                     onToggle(task); 
-                    if (isDoubleChance && onConsumeChance && task.listId !== 'deadline') onConsumeChance(); 
-                }, 50);
+                    onXpGain(task, rect, setConfettiType);
+                }, 400); 
             };
 
-            const isVisuallyCompleted = task.completed || isCompleting;
-
-            const dragProps = (!task.completed && dragHandlers) ? {
-                draggable: true,
-                onDragStart: (e) => dragHandlers.onDragStart(e, index),
-                onDragEnter: (e) => dragHandlers.onDragEnter(e, index),
-                onDragEnd: dragHandlers.onDragEnd,
-                onDragOver: (e) => e.preventDefault(),
-            } : {};
+            const springClass = isCompleting ? "animate-spring" : "";
+            const checkboxPop = animateCheckbox ? "animate-checkbox-pop" : "";
+            // Section 1以外はクリック不可 (pointer-events-none)
+            const disabledClass = !isFocusedSection && !task.completed ? "pointer-events-none opacity-50 grayscale" : "";
 
             return (
-                <>
-                    {isCompleting && (
-                        <>
-                            {confettiType === 'big' && !showConfetti && (<><FlashEffect /><LightningEffect /></>)}
-                        </>
-                    )}
-
-                    <div 
-                        onClick={onSelect} 
-                        className={`group flex items-start py-3 px-2 cursor-pointer transition-colors duration-200
-                            ${isSelected ? 'bg-google-selected' : 'hover:bg-google-hover bg-white'}
-                            ${isVisuallyCompleted ? '' : ''}
-                        `}
-                        {...dragProps}
-                    >
-                        {!task.completed && (
-                            <div className="pt-1 px-1 text-gray-300 cursor-grab hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <GripVertical size={16} />
-                            </div>
-                        )}
-                        {task.completed && <div className="w-6"></div>}
-
-                        <div className="pt-0.5 pr-4 flex-shrink-0 relative flex items-center justify-center" onClick={handleToggle}>
-                            {isCompleting && confettiType && showConfetti && <ConfettiExplosion type={confettiType} />}
-                            <TaskCheckCircle completed={isVisuallyCompleted} />
-                        </div>
-                        
-                        <div className="flex-grow min-w-0 pr-2 pt-0.5">
-                            {isDeadlineView ? (
-                                /* 締切リスト表示用: 日付を大きく、タイトルを小さく */
-                                <div className="flex flex-col">
-                                    {task.dueDate && (
-                                        <div className={`text-base font-bold mb-0.5 transition-colors duration-300 ${isVisuallyCompleted ? 'text-gray-400' : 'text-google-red'}`}>
-                                            {formatDate(task.dueDate)}
-                                        </div>
-                                    )}
-                                    <div className={`text-sm font-normal leading-5 transition-all duration-300 ${isVisuallyCompleted ? 'text-google-textSec line-through' : 'text-google-text'}`}>
-                                        {task.title}
-                                    </div>
-                                    {task.details && <div className="text-xs text-google-textSec truncate mt-0.5">{task.details}</div>}
-                                </div>
-                            ) : (
-                                /* 通常表示 */
-                                <>
-                                    <div className={`text-[15px] font-normal leading-5 transition-all duration-300 ${isVisuallyCompleted ? 'text-google-textSec line-through' : 'text-google-text'}`}>
-                                        {task.title}
-                                    </div>
-                                    <div className={`flex flex-wrap items-center gap-2 mt-1 ${isVisuallyCompleted ? 'opacity-60' : 'opacity-100'}`}>
-                                        {task.details && <span className="text-xs text-google-textSec truncate max-w-full">{task.details}</span>}
-                                        {task.dueDate && (
-                                            <span className={`flex items-center text-xs px-2 py-0.5 rounded-full border ${isVisuallyCompleted ? 'text-gray-400 border-gray-200' : 'text-google-blue border-transparent bg-google-selected'}`}>
-                                                <Calendar size={12} className="mr-1" />{formatDate(task.dueDate)}
-                                            </span>
-                                        )}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                        
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 md:opacity-0 opacity-100 transition-opacity">
-                            <IconButton icon={Star} size={20} active={task.isStarred} onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
-                            <div className="relative group/menu">
-                                <IconButton icon={Trash2} size={18} className="hover:text-google-red" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
-                            </div>
+                <div 
+                    className={`group flex items-start py-4 px-4 cursor-pointer border-b-2 transition-all ${springClass} ${disabledClass} ${
+                        task.completed 
+                            ? 'bg-gray-50 opacity-60 border-gray-100' 
+                            : isFocusedSection 
+                                ? 'bg-white border-gray-200' 
+                                : 'bg-gray-100 border-gray-200'
+                    }`}
+                    // 親要素のonClick削除 (チェックボックスのみで完了)
+                    onContextMenu={(e) => onContextMenu && onContextMenu(e, task)}
+                >
+                    <div className="pt-0.5 pr-4 flex-shrink-0 relative" ref={buttonRef} onClick={(e) => handleToggle(e)}>
+                        {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
+                        <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${
+                            task.completed || isCompleting 
+                                ? 'bg-duo-blue border-duo-blue scale-110' 
+                                : isFocusedSection
+                                    ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50' 
+                                    : 'border-gray-300 bg-gray-200'
+                        }`}>
+                            {(task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
                         </div>
                     </div>
-                </>
+                    <div className="flex-grow min-w-0 pr-2 pt-0.5">
+                        <div className={`text-[17px] font-bold leading-tight ${
+                            task.completed 
+                                ? 'text-gray-400 line-through' 
+                                : isFocusedSection 
+                                    ? 'text-duo-text'
+                                    : 'text-gray-500'
+                        }`}>{task.title}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        {challengeTimeLeft !== null && !task.completed && (
+                            <span className={`text-[11px] font-black px-3 py-1 rounded-xl border-b-2 shadow-sm ${challengeTimeLeft > 0 ? 'bg-duo-pink text-white border-duo-pinkBorder animate-pulse' : 'bg-gray-200 text-gray-500 border-gray-300'}`}>
+                                {challengeTimeLeft > 0 ? `${Math.floor(challengeTimeLeft / 60)}:${(challengeTimeLeft % 60).toString().padStart(2, '0')}` : 'TIME OVER'}
+                            </span>
+                        )}
+                        {!challengeTimeLeft && !task.completed && isFocusedSection && (
+                            <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <IconButton icon={Icons.Flame} size={20} className="text-gray-300 hover:text-orange-400 hover:bg-orange-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 7 * 60 * 1000 }); }} />
+                                <IconButton icon={Icons.Star} size={20} active={task.isStarred} className="text-gray-300 hover:text-yellow-400 hover:bg-yellow-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
+                                <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                            </div>
+                        )}
+                        {task.completed && (
+                            <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                            </div>
+                        )}
+                        {/* Section 2以降のボタン表示 (通常) */}
+                        {!challengeTimeLeft && !task.completed && !isFocusedSection && (
+                            <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <IconButton icon={Icons.Flame} size={20} className="text-orange-400 hover:bg-orange-100" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 7 * 60 * 1000 }); }} />
+                                <IconButton icon={Icons.Star} size={20} active={task.isStarred} onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
+                                <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                            </div>
+                        )}
+                    </div>
+                </div>
             );
         };
 
-        // --- Main App ---
+        // --- メインアプリ ---
         const App = () => {
             const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
+            const [tasks, setTasks] = useState(() => load('duo_v18_tasks', []));
+            const [stats, setStats] = useState(() => load('duo_v18_stats', { 
+                xp: 0, level: 1, gems: 100, streak: 0, lastDate: null, streakFreeze: 0, 
+                wager: { active: false },
+                focusPotion: false, 
+                resurrectionTickets: 0,
+                themes: ['default'], currentTheme: 'default',
+                streakBroken: false, savedStreak: 0,
+                completedSections: 0,
+                devLogs: [],
+                mvpScrutinizerActive: false, // New Item
+                devOathActive: false, // New Item
+                flowCapacitorEndTime: 0, // New Item
+            }));
             
-            const [tasks, setTasks] = useState(() => load('gt_tasks', []));
-            
-            // リスト初期化
-            const [lists, setLists] = useState(() => {
-                let loaded = load('gt_lists', [
-                    { id: 'default', title: 'マイタスク', icon: 'check' },
-                    { id: 'deadline', title: '締切', icon: 'calendar' },
-                    { id: 'starred', title: 'スター付き', icon: 'star' }
-                ]);
-                if (!loaded.find(l => l.id === 'deadline')) {
-                    const defaultIdx = loaded.findIndex(l => l.id === 'default');
-                    const insertIdx = defaultIdx !== -1 ? defaultIdx + 1 : 0;
-                    loaded.splice(insertIdx, 0, { id: 'deadline', title: '締切', icon: 'calendar' });
-                }
-                return loaded;
-            });
+            const SECTION_SIZE = 4;
 
-            // フィーバー状態の永続化
-            const [isDoubleChance, setIsDoubleChance] = useState(() => load('gt_fever_active', false));
-
-            const [activeListId, setActiveListId] = useState('default');
             const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
-            const [newTaskTitle, setNewTaskTitle] = useState('');
-            const [newTaskDetails, setNewTaskDetails] = useState('');
-            const [newTaskDate, setNewTaskDate] = useState('');
-            const [isInputExpanded, setIsInputExpanded] = useState(false);
-            const [showCompleted, setShowCompleted] = useState(false);
-            const [selectedTaskId, setSelectedTaskId] = useState(null);
+            const [activeListId, setActiveListId] = useState('default');
+            const [isShopOpen, setIsShopOpen] = useState(false);
+            const [isDoubleChance, setIsDoubleChance] = useState(false);
             const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-            const [showDailyModal, setShowDailyModal] = useState(false); // 今日の成果モーダル用
+            const [timerState, setTimerState] = useState({ active: false, time: 52 * 60, mode: 'work' });
+            const [isCompletedOpen, setIsCompletedOpen] = useState(false);
+            const [toastMessage, setToastMessage] = useState(null);
+            const [showChestModal, setShowChestModal] = useState(false);
+            const [levelGlow, setLevelGlow] = useState(false);
+            const [progressGlow, setProgressGlow] = useState(false);
+            const [showIgnition, setShowIgnition] = useState(false);
+            const [floatingTexts, setFloatingTexts] = useState([]);
             
-            const inputRef = useRef(null);
-            const dragItem = useRef();
-            const dragOverItem = useRef();
-            const dragListItem = useRef();
-            const dragOverListItem = useRef();
-
-            useEffect(() => localStorage.setItem('gt_tasks', JSON.stringify(tasks)), [tasks]);
-            useEffect(() => localStorage.setItem('gt_lists', JSON.stringify(lists)), [lists]);
+            const [contextMenu, setContextMenu] = useState(null);
             
-            // フィーバー状態の保存
-            useEffect(() => {
-                localStorage.setItem('gt_fever_active', JSON.stringify(isDoubleChance));
-            }, [isDoubleChance]);
+            // Progress Bar Animation State
+            const [progressBounce, setProgressBounce] = useState(false);
 
-           // -------------------------------------------
-            // ★ AI Agent連携用: URL連携 & タブ間同期 & 自動クローズ (Ver.2)
-            // -------------------------------------------
+            const closeToast = useCallback(() => {
+                setToastMessage(null);
+            }, []);
+
             useEffect(() => {
-                // 1. 他のタブでの変更を検知して同期（リロード不要機能）
-                const handleStorageChange = (e) => {
-                    if (e.key === 'gt_tasks') {
-                        try {
-                            const newTasks = JSON.parse(e.newValue || '[]');
-                            setTasks(newTasks);
-                        } catch (err) {
-                            console.error('Sync error:', err);
+                const h = () => { const m = window.innerWidth < 768; setIsMobile(m); if(!m) setIsSidebarOpen(true); };
+                window.addEventListener('resize', h); return () => window.removeEventListener('resize', h);
+            }, []);
+
+            useEffect(() => {
+                const handleClick = () => setContextMenu(null);
+                window.addEventListener('click', handleClick);
+                return () => window.removeEventListener('click', handleClick);
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('duo_v18_tasks', JSON.stringify(tasks));
+                localStorage.setItem('duo_v18_stats', JSON.stringify(stats));
+            }, [tasks, stats]);
+
+            useEffect(() => {
+                const today = getAdjustedToday();
+                // Dev's Oath Check
+                if (stats.devOathActive && stats.lastDate !== today) {
+                    // Logic for oath check would go here
+                }
+                
+                if (stats.lastDate && stats.lastDate !== today) {
+                    const last = new Date(stats.lastDate); const curr = new Date(today);
+                    const diff = (curr - last) / (1000 * 60 * 60 * 24);
+                    if (diff > 1 && stats.streak > 0 && !stats.streakBroken) {
+                        if (stats.streakFreeze > 0) {
+                            setStats(s => ({ ...s, streakFreeze: s.streakFreeze - 1, lastDate: today }));
+                            setToastMessage("フリーズ発動！Streakは守られました❄️");
+                        } else {
+                            setStats(s => ({ ...s, streakBroken: true, savedStreak: s.streak, streak: 0 }));
                         }
                     }
-                };
-                window.addEventListener('storage', handleStorageChange);
-                // 2. URLからのタスク追加処理
-                const params = new URLSearchParams(window.location.search);
-                const automaticTask = params.get('add_task');
-                const shouldClose = params.get('autoclose') === 'true'; // 自動クローズフラグ
-                if (automaticTask) {
-                    const newTask = {
-                        id: Date.now().toString(),
-                        title: decodeURIComponent(automaticTask),
-                        details: 'AI Agentによる自動追加',
-                        dueDate: '',
-                        listId: 'default',
-                        isStarred: false,
-                        completed: false, 
-                        createdAt: Date.now(),
-                        completedAt: null,
-                    };
-                    
-                    // タスクを追加
-                    setTasks(prev => {
-                        const updated = [newTask, ...prev];
-                        // 即座に保存してイベントを発火させる（重要）
-                        localStorage.setItem('gt_tasks', JSON.stringify(updated));
-                        return updated;
-                    });
-                    
-                    // URLクリーンアップ
-                    window.history.replaceState({}, '', window.location.pathname);
-                    // 自動クローズモードなら、処理後にウィンドウを閉じる
-                    if (shouldClose) {
-                        setTimeout(() => {
-                            window.close();
-                        }, 500); // 0.5秒後に閉じる
-                    }
                 }
-                
-                return () => window.removeEventListener('storage', handleStorageChange);
             }, []);
-            // -------------------------------------------
-            
+
             useEffect(() => {
-                const handleResize = () => {
-                    const mobile = window.innerWidth < 768;
-                    setIsMobile(mobile);
-                    if(mobile) setIsSidebarOpen(false);
-                };
-                window.addEventListener('resize', handleResize);
-                return () => window.removeEventListener('resize', handleResize);
-            }, []);
+                let timer = null;
+                if (timerState.active && timerState.time > 0) {
+                    timer = setInterval(() => setTimerState(s => ({ ...s, time: s.time - 1 })), 1000);
+                } else if (timerState.time === 0) {
+                    const isWork = timerState.mode === 'work';
+                    setTimerState({ active: false, mode: isWork ? 'break' : 'work', time: isWork ? 17 * 60 : 52 * 60 });
+                    AudioEngine.play([880, 440], 'sine', 0.15, 0.2);
 
-            const handleAddTask = () => {
-                if (!newTaskTitle.trim()) return;
-                
-                // 「締切」リストで追加した場合のみ自動日付設定
-                let initialDate = newTaskDate;
-                if (!initialDate && activeListId === 'deadline') {
-                    initialDate = new Date().toISOString().split('T')[0];
+                    setStats(s => {
+                        if (s.wager.active) {
+                            setToastMessage("倍か無か... 失敗 😢");
+                            return { ...s, wager: { active: false } };
+                        }
+                        return s;
+                    });
                 }
+                return () => clearInterval(timer);
+            }, [timerState.active, timerState.time]);
 
-                // 締切リストなら 'deadline' ID、スター付きなら 'default'、それ以外はそのリストID
-                // これにより、締切リストで作ったものは独立する
-                const targetListId = activeListId === 'starred' ? 'default' : activeListId;
-
-                const newTask = {
-                    id: Date.now().toString(),
-                    title: newTaskTitle,
-                    details: newTaskDetails,
-                    dueDate: initialDate,
-                    listId: targetListId,
-                    isStarred: activeListId === 'starred',
-                    completed: false,
-                    createdAt: Date.now(),
-                    completedAt: null, // 初期値
-                };
-                setTasks([newTask, ...tasks]);
-                setNewTaskTitle(''); setNewTaskDetails(''); setNewTaskDate('');
-                setIsInputExpanded(false);
+            const switchTimerMode = (mode) => {
+                const time = mode === 'work' ? 52 * 60 : 17 * 60;
+                setTimerState({ active: false, mode, time });
+                if (mode === 'break') {
+                     setStats(s => {
+                        if (s.wager.active) {
+                            setToastMessage("倍か無か... 失敗 😢");
+                            return { ...s, wager: { active: false } };
+                        }
+                        return s;
+                    });
+                }
             };
 
-            const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
-            
-            // toggleTask修正：完了日時の記録
-            const toggleTask = (task) => {
-                const isNowCompleted = !task.completed;
-                updateTask(task.id, { 
-                    completed: isNowCompleted,
-                    completedAt: isNowCompleted ? Date.now() : null
+            const resurrectStreak = () => {
+                if (stats.resurrectionTickets > 0 && stats.streakBroken) {
+                    setStats(s => ({
+                        ...s,
+                        streak: s.savedStreak,
+                        streakBroken: false,
+                        resurrectionTickets: s.resurrectionTickets - 1,
+                        lastDate: getAdjustedToday()
+                    }));
+                    setToastMessage("Streak復活！🔥");
+                    AudioEngine.play([523, 659, 784, 1046], 'sine', 0.2, 0.1);
+                }
+            };
+
+            const handleContextMenu = (e, task) => {
+                e.preventDefault();
+                setContextMenu({ x: e.clientX, y: e.clientY, task });
+            };
+
+            const toggleSectionBreak = () => {
+                if (!contextMenu) return;
+                const currentIndex = tasks.findIndex(t => t.id === contextMenu.task.id);
+                if (currentIndex === -1 || currentIndex === tasks.length - 1) return;
+
+                const nextTask = tasks[currentIndex + 1];
+                const isHead = nextTask.isSectionHead;
+
+                setTasks(tasks.map((t, idx) => 
+                    idx === currentIndex + 1 ? { ...t, isSectionHead: !isHead } : t
+                ));
+                setContextMenu(null);
+            };
+
+            // MVP Scrutinizer: パージ機能
+            const purgeTask = () => {
+                if (!contextMenu) return;
+                const taskToPurge = contextMenu.task;
+                
+                // タスクを末尾へ移動
+                const newTasks = tasks.filter(t => t.id !== taskToPurge.id);
+                newTasks.push(taskToPurge);
+                
+                setTasks(newTasks);
+                setContextMenu(null);
+                setToastMessage("タスクをPost-MVPへパージしました🗑️");
+                AudioEngine.play([150, 100], 'sawtooth', 0.1, 0.1);
+            };
+
+            const checkSectionCompletion = (completedTaskId) => {
+                let sectionTasks = [];
+                let currentSection = [];
+                
+                for (let i = 0; i < tasks.length; i++) {
+                    const t = tasks[i];
+                    if (i > 0 && t.isSectionHead) {
+                        if (currentSection.length > 0) sectionTasks.push(currentSection);
+                        currentSection = [];
+                    }
+                    currentSection.push(t);
+                }
+                if (currentSection.length > 0) sectionTasks.push(currentSection);
+
+                const targetSection = sectionTasks.find(section => section.some(t => t.id === completedTaskId));
+
+                if (targetSection) {
+                    const allCompleted = targetSection.every(t => t.id === completedTaskId || t.completed);
+                    if (allCompleted) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            const handleXpGain = (task, rect, setConfettiType, manualXp = 0) => {
+                const today = getAdjustedToday();
+                const now = new Date();
+                const currentHour = now.getHours();
+
+                // 1. Determine Reward Type & Amount
+                let rewardAmount = 2; // Default: Focus (Normal)
+                let rewardType = 'normal'; // normal, velocity, morning, milestone
+                let logText = "";
+
+                // Milestone (50💎): Section Complete
+                const isSectionComplete = checkSectionCompletion(task.id);
+                if (isSectionComplete) {
+                    rewardAmount = 50;
+                    rewardType = 'milestone';
+                    logText = "[Milestone] Section クリア。MVPのリリース準備率が大きく前進。";
+                }
+
+                // Morning Ignition (30💎): Before 13PM & First Task
+                const isFirstTaskToday = stats.lastDate !== today;
+                if (currentHour < 13 && isFirstTaskToday && rewardAmount < 30) {
+                    rewardAmount = 30;
+                    rewardType = 'morning';
+                    logText = `[Early Bird] 朝の着火成功。${task.title} を完了。`;
+                }
+
+                // High Velocity (15💎): Challenge Timer Active & Not Expired
+                const isChallenge = task.challengeEndTime && task.challengeEndTime > Date.now();
+                // Flow Capacitor Check
+                const isFlowActive = Date.now() < stats.flowCapacitorEndTime;
+                
+                if ((isChallenge || isFlowActive) && rewardAmount < 15) {
+                    rewardAmount = 15;
+                    rewardType = 'velocity';
+                    logText = `[High Velocity] タイムアタック成功。${task.title} を最短工数で完遂しました。`;
+                }
+
+                // Normal log if not specified
+                if (!logText) {
+                    logText = `[Focus] ${task.title} 完了。`;
+                }
+
+                let wagerBonus = 0;
+                let wagerComplete = false;
+
+                // Progress Bar Shimmer & Bounce
+                setLevelGlow(true);
+                setProgressBounce(true);
+                setTimeout(() => setLevelGlow(false), 500);
+                setTimeout(() => setProgressBounce(false), 500);
+                
+                setProgressGlow(true);
+                setTimeout(() => setProgressGlow(false), 700);
+
+                // Confetti & Floating Text Setup
+                if (setConfettiType) {
+                    // Always show small sparks (ignition) for normal
+                    // Show performance confetti for higher rewards
+                    if (rewardAmount >= 15) {
+                          setConfettiType('performance');
+                          AudioEngine.play([440, 554, 659, 880], 'square', 0.2, 0.1);
+                    } else {
+                          setConfettiType('ignition');
+                    }
+                }
+
+                setStats(prev => {
+                    const isFirstTaskToday = prev.lastDate !== today;
+                    if (isFirstTaskToday) {
+                        setShowIgnition(true); 
+                        setTimeout(() => setShowIgnition(false), 2000);
+                        AudioEngine.play([100, 150, 200, 300, 500], 'sawtooth', 0.2, 0.1);
+                    }
+                    
+                    // Dev's Oath Success
+                    let oathBonus = 0;
+                    if (isFirstTaskToday && prev.devOathActive) {
+                        oathBonus = 100;
+                        setToastMessage("Dev's Oath 達成！100💎返還！");
+                    }
+
+                    // XP加算削除
+                    let newXp = prev.xp;
+                    let newLevel = prev.level;
+                    let newStreak = prev.streak;
+                    let newWager = { ...prev.wager };
+                    let newGems = prev.gems + rewardAmount; // Use calculated reward
+
+                    if (isFirstTaskToday) {
+                        if (!prev.lastDate) { 
+                            newStreak = 1; 
+                        } else {
+                            const last = new Date(prev.lastDate); const curr = new Date(today);
+                            const diff = (curr - last) / (1000 * 60 * 60 * 24);
+                            
+                            if (diff <= 1) {
+                                newStreak++;
+                            } else { 
+                                newStreak = 1; 
+                            }
+                        }
+                    }
+
+                    // Wager Logic (Simplified: Active & Challenge Success = Win)
+                    if (prev.wager.active && (isChallenge || isFlowActive)) {
+                         wagerBonus = 100;
+                         wagerComplete = true;
+                         newWager = { active: false };
+                    }
+
+                    if (wagerBonus > 0) newGems += wagerBonus;
+                    if (oathBonus > 0) newGems += oathBonus;
+
+                    if (wagerComplete) setToastMessage("倍か無か達成！100💎獲得！");
+
+                    // Floating Text Style Logic
+                    let floatColor = "text-slate-400 text-sm";
+                    let floatScale = "scale-100";
+                    let floatText = `+${rewardAmount}💎`;
+                    
+                    if (rewardAmount >= 50) {
+                        floatColor = "text-fuchsia-500 font-black";
+                        floatScale = "scale-150 animate-bounce-hard";
+                    } else if (rewardAmount >= 30) {
+                        floatColor = "text-amber-500 font-bold";
+                        floatScale = "scale-125";
+                    } else if (rewardAmount >= 15) {
+                        floatColor = "text-cyan-400 font-bold";
+                        floatScale = "scale-110";
+                    }
+
+                    // Log Logic
+                    let newLogs = prev.devLogs || [];
+                    // Log Color based on reward type for display logic later
+                    // We'll store type in the log object
+                    let logColorClass = "text-gray-600";
+                    if (rewardType === 'milestone') logColorClass = "text-fuchsia-600 font-bold";
+                    else if (rewardType === 'morning') logColorClass = "text-amber-600 font-bold";
+                    else if (rewardType === 'velocity') logColorClass = "text-cyan-600 font-bold";
+
+                    // Prepend timestamp to text for simple display or store structure
+                    const logEntry = { 
+                        id: Date.now(), 
+                        text: logText, 
+                        date: new Date().toLocaleTimeString(),
+                        colorClass: logColorClass 
+                    };
+                    newLogs = [logEntry, ...newLogs].slice(0, 20);
+
+                    // Add Floating Text
+                    if (rect) {
+                        const id = Date.now();
+                        setFloatingTexts(prev => [...prev, { id, x: rect.left + 50, y: rect.top - 20, text: floatText, color: floatColor, scale: floatScale }]);
+                        setTimeout(() => setFloatingTexts(prev => prev.filter(t => t.id !== id)), 1000);
+                    }
+
+                    return { 
+                        ...prev, xp: newXp, level: newLevel, gems: newGems, streak: newStreak, lastDate: today, 
+                        wager: newWager,
+                        streakBroken: false,
+                        devLogs: newLogs,
+                        devOathActive: oathBonus > 0 ? false : prev.devOathActive
+                    };
                 });
             };
 
-            const deleteTask = (id) => {
-                setTasks(tasks.filter(t => t.id !== id));
-                if (selectedTaskId === id) setSelectedTaskId(null);
-            };
-            const addList = () => {
-                const t = prompt("新しいリストの名前:"); 
-                if(t) setLists([...lists, {id: Date.now().toString(), title: t, icon:'list'}]);
+            const buyItem = (cost, action) => {
+                if (stats.gems < cost) {
+                    setToastMessage("ジェムが足りません！💎");
+                    AudioEngine.play([150, 100], 'sawtooth', 0.1, 0.1);
+                    return;
+                }
+                setStats(prev => ({ ...prev, gems: prev.gems - cost }));
+                action(); 
+                AudioEngine.play([783, 1046], 'sine', 0.1, 0.1);
             };
 
-            // リスト削除関数
-            const deleteList = (listId) => {
-                if (window.confirm('このリストを削除しますか？含まれるタスクも削除されます。')) {
-                    setLists(lists.filter(l => l.id !== listId));
-                    setTasks(tasks.filter(t => t.listId !== listId));
-                    if (activeListId === listId) {
-                        setActiveListId('default');
-                    }
+            const handleReward = (reward) => {
+                if (reward.type === 'gems') {
+                    setStats(prev => ({ ...prev, gems: prev.gems + reward.amount }));
+                } else if (reward.itemId === 'freeze') {
+                    setStats(prev => ({ ...prev, streakFreeze: prev.streakFreeze + 1 }));
+                } else if (reward.itemId === 'ticket') {
+                    setStats(prev => ({ ...prev, resurrectionTickets: prev.resurrectionTickets + 1 }));
+                }
+                setToastMessage(`${reward.text} を獲得しました！`);
+            };
+
+            const unlockTheme = (themeName, cost) => {
+                if (stats.themes.includes(themeName)) {
+                    setStats(s => ({ ...s, currentTheme: themeName }));
+                    setToastMessage("テーマを変更しました🎨");
+                } else {
+                    buyItem(cost, () => {
+                        setStats(s => ({ ...s, themes: [...s.themes, themeName], currentTheme: themeName }));
+                        setToastMessage("新テーマ獲得！✨");
+                    });
                 }
             };
 
-            // フィーバー管理
-            const handleBreakComplete = () => {
-                setIsDoubleChance(true);
-            };
-            const handleConsumeChance = () => {
-                setIsDoubleChance(false);
-            };
-
-            // Filtering (独立性を確保)
-            const visibleTasks = tasks.filter(t => {
-                if (activeListId === 'starred') return t.isStarred;
-                if (activeListId === 'default') return !t.listId || t.listId === 'default'; // defaultのみ表示
-                if (activeListId === 'deadline') return t.listId === 'deadline'; // deadlineのみ表示（独立）
-                return t.listId === activeListId;
-            });
-            
+            const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
+            const visibleTasks = tasks.filter(t => activeListId === 'default' ? !t.listId || t.listId === 'default' : t.listId === activeListId);
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
+            
+            const totalTasks = tasks.length;
+            const completedTasksCount = tasks.filter(t => t.completed).length;
+            const completionRate = totalTasks === 0 ? 0 : Math.round((completedTasksCount / totalTasks) * 100);
 
-            // Drag Handlers
-            const onDragStart = (e, index) => {
-                dragItem.current = index;
-                e.target.classList.add('dragging');
-            };
+            // Calculate Section 1 completion for Rocket Pulse
+            let section1Tasks = [];
+            for (let t of tasks) {
+                 if (section1Tasks.length > 0 && t.isSectionHead) break; 
+                 section1Tasks.push(t);
+            }
+            const section1Total = section1Tasks.length;
+            const section1Completed = section1Tasks.filter(t => t.completed).length;
+            const section1Rate = section1Total === 0 ? 0 : section1Completed / section1Total;
+            // Pulse speed depends on rate. 0.2s (fast) to 2s (slow)
+            const pulseDuration = section1Rate > 0 ? Math.max(0.2, 2 - (section1Rate * 1.8)) + 's' : '0s';
 
-            const onDragEnter = (e, index) => {
-                dragOverItem.current = index;
-                const dragIdx = dragItem.current;
-                if (dragIdx === undefined || dragIdx === index) return;
-                const newIncomplete = [...incomplete];
-                const draggedItem = newIncomplete[dragIdx];
-                newIncomplete.splice(dragIdx, 1);
-                newIncomplete.splice(index, 0, draggedItem);
-                const visibleIncompleteIds = new Set(newIncomplete.map(t => t.id));
-                const otherTasks = tasks.filter(t => !visibleIncompleteIds.has(t.id));
-                setTasks([...newIncomplete, ...otherTasks]);
-                dragItem.current = index;
-            };
 
-            const onDragEnd = (e) => {
-                e.target.classList.remove('dragging');
-                dragItem.current = null;
-                dragOverItem.current = null;
-            };
+            const btn3DClass = "transition-all active:translate-y-[4px] active:border-b-0 border-b-[4px] hover:scale-105 active:scale-95 duration-150";
+            
+            const isStreakActive = stats.lastDate === getAdjustedToday();
 
-            // List Drag Handlers
-            const onListDragStart = (e, index) => {
-                dragListItem.current = index;
-            };
+            let sectionCounter = 0; 
 
-            const onListDragEnter = (e, index) => {
-                dragOverListItem.current = index;
-                const dragIdx = dragListItem.current;
-                
-                if (dragIdx === undefined || dragIdx === index) return;
-                // 固定リスト（0: default, 1: deadline, 2: starred）は移動不可＆割り込み不可
-                if (dragIdx < 3 || index < 3) return;
-
-                const newLists = [...lists];
-                const draggedItem = newLists[dragIdx];
-                
-                newLists.splice(dragIdx, 1);
-                newLists.splice(index, 0, draggedItem);
-                
-                setLists(newLists);
-                dragListItem.current = index;
-            };
-
-            const onListDragEnd = (e) => {
-                dragListItem.current = null;
-                dragOverListItem.current = null;
+            // Helper to determine if a task is the last in its section (of incomplete tasks)
+            const isLastTaskInSection = (index) => {
+                 const nextTask = incomplete[index + 1];
+                 return !nextTask || nextTask.isSectionHead;
             };
 
             return (
-                <div className="flex h-screen w-full bg-white font-sans text-google-text overflow-hidden selection:bg-google-selected selection:text-google-blue">
-                    {/* 今日の成果モーダル */}
-                    {showDailyModal && <DailyAchievementModal tasks={tasks} onClose={() => setShowDailyModal(false)} />}
+                <div className="flex h-screen w-full bg-white overflow-hidden relative selection:bg-duo-green/20 font-bold text-duo-text">
                     
-                    {/* 今日の成果ボタン (右下に配置) */}
-                    <button 
-                        onClick={() => setShowDailyModal(true)}
-                        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-white rounded-full shadow-floating flex items-center justify-center text-yellow-500 hover:bg-yellow-50 transition-transform hover:scale-105 active:scale-95 border border-yellow-200"
-                        title="今日の成果を見る"
-                    >
-                        <Trophy size={24} strokeWidth={2} />
-                    </button>
-
-                    {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setIsSidebarOpen(false)} />}
-                    
-                    {/* サイドバー */}
-                    <div className={`fixed md:relative z-50 h-full bg-white flex flex-col transition-all duration-300 shadow-[1px_0_0_0_#dadce0] ${isSidebarOpen ? 'w-[280px] translate-x-0' : 'w-0 -translate-x-full md:w-0 overflow-hidden'}`}>
-                        <div className="h-16 flex items-center px-4 mb-2">
-                             <span className="text-[22px] text-google-textSec font-normal pl-2 flex items-center gap-1">
-                                <span className="text-google-blue font-bold">ToDo</span>リスト
-                            </span>
-                            {isMobile && <div className="ml-auto"><IconButton icon={X} onClick={() => setIsSidebarOpen(false)} /></div>}
+                    {/* Header */}
+                    <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b-2 border-gray-100 z-[100] flex items-center justify-between px-6">
+                        {/* Left: Menu Button */}
+                        <div className="flex-shrink-0 z-20">
+                            <IconButton icon={Icons.Menu} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
                         </div>
-                        <div className="flex-1 overflow-y-auto px-2">
-                            {lists.map((list, index) => {
-                                // 固定リスト判定
-                                const isFixed = list.id === 'default' || list.id === 'starred' || list.id === 'deadline';
-                                const listDragProps = !isFixed ? {
-                                    draggable: true,
-                                    onDragStart: (e) => onListDragStart(e, index),
-                                    onDragEnter: (e) => onListDragEnter(e, index),
-                                    onDragEnd: onListDragEnd,
-                                    onDragOver: (e) => e.preventDefault(),
-                                } : {};
 
-                                return (
-                                <div 
-                                    key={list.id} 
-                                    onClick={() => { setActiveListId(list.id); if(isMobile) setIsSidebarOpen(false); }} 
-                                    className={`group flex items-center px-4 py-2 mb-1 rounded-r-full cursor-pointer text-[15px] font-medium transition-colors 
-                                    ${activeListId === list.id ? 'bg-google-selected text-google-selectedText' : 'text-google-text hover:bg-google-hover'}`}
-                                    {...listDragProps}
-                                >
-                                    {/* リスト用グリップ (固定リスト以外に表示) */}
-                                    {!isFixed && (
-                                        <div className="mr-2 text-gray-300 cursor-grab hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <GripVertical size={14} />
-                                        </div>
-                                    )}
-                                    <div className={`${!isFixed ? 'mr-2' : 'mr-4'} text-google-textSec`}>
-                                        {list.icon === 'star' ? <Star size={20} /> : 
-                                         list.icon === 'calendar' ? <Calendar size={20} /> :
-                                         list.icon === 'check' ? <Check size={20} /> : <ListIcon size={20} />}
-                                    </div>
-                                    <span className="truncate flex-1">{list.title}</span>
-
-                                    {/* 削除ボタン (ホバー時のみ表示、固定リスト以外) */}
-                                    {!isFixed && (
-                                        <div 
-                                            className="ml-2 p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => { e.stopPropagation(); deleteList(list.id); }}
-                                            title="リストを削除"
-                                        >
-                                            <Trash2 size={14} />
-                                        </div>
-                                    )}
-
-                                    {list.id === activeListId && <span className="text-xs font-bold ml-2">{visibleTasks.length > 0 ? visibleTasks.length : ''}</span>}
+                        {/* Center: Project Progress Bar (MVP Progress) */}
+                        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] px-4 hidden md:block">
+                            <div className={`relative h-8 bg-gray-100 rounded-full overflow-hidden border-2 border-gray-200 shadow-inner ${levelGlow ? 'animate-pulse' : ''}`}>
+                                <div className={`h-full bg-gradient-to-r from-duo-green to-duo-greenHighlight transition-all duration-700 ease-out relative ${levelGlow ? 'progress-glow brightness-125' : ''}`} style={{ width: `${completionRate}%` }}>
+                                     <div className="absolute inset-0 bg-white/20 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
                                 </div>
-                            )})}
-                            <div className="border-t border-gray-200 my-2 mx-2"></div>
-                            <div onClick={addList} className="flex items-center px-4 py-2 rounded-r-full cursor-pointer text-[15px] font-medium text-google-text hover:bg-google-hover">
-                                <Plus size={20} className="mr-4 text-google-textSec"/> 新しいリストを作成
+                                <div className={`absolute inset-0 flex items-center justify-center gap-2 z-10 transition-transform ${progressBounce ? 'scale-110' : ''}`}>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-40" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.8)' }}>MVP Progress</span>
+                                    <span className={`text-xs font-black ${progressBounce ? 'text-duo-green' : 'text-slate-600'}`} style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>{completionRate}%</span>
+                                </div>
+                                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-lg z-20" style={{ animation: section1Rate > 0 && section1Rate < 1 ? `pulse ${pulseDuration} cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none', color: section1Rate > 0.8 ? '#ef4444' : 'currentColor', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))' }}>🚀</div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* メインエリア */}
-                    <div className="flex-1 flex flex-col h-full min-w-0 bg-white">
-                        <header className="h-16 flex items-center px-4 flex-shrink-0">
-                            {!isSidebarOpen && <IconButton icon={MenuIcon} onClick={() => setIsSidebarOpen(true)} className="mr-4" />}
-                            <h1 className="text-2xl text-google-text pb-1 ml-2 truncate font-normal">
-                                {lists.find(l => l.id === activeListId)?.title}
-                            </h1>
-                            <div className="ml-auto">
-                                <IconButton icon={MoreVertical} />
+                        {/* Right: Reward Units (Streak & Gem) */}
+                        <div className="flex items-center gap-2 z-20">
+                            {/* Streak Unit */}
+                            <div className="relative">
+                                <button className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl transition-all group ${isStreakActive ? 'hover:bg-gray-50' : ''}`}>
+                                    <Icons.Flame 
+                                        size={26} 
+                                        fill="currentColor" 
+                                        className={`transition-colors duration-500 ${!stats.streakBroken && isStreakActive ? "text-duo-orange" : "text-[#e5e5e5]"}`} 
+                                    />
+                                    <span className={`text-lg font-black transition-colors duration-500 ${!stats.streakBroken && isStreakActive ? "text-duo-orange" : "text-[#e5e5e5]"}`}>
+                                        {stats.streakBroken ? 0 : stats.streak}
+                                    </span>
+                                </button>
+                                {stats.streakBroken && stats.resurrectionTickets > 0 && (
+                                    <button onClick={resurrectStreak} className={`absolute -bottom-8 left-1/2 -translate-x-1/2 bg-duo-blue text-white text-xs font-black px-3 py-1 rounded-xl whitespace-nowrap animate-bounce border-b-4 border-duo-blueBorder ${btn3DClass} z-50`}>
+                                        復活！
+                                    </button>
+                                )}
                             </div>
-                        </header>
 
-                        <div className="flex-1 overflow-y-auto px-4 md:px-12 pb-40">
-                            <div className="max-w-4xl mx-auto flex flex-col">
-                                {/* タスク追加エリア */}
-                                <div className={`mb-6 transition-all duration-300 ${isInputExpanded ? 'shadow-float rounded-lg bg-white p-4 my-4' : 'rounded-t-lg pt-2'}`}>
-                                    <div 
-                                        className={`flex items-center gap-4 cursor-text ${!isInputExpanded && 'hover:bg-google-hover p-3 rounded-full'}`}
-                                        onClick={() => { setIsInputExpanded(true); setTimeout(() => inputRef.current?.focus(), 10); }}
-                                    >
-                                        {isInputExpanded ? (
-                                             <div className="w-5 h-5 ml-1 mt-1 rounded-full border-2 border-gray-300 flex-shrink-0" />
-                                        ) : (
-                                            <div className="text-google-blue bg-transparent p-1"><Plus size={24} strokeWidth={2.5}/></div>
-                                        )}
-                                        
-                                        <input 
-                                            ref={inputRef} 
-                                            type="text" 
-                                            placeholder="タスクを追加" 
-                                            className={`flex-1 bg-transparent border-none outline-none text-google-text placeholder-google-textSec h-10 ${isInputExpanded ? 'text-base font-medium' : 'text-[15px] font-medium'}`}
-                                            value={newTaskTitle} 
-                                            onChange={(e) => setNewTaskTitle(e.target.value)} 
-                                            onKeyDown={(e) => e.key === 'Enter' && handleAddTask()} 
-                                        />
+                            {/* Gem Unit */}
+                            <button className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl transition-all group ${isStreakActive ? 'hover:bg-gray-50' : ''}`}>
+                                <Icons.Gem 
+                                    size={26} 
+                                    fill="currentColor" 
+                                    className={`transition-transform duration-500 ${!stats.streakBroken && isStreakActive ? "text-duo-pink" : "text-[#e5e5e5]"}`} 
+                                />
+                                <span className={`text-lg font-black transition-colors duration-500 ${!stats.streakBroken && isStreakActive ? "text-duo-pink" : "text-[#e5e5e5]"}`}>
+                                    {stats.gems}
+                                </span>
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Sidebar */}
+                    {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/40 z-[80] backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />}
+                    <aside className={`fixed inset-y-0 left-0 transform transition-all duration-300 z-[90] w-72 bg-white border-r-2 border-duo-gray pt-20 flex flex-col ${isSidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}>
+                        {/* Streak Section */}
+                        <div className="p-4 mb-2">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">今日の記録</h3>
+                            <div className={`flex items-center gap-4 p-3 rounded-2xl border-2 transition-colors duration-500 ${isStreakActive ? 'bg-orange-50 border-orange-100' : 'bg-gray-50 border-gray-200'}`}>
+                                <div className="relative group cursor-pointer transition-transform hover:scale-110">
+                                    <Icons.Flame size={32} className={`transition-colors duration-1000 ${isStreakActive ? "text-duo-orange" : "text-gray-300"}`} fill="currentColor" />
+                                    {stats.streakBroken && stats.resurrectionTickets > 0 && (
+                                        <button onClick={resurrectStreak} className="absolute -bottom-2 -right-4 bg-duo-blue text-white text-[10px] font-black px-2 py-0.5 rounded-lg whitespace-nowrap animate-bounce shadow-sm">
+                                            復活！
+                                        </button>
+                                    )}
+                                </div>
+                                <div>
+                                    <div className={`text-xl font-black transition-colors duration-1000 ${isStreakActive ? "text-duo-orange" : "text-gray-400"}`}>
+                                        {stats.streakBroken ? 0 : stats.streak}日連続
                                     </div>
+                                    <div className="text-xs text-gray-400 font-bold">{isStreakActive ? "Keep it burning!" : "タスク完了で着火！"}</div>
+                                </div>
+                            </div>
+                        </div>
 
-                                    {isInputExpanded && (
-                                        <div className="mt-2 pl-10 animate-[fadeIn_0.2s_ease-out]">
-                                            <input 
-                                                type="text" 
-                                                placeholder="詳細を追加" 
-                                                className="w-full text-[13px] bg-transparent border-none outline-none mb-4 text-google-textSec font-medium" 
-                                                value={newTaskDetails} 
-                                                onChange={(e) => setNewTaskDetails(e.target.value)} 
-                                            />
-                                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                                                <div className="flex gap-2">
-                                                    <div className="relative group">
-                                                        <input 
-                                                            type="date" 
-                                                            className="opacity-0 absolute inset-0 w-8 h-8 cursor-pointer z-10" 
-                                                            onChange={(e) => setNewTaskDate(e.target.value)} 
-                                                        />
-                                                        <IconButton icon={Calendar} className={newTaskDate ? "text-google-blue bg-google-selected" : ""} />
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => { setIsInputExpanded(false); setNewTaskTitle(''); }} className="text-sm text-google-textSec font-medium px-4 py-2 hover:bg-google-hover rounded">キャンセル</button>
-                                                    <button onClick={handleAddTask} disabled={!newTaskTitle.trim()} className="text-sm text-google-blue font-medium px-6 py-2 disabled:opacity-50 hover:bg-google-selected rounded">完了</button>
-                                                </div>
+                        {/* Compact Focus Bar (Moved to Sidebar) */}
+                        <div className="px-4 mb-6">
+                            <div className="w-full bg-white border-2 border-gray-200 border-b-4 rounded-2xl p-2 flex items-center justify-between shadow-sm hover:shadow-md transition-all">
+                                <button onClick={() => setTimerState(s => ({ ...s, active: !s.active }))} 
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${btn3DClass} ${timerState.active ? 'bg-gray-100 text-gray-400 border-gray-300' : 'bg-duo-blue text-white border-duo-blueBorder'}`}>
+                                    {timerState.active ? <Icons.Pause size={18} fill="currentColor"/> : <Icons.Play size={18} fill="currentColor" className="ml-0.5"/>}
+                                </button>
+                                <div className="text-xl font-black font-mono tracking-tighter text-duo-text">
+                                    {Math.floor(timerState.time / 60)}:{(timerState.time % 60).toString().padStart(2, '0')}
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <button onClick={() => switchTimerMode('work')} className={`text-[9px] font-black px-2 py-0.5 rounded ${timerState.mode === 'work' ? 'bg-duo-blue/10 text-duo-blue' : 'text-gray-400'}`}>集中</button>
+                                    <button onClick={() => switchTimerMode('break')} className={`text-[9px] font-black px-2 py-0.5 rounded ${timerState.mode === 'break' ? 'bg-duo-green/10 text-duo-green' : 'text-gray-400'}`}>休憩</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6 border-t-2 border-duo-gray">
+                            <div className="space-y-3">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Lists</h3>
+                                <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'default' ? 'bg-duo-blue/10 text-duo-blue border-duo-blue/20' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('default'); if(isMobile) setIsSidebarOpen(false); }}><Icons.Check size={24} />マイタスク</button>
+                                <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'deadline' ? 'bg-duo-pink/10 text-duo-pink border-duo-pink/20' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('deadline'); if(isMobile) setIsSidebarOpen(false); }}><Icons.Calendar size={24} />締切リスト</button>
+                            </div>
+
+                            {/* Dev Log Moved Here (Above Gem Shop) */}
+                            <div>
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 px-2">開発ログ</h3>
+                                <div className="bg-gray-50 rounded-xl p-3 border-2 border-gray-100 h-48 overflow-y-auto space-y-2">
+                                    {stats.devLogs && stats.devLogs.length > 0 ? (
+                                        stats.devLogs.map((log, i) => (
+                                            <div key={log.id} className={`text-[10px] font-mono leading-tight border-l-2 border-l-transparent pl-2 py-1 ${i === 0 ? 'animate-log-fade' : ''} ${log.colorClass}`}>
+                                                <span className="text-gray-400 block mb-0.5">{log.date}</span>
+                                                {log.text}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-[10px] text-gray-400 text-center py-4">No logs yet.</div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="pt-6 border-t-2 border-duo-gray/50 pb-20">
+                                <button onClick={() => setIsShopOpen(!isShopOpen)} className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all font-black text-gray-500 bg-white border-2 border-transparent hover:bg-gray-50 ${isShopOpen ? 'text-duo-text' : ''} ${juicyBtnClass}`}>
+                                    <div className="flex items-center gap-2 text-xs uppercase tracking-widest"><Icons.ShoppingBag size={18}/> Gem Shop</div>
+                                    {isShopOpen ? <Icons.ChevronDown size={18} /> : <Icons.ChevronRight size={18} />}
+                                </button>
+                                {isShopOpen && (
+                                    <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-top-1 pb-20 px-1">
+                                        <div className={`p-3 border-2 border-gray-200 border-b-4 rounded-2xl flex justify-between items-center cursor-pointer active:border-b-2 active:translate-y-[2px] transition-all bg-white hover:scale-105 active:scale-95`} onClick={() => buyItem(200, () => setStats(s => ({...s, streakFreeze: s.streakFreeze + 1})))}>
+                                            <div className="text-left"><div className="font-black text-sm text-duo-blue flex items-center gap-1"><Icons.Snowflake size={16}/> 連続フリーズ ({stats.streakFreeze})</div><div className="text-[10px] text-gray-400 font-bold">Streakを1日守る</div></div>
+                                            <div className="text-duo-pink font-black text-sm">200💎</div>
+                                        </div>
+                                        
+                                        {/* MVP Scrutinizer */}
+                                        <div className={`p-3 border-2 border-gray-200 border-b-4 rounded-2xl flex justify-between items-center cursor-pointer active:border-b-2 active:translate-y-[2px] transition-all hover:scale-105 active:scale-95 ${stats.mvpScrutinizerActive ? 'bg-blue-50 border-blue-200' : 'bg-white'}`} 
+                                             onClick={() => !stats.mvpScrutinizerActive && buyItem(100, () => setStats(s => ({...s, mvpScrutinizerActive: true})))}>
+                                            <div className="text-left">
+                                                <div className="font-black text-sm text-duo-blue flex items-center gap-1"><Icons.Search size={16}/> MVP Scrutinizer</div>
+                                                <div className="text-[10px] text-gray-400 font-bold">右クリックでタスクをパージ</div>
+                                            </div>
+                                            {!stats.mvpScrutinizerActive ? <div className="text-duo-pink font-black text-sm">100💎</div> : <div className="text-[10px] font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-lg">ON</div>}
+                                        </div>
+
+                                        {/* Dev's Oath */}
+                                        <div className={`p-3 border-2 border-gray-200 border-b-4 rounded-2xl flex justify-between items-center cursor-pointer active:border-b-2 active:translate-y-[2px] transition-all hover:scale-105 active:scale-95 ${stats.devOathActive ? 'bg-purple-50 border-purple-200' : 'bg-white'}`} 
+                                             onClick={() => !stats.devOathActive && buyItem(50, () => setStats(s => ({...s, devOathActive: true})))}>
+                                            <div className="text-left">
+                                                <div className="font-black text-sm text-purple-600 flex items-center gap-1"><Icons.Shield size={16}/> Dev's Oath</div>
+                                                <div className="text-[10px] text-gray-400 font-bold">明日のタスク完了を誓う</div>
+                                            </div>
+                                            {!stats.devOathActive ? <div className="text-duo-pink font-black text-sm">50💎</div> : <div className="text-[10px] font-black text-purple-600 bg-purple-100 px-2 py-1 rounded-lg">誓約済</div>}
+                                        </div>
+
+                                        {/* Flow Capacitor */}
+                                        <div className={`p-3 border-2 border-gray-200 border-b-4 rounded-2xl flex justify-between items-center cursor-pointer active:border-b-2 active:translate-y-[2px] transition-all hover:scale-105 active:scale-95 ${Date.now() < stats.flowCapacitorEndTime ? 'bg-yellow-50 border-yellow-200' : 'bg-white'}`} 
+                                             onClick={() => Date.now() > stats.flowCapacitorEndTime && buyItem(150, () => setStats(s => ({...s, flowCapacitorEndTime: Date.now() + 15 * 60 * 1000})))}>
+                                            <div className="text-left">
+                                                <div className="font-black text-sm text-yellow-600 flex items-center gap-1"><Icons.Zap size={16}/> Flow Capacitor</div>
+                                                <div className="text-[10px] text-gray-400 font-bold">15分間、演出確率100%</div>
+                                            </div>
+                                            {Date.now() > stats.flowCapacitorEndTime ? <div className="text-duo-pink font-black text-sm">150💎</div> : <div className="text-[10px] font-black text-yellow-600 bg-yellow-100 px-2 py-1 rounded-lg">Active</div>}
+                                        </div>
+
+                                        <div className="p-3 border-2 border-gray-200 border-b-4 rounded-2xl flex justify-between items-center cursor-pointer active:border-b-2 active:translate-y-[2px] transition-all bg-white hover:scale-105 active:scale-95" onClick={() => buyItem(150, () => setStats(s => ({...s, resurrectionTickets: s.resurrectionTickets + 1})))}>
+                                            <div className="text-left"><div className="font-black text-sm text-gray-600 flex items-center gap-1"><Icons.Ticket size={16}/> 蘇生チケット ({stats.resurrectionTickets})</div><div className="text-[10px] text-gray-400 font-bold">Streak切れを復活</div></div>
+                                            <div className="text-duo-pink font-black text-sm">150💎</div>
+                                        </div>
+
+                                        <div className="mt-4 text-[10px] font-black text-gray-400 px-2 uppercase tracking-widest">THEMES</div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className={`p-3 border-2 border-b-4 rounded-2xl text-center cursor-pointer active:border-b-2 active:translate-y-[2px] transition-all hover:scale-105 active:scale-95 ${stats.currentTheme === 'cherry' ? 'border-pink-400 bg-pink-50' : 'border-gray-200 bg-white'}`} onClick={() => unlockTheme('cherry', 500)}>
+                                                <Icons.Cherry size={24} className="mx-auto text-pink-400 mb-2"/>
+                                                <div className="text-[10px] font-bold text-gray-600">桜吹雪</div>
+                                                {!stats.themes.includes('cherry') && <div className="text-duo-pink text-xs font-black mt-1">500💎</div>}
+                                            </div>
+                                            <div className={`p-3 border-2 border-b-4 rounded-2xl text-center cursor-pointer active:border-b-2 active:translate-y-[2px] transition-all hover:scale-105 active:scale-95 ${stats.currentTheme === 'fireworks' ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'}`} onClick={() => unlockTheme('fireworks', 500)}>
+                                                <Icons.Sparkles size={24} className="mx-auto text-blue-400 mb-2"/>
+                                                <div className="text-[10px] font-bold text-gray-600">花火</div>
+                                                {!stats.themes.includes('fireworks') && <div className="text-duo-pink text-xs font-black mt-1">500💎</div>}
                                             </div>
                                         </div>
-                                    )}
+
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Area */}
+                    <main className={`flex-1 pt-20 transition-all duration-300 ${isSidebarOpen && !isMobile ? 'pl-72' : 'pl-0'}`}>
+                        <div className="h-full overflow-y-auto px-6 md:px-20 lg:px-32 pb-40">
+                            <div className="max-w-2xl mx-auto pt-8">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <h1 className="text-3xl font-black tracking-tight text-duo-text">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
+                                </div>
+                                
+                                {/* タスク入力エリア */}
+                                <div className={`mb-10 bg-duo-green border-duo-border rounded-2xl p-1 flex items-center shadow-lg ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
+                                    <div className="w-full h-full flex items-center px-4 py-3 gap-3">
+                                        <Icons.Plus className="text-white opacity-80" size={28} />
+                                        <input className="bg-transparent outline-none flex-1 font-black text-xl text-white placeholder-green-200" placeholder="新しいタスクを追加" onKeyDown={(e) => { if (e.key === 'Enter' && e.target.value.trim()) { setTasks([...tasks, { id: Date.now().toString(), title: e.target.value, completed: false, listId: activeListId, createdAt: Date.now(), isSectionHead: tasks.length === 0 }]); e.target.value = ''; } }} />
+                                    </div>
                                 </div>
 
-                                {/* 未完了タスク (ドラッグ可能) */}
-                                <div className="pb-4">
-                                    {incomplete.map((t, index) => (
-                                        <TaskItem 
-                                            key={t.id} 
-                                            index={index}
-                                            task={t} 
-                                            onToggle={toggleTask} 
-                                            onUpdate={updateTask} 
-                                            onDelete={deleteTask} 
-                                            isSelected={selectedTaskId === t.id} 
-                                            onSelect={() => setSelectedTaskId(t.id)}
-                                            dragHandlers={{onDragStart, onDragEnter, onDragEnd}}
-                                            isDoubleChance={isDoubleChance}
-                                            onConsumeChance={handleConsumeChance}
-                                            isDeadlineView={activeListId === 'deadline'}
-                                        />
-                                    ))}
+                                <div className="space-y-3 relative">
+                                    {incomplete.map((t, index) => {
+                                        const isFirst = index === 0;
+                                        const showSectionHeader = isFirst || t.isSectionHead;
+                                        
+                                        if (showSectionHeader) {
+                                            sectionCounter++;
+                                            const sectionNum = sectionCounter;
+                                            const isLast = isLastTaskInSection(index);
+
+                                            return (
+                                                <React.Fragment key={t.id}>
+                                                    <div className="py-4 flex items-center justify-center">
+                                                        <div className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest ${sectionNum === 1 ? 'bg-[#8ba4c9] text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                                            Section {sectionNum}
+                                                        </div>
+                                                    </div>
+                                                    <TaskItem 
+                                                        task={t} 
+                                                        isMobile={isMobile} 
+                                                        onXpGain={handleXpGain} 
+                                                        onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })} 
+                                                        onUpdate={updateTask} 
+                                                        onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))} 
+                                                        isDeadlineView={activeListId==='deadline'} 
+                                                        activeTheme={stats.currentTheme}
+                                                        onContextMenu={handleContextMenu}
+                                                        isFocusedSection={sectionNum === 1}
+                                                        isLastInSection={isLast}
+                                                    />
+                                                </React.Fragment>
+                                            );
+                                        }
+                                        
+                                        const isLast = isLastTaskInSection(index);
+                                        return (
+                                            <TaskItem 
+                                                key={t.id}
+                                                task={t} 
+                                                isMobile={isMobile} 
+                                                onXpGain={handleXpGain} 
+                                                onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })} 
+                                                onUpdate={updateTask} 
+                                                onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))} 
+                                                isDeadlineView={activeListId==='deadline'} 
+                                                activeTheme={stats.currentTheme}
+                                                onContextMenu={handleContextMenu}
+                                                isFocusedSection={sectionCounter === 1}
+                                                isLastInSection={isLast}
+                                            />
+                                        );
+                                    })}
                                 </div>
 
-                                {/* 完了タスク */}
+                                {/* 完了タスクセクション */}
                                 {completed.length > 0 && (
-                                    <div className="border-t border-gray-200 mt-2 pt-2">
-                                        <button 
-                                            onClick={() => setShowCompleted(!showCompleted)} 
-                                            className="w-full flex items-center px-4 py-3 hover:bg-google-hover rounded transition-colors group"
-                                        >
-                                            <span className="text-google-textSec group-hover:text-google-text transition-colors">{showCompleted ? <ChevronDown size={20} /> : <ChevronRight size={20} />}</span>
-                                            <span className="ml-4 text-[15px] font-medium text-google-textSec group-hover:text-google-text">完了 ({completed.length})</span>
+                                    <div className="mt-16 mb-20">
+                                        <button onClick={() => setIsCompletedOpen(!isCompletedOpen)} className={`flex items-center gap-2 text-sm font-black text-gray-400 hover:text-gray-600 px-4 py-3 rounded-xl transition-colors bg-gray-50 border-2 border-transparent hover:border-gray-200 ${juicyBtnClass}`}>
+                                            {isCompletedOpen ? <Icons.ChevronDown size={18} /> : <Icons.ChevronRight size={18} />}
+                                            完了済み ({completed.length})
                                         </button>
                                         
-                                        {showCompleted && (
-                                            <div className="pb-4 animate-[fadeIn_0.2s_ease-out]">
-                                                {completed.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} isSelected={selectedTaskId === t.id} onSelect={() => setSelectedTaskId(t.id)} isDeadlineView={activeListId === 'deadline'} />)}
+                                        {isCompletedOpen && (
+                                            <div className="mt-4 space-y-2 opacity-75">
+                                                {completed.map(t => (
+                                                    <TaskItem 
+                                                        key={t.id} 
+                                                        task={t} 
+                                                        isMobile={isMobile} 
+                                                        onXpGain={handleXpGain} 
+                                                        onToggle={() => updateTask(t.id, { completed: false })}
+                                                        onUpdate={updateTask} 
+                                                        onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))} 
+                                                        isDeadlineView={activeListId==='deadline'} 
+                                                        activeTheme={stats.currentTheme}
+                                                    />
+                                                ))}
                                             </div>
                                         )}
                                     </div>
                                 )}
-
-                                {/* フィーバータイムのお知らせ表示 (マイタスクのみ) */}
-                                {activeListId === 'default' && isDoubleChance && (
-                                    <div className="mt-4 mx-1 p-3 rounded-lg flex items-center justify-center gap-2 fever-mode text-sm font-bold text-yellow-800 shadow-sm animate-pulse">
-                                        <Zap size={18} className="text-yellow-600" fill="currentColor" />
-                                        <span>フィーバータイム！次のタスク完了で大当たり確率2倍！</span>
-                                        <Zap size={18} className="text-yellow-600" fill="currentColor" />
-                                    </div>
-                                )}
-
-                                {/* ポモドーロタイマー (マイタスクのみ) */}
-                                {activeListId === 'default' && (
-                                    <PomodoroTimer onBreakComplete={handleBreakComplete} />
-                                )}
                             </div>
                         </div>
+                    </main>
 
-                        {/* 詳細パネル (PC用 - 右側スライドイン) */}
-                        {selectedTaskId && !isMobile && (
-                            <div className="hidden lg:flex w-[360px] bg-white shadow-[-5px_0_15px_-5px_rgba(0,0,0,0.1)] z-40 absolute right-4 bottom-4 top-20 rounded-lg flex-col border border-[#dadce0] animate-[slideIn_0.2s_ease-out]">
-                                <div className="flex items-center justify-between p-2 pl-4 border-b border-gray-100">
-                                    <span className="text-xs font-medium text-google-textSec"></span>
-                                    <IconButton icon={X} onClick={() => setSelectedTaskId(null)} size={18} />
-                                </div>
-                                {(() => {
-                                    const t = tasks.find(task => task.id === selectedTaskId);
-                                    if (!t) return null;
-                                    return (
-                                        <div className="p-5 flex-1 overflow-y-auto">
-                                            <div className="flex items-start gap-3 mb-6">
-                                                <div className="mt-1"><TaskCheckCircle completed={t.completed} /></div>
-                                                <input 
-                                                    className="w-full text-xl text-google-text font-normal outline-none border-b border-transparent focus:border-google-blue pb-1 transition-colors bg-transparent" 
-                                                    value={t.title} 
-                                                    onChange={(e) => updateTask(t.id, { title: e.target.value })} 
-                                                />
-                                            </div>
-                                            
-                                            <div className="flex items-start gap-4 mb-6 pl-1">
-                                                <div className="text-google-textSec mt-1"><ListIcon size={20} /></div>
-                                                <textarea 
-                                                    className="w-full text-[14px] text-google-textSec resize-none outline-none min-h-[100px] bg-transparent leading-6" 
-                                                    placeholder="詳細を追加" 
-                                                    value={t.details || ''} 
-                                                    onChange={(e) => updateTask(t.id, { details: e.target.value })} 
-                                                />
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-4 mb-6 pl-1">
-                                                <div className="text-google-textSec"><Calendar size={20} /></div>
-                                                <div className="flex items-center gap-2 hover:bg-google-hover px-3 py-1.5 rounded cursor-pointer border border-gray-200 hover:border-gray-300 transition-all">
-                                                     <input 
-                                                        type="date" 
-                                                        className="text-[13px] text-google-text outline-none bg-transparent cursor-pointer" 
-                                                        value={t.dueDate || ''} 
-                                                        onChange={(e) => updateTask(t.id, { dueDate: e.target.value })} 
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex justify-end pt-10">
-                                                <button onClick={() => deleteTask(t.id)} className="text-xs text-google-textSec hover:text-google-red flex items-center gap-1 transition-colors p-2 rounded hover:bg-google-hover">
-                                                    <Trash2 size={14} /> タスクを削除
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        )}
-                    </div>
+                    {/* Effects */}
+                    {toastMessage && <Toast message={toastMessage} onClose={closeToast} />}
+                    {floatingTexts.map(t => <FloatingText key={t.id} x={t.x} y={t.y} text={t.text} color={t.color} scale={t.scale} />)}
+                    {/* PerformanceOverlay removed */}
+                    {showChestModal && <ChestModal onClose={() => setShowChestModal(false)} onReward={handleReward} />}
+                    {showIgnition && <IgnitionModal />}
+                    {contextMenu && (
+                        <ContextMenu 
+                            x={contextMenu.x} 
+                            y={contextMenu.y} 
+                            onDivide={toggleSectionBreak} 
+                            onMerge={toggleSectionBreak}
+                            showMerge={tasks.findIndex(t => t.id === contextMenu.task.id) < tasks.length - 1 && tasks[tasks.findIndex(t => t.id === contextMenu.task.id) + 1].isSectionHead}
+                            showPurge={stats.mvpScrutinizerActive}
+                            onPurge={purgeTask}
+                        />
+                    )}
                 </div>
             );
         };
@@ -1175,5 +1190,3 @@
     </script>
 </body>
 </html>
-
-
