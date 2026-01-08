@@ -428,7 +428,7 @@
                         )}
                         {!challengeTimeLeft && !task.completed && isFocusedSection && (
                             <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <IconButton icon={Icons.Flame} size={20} className="text-gray-300 hover:text-orange-400 hover:bg-orange-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 7 * 60 * 1000 }); }} />
+                                <IconButton icon={Icons.Flame} size={20} className="text-gray-300 hover:text-orange-400 hover:bg-orange-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 9.5 * 60 * 1000 }); }} />
                                 <IconButton icon={Icons.Star} size={20} active={task.isStarred} className="text-gray-300 hover:text-yellow-400 hover:bg-yellow-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
                                 <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
                             </div>
@@ -441,7 +441,7 @@
                         {/* Section 2以降のボタン表示 (通常) */}
                         {!challengeTimeLeft && !task.completed && !isFocusedSection && (
                             <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <IconButton icon={Icons.Flame} size={20} className="text-orange-400 hover:bg-orange-100" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 7 * 60 * 1000 }); }} />
+                                <IconButton icon={Icons.Flame} size={20} className="text-orange-400 hover:bg-orange-100" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 9.5 * 60 * 1000 }); }} />
                                 <IconButton icon={Icons.Star} size={20} active={task.isStarred} onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
                                 <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
                             </div>
