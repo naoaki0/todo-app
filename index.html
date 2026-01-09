@@ -134,7 +134,9 @@
             Gem: (p) => <SvgIcon {...p}><path d="M6 3h12l4 6-10 12L2 9z"/><path d="M11 3v18"/><path d="M6 3l5 6 5-6"/><path d="M2 9h20"/></SvgIcon>,
             ShoppingBag: (p) => <SvgIcon {...p}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></SvgIcon>,
             ChevronDown: (p) => <SvgIcon {...p}><polyline points="6 9 12 15 18 9"/></SvgIcon>,
+            ChevronUp: (p) => <SvgIcon {...p}><polyline points="18 15 12 9 6 15"/></SvgIcon>,
             ChevronRight: (p) => <SvgIcon {...p}><polyline points="9 18 15 12 9 6"/></SvgIcon>,
+            Edit: (p) => <SvgIcon {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></SvgIcon>,
             Star: (p) => <SvgIcon {...p} fill={p.active ? "currentColor" : "none"}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></SvgIcon>,
             Play: (p) => <SvgIcon {...p}><polygon points="5 3 19 12 5 21 5 3"/></SvgIcon>,
             Pause: (p) => <SvgIcon {...p}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></SvgIcon>,
@@ -331,11 +333,13 @@
 
 
         // --- タスク部品 ---
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false }) => {
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
             const [animateCheckbox, setAnimateCheckbox] = useState(false);
+            const [isEditingTime, setIsEditingTime] = useState(false);
+            const [editTimeValue, setEditTimeValue] = useState('9.5');
             const buttonRef = useRef(null);
 
             useEffect(() => {
@@ -420,29 +424,113 @@
                         }`}>{task.title}</div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {challengeTimeLeft !== null && !task.completed && (
-                            <span className={`text-[11px] font-black px-3 py-1 rounded-xl border-b-2 shadow-sm ${challengeTimeLeft > 0 ? 'bg-duo-pink text-white border-duo-pinkBorder animate-pulse' : 'bg-gray-200 text-gray-500 border-gray-300'}`}>
-                                {challengeTimeLeft > 0 ? `${Math.floor(challengeTimeLeft / 60)}:${(challengeTimeLeft % 60).toString().padStart(2, '0')}` : 'TIME OVER'}
-                            </span>
-                        )}
-                        {!challengeTimeLeft && !task.completed && isFocusedSection && (
-                            <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <IconButton icon={Icons.Flame} size={20} className="text-gray-300 hover:text-orange-400 hover:bg-orange-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 9.5 * 60 * 1000 }); }} />
-                                <IconButton icon={Icons.Star} size={20} active={task.isStarred} className="text-gray-300 hover:text-yellow-400 hover:bg-yellow-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
-                                <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                        {/* 制限時間表示: 常に表示、アクティブ時はピンク、非アクティブ時は薄いグレー */}
+                        {!task.completed && (
+                            <div className="flex items-center gap-1">
+                                {challengeTimeLeft !== null ? (
+                                    <span className={`text-[11px] font-black px-3 py-1 rounded-xl border-b-2 shadow-sm ${challengeTimeLeft > 0 ? 'bg-duo-pink text-white border-duo-pinkBorder animate-pulse' : 'bg-gray-200 text-gray-500 border-gray-300'}`}>
+                                        {challengeTimeLeft > 0 ? `${Math.floor(challengeTimeLeft / 60)}:${(challengeTimeLeft % 60).toString().padStart(2, '0')}` : 'TIME OVER'}
+                                    </span>
+                                ) : (
+                                    <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-gray-50 text-gray-400 border border-gray-200">
+                                        {task.challengeDuration || 9.5}分
+                                    </span>
+                                )}
+                                {/* 時間編集モーダル */}
+                                {isEditingTime && (
+                                    <div className="fixed inset-0 bg-black/50 z-[300] flex items-center justify-center" onClick={() => setIsEditingTime(false)}>
+                                        <div className="bg-white rounded-2xl p-6 shadow-floating w-80 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                                            <h3 className="text-lg font-black mb-4 text-gray-700">制限時間を設定</h3>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <input
+                                                    type="number"
+                                                    step="0.5"
+                                                    min="0.5"
+                                                    value={editTimeValue}
+                                                    onChange={(e) => setEditTimeValue(e.target.value)}
+                                                    className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl font-bold text-lg text-center"
+                                                />
+                                                <span className="font-bold text-gray-500">分</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        onUpdate(task.id, { challengeDuration: parseFloat(editTimeValue) });
+                                                        setIsEditingTime(false);
+                                                    }}
+                                                    className="flex-1 bg-duo-blue text-white font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
+                                                >
+                                                    保存
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsEditingTime(false)}
+                                                    className="flex-1 bg-gray-200 text-gray-600 font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
+                                                >
+                                                    キャンセル
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
+
+                        {/* ボタン群: 常に表示 */}
+                        {!task.completed && (
+                            <div className="flex items-center gap-1">
+                                {/* 挑戦ボタン: 常に表示 */}
+                                <IconButton
+                                    icon={Icons.Flame}
+                                    size={18}
+                                    className={challengeTimeLeft !== null ? "text-orange-500" : "text-gray-300 hover:text-orange-400 hover:bg-orange-50"}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const duration = (task.challengeDuration || 9.5) * 60 * 1000;
+                                        onUpdate(task.id, { challengeEndTime: Date.now() + duration });
+                                    }}
+                                />
+                                {/* 時間編集ボタン */}
+                                <IconButton
+                                    icon={Icons.Edit}
+                                    size={16}
+                                    className="text-gray-300 hover:text-blue-400 hover:bg-blue-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditTimeValue(String(task.challengeDuration || 9.5));
+                                        setIsEditingTime(true);
+                                    }}
+                                />
+                                {/* 上下移動ボタン */}
+                                <IconButton
+                                    icon={Icons.ChevronUp}
+                                    size={16}
+                                    className={`${canMoveUp ? 'text-gray-300 hover:text-gray-600 hover:bg-gray-50' : 'text-gray-200 cursor-not-allowed'}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (canMoveUp) onMoveUp();
+                                    }}
+                                />
+                                <IconButton
+                                    icon={Icons.ChevronDown}
+                                    size={16}
+                                    className={`${canMoveDown ? 'text-gray-300 hover:text-gray-600 hover:bg-gray-50' : 'text-gray-200 cursor-not-allowed'}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (canMoveDown) onMoveDown();
+                                    }}
+                                />
+                                {/* その他のボタン（ホバー時のみ表示） */}
+                                <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                    <IconButton icon={Icons.Star} size={18} active={task.isStarred} className="text-gray-300 hover:text-yellow-400 hover:bg-yellow-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
+                                    <IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 完了済みタスクのボタン */}
                         {task.completed && (
                             <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
-                            </div>
-                        )}
-                        {/* Section 2以降のボタン表示 (通常) */}
-                        {!challengeTimeLeft && !task.completed && !isFocusedSection && (
-                            <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <IconButton icon={Icons.Flame} size={20} className="text-orange-400 hover:bg-orange-100" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { challengeEndTime: Date.now() + 9.5 * 60 * 1000 }); }} />
-                                <IconButton icon={Icons.Star} size={20} active={task.isStarred} onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
-                                <IconButton icon={Icons.Trash2} size={20} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
+                                <IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
                             </div>
                         )}
                     </div>
@@ -876,6 +964,22 @@
             };
 
             const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
+
+            // タスクの並び替え機能
+            const moveTask = (taskId, direction) => {
+                const index = tasks.findIndex(t => t.id === taskId);
+                if (index === -1) return;
+
+                const newTasks = [...tasks];
+                const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+                if (targetIndex < 0 || targetIndex >= newTasks.length) return;
+
+                // 配列内で要素を交換
+                [newTasks[index], newTasks[targetIndex]] = [newTasks[targetIndex], newTasks[index]];
+                setTasks(newTasks);
+            };
+
             const visibleTasks = tasks.filter(t => activeListId === 'default' ? !t.listId || t.listId === 'default' : t.listId === activeListId);
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
@@ -1178,14 +1282,18 @@
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <TaskItem 
-                                                        task={t} 
-                                                        isMobile={isMobile} 
-                                                        onXpGain={handleXpGain} 
-                                                        onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })} 
-                                                        onUpdate={updateTask} 
-                                                        onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))} 
-                                                        isDeadlineView={activeListId==='deadline'} 
+                                                    <TaskItem
+                                                        task={t}
+                                                        isMobile={isMobile}
+                                                        onXpGain={handleXpGain}
+                                                        onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
+                                                        onUpdate={updateTask}
+                                                        onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
+                                                        onMoveUp={() => moveTask(t.id, 'up')}
+                                                        onMoveDown={() => moveTask(t.id, 'down')}
+                                                        canMoveUp={index > 0}
+                                                        canMoveDown={index < incomplete.length - 1}
+                                                        isDeadlineView={activeListId==='deadline'}
                                                         activeTheme={stats.currentTheme}
                                                         onContextMenu={handleContextMenu}
                                                         isFocusedSection={sectionNum === 1}
@@ -1197,15 +1305,19 @@
                                         
                                         const isLast = isLastTaskInSection(index);
                                         return (
-                                            <TaskItem 
+                                            <TaskItem
                                                 key={t.id}
-                                                task={t} 
-                                                isMobile={isMobile} 
-                                                onXpGain={handleXpGain} 
-                                                onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })} 
-                                                onUpdate={updateTask} 
-                                                onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))} 
-                                                isDeadlineView={activeListId==='deadline'} 
+                                                task={t}
+                                                isMobile={isMobile}
+                                                onXpGain={handleXpGain}
+                                                onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
+                                                onUpdate={updateTask}
+                                                onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
+                                                onMoveUp={() => moveTask(t.id, 'up')}
+                                                onMoveDown={() => moveTask(t.id, 'down')}
+                                                canMoveUp={index > 0}
+                                                canMoveDown={index < incomplete.length - 1}
+                                                isDeadlineView={activeListId==='deadline'}
                                                 activeTheme={stats.currentTheme}
                                                 onContextMenu={handleContextMenu}
                                                 isFocusedSection={sectionCounter === 1}
@@ -1226,14 +1338,18 @@
                                         {isCompletedOpen && (
                                             <div className="mt-4 space-y-2 opacity-75">
                                                 {completed.map(t => (
-                                                    <TaskItem 
-                                                        key={t.id} 
-                                                        task={t} 
-                                                        isMobile={isMobile} 
-                                                        onXpGain={handleXpGain} 
+                                                    <TaskItem
+                                                        key={t.id}
+                                                        task={t}
+                                                        isMobile={isMobile}
+                                                        onXpGain={handleXpGain}
                                                         onToggle={() => updateTask(t.id, { completed: false })}
-                                                        onUpdate={updateTask} 
-                                                        onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))} 
+                                                        onUpdate={updateTask}
+                                                        onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
+                                                        onMoveUp={() => {}}
+                                                        onMoveDown={() => {}}
+                                                        canMoveUp={false}
+                                                        canMoveDown={false}
                                                         isDeadlineView={activeListId==='deadline'} 
                                                         activeTheme={stats.currentTheme}
                                                     />
