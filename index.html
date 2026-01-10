@@ -1398,8 +1398,18 @@
                                             return (
                                                 <React.Fragment key={t.id}>
                                                     <div className="py-4 flex items-center justify-center gap-2">
-                                                        <div className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest ${sectionNum === 1 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-gray-200 text-gray-500'}`}>
-                                                            Section {sectionNum}
+                                                        <div
+                                                            className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest cursor-pointer hover:scale-105 transition-transform ${sectionNum === 1 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-gray-200 text-gray-500'}`}
+                                                            onContextMenu={(e) => {
+                                                                e.preventDefault();
+                                                                const newName = prompt('セクション名を入力してください:', t.sectionName || `Section ${sectionNum}`);
+                                                                if (newName !== null && newName.trim()) {
+                                                                    updateTask(t.id, { sectionName: newName.trim() });
+                                                                }
+                                                            }}
+                                                            title="右クリックで名前を変更"
+                                                        >
+                                                            {t.sectionName || `Section ${sectionNum}`}
                                                         </div>
                                                         {sectionNum === 1 && (
                                                             <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
