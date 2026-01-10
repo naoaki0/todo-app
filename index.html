@@ -137,6 +137,7 @@
             ChevronUp: (p) => <SvgIcon {...p}><polyline points="18 15 12 9 6 15"/></SvgIcon>,
             ChevronRight: (p) => <SvgIcon {...p}><polyline points="9 18 15 12 9 6"/></SvgIcon>,
             Edit: (p) => <SvgIcon {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></SvgIcon>,
+            GripVertical: (p) => <SvgIcon {...p}><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></SvgIcon>,
             Star: (p) => <SvgIcon {...p} fill={p.active ? "currentColor" : "none"}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></SvgIcon>,
             Play: (p) => <SvgIcon {...p}><polygon points="5 3 19 12 5 21 5 3"/></SvgIcon>,
             Pause: (p) => <SvgIcon {...p}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></SvgIcon>,
@@ -333,7 +334,7 @@
 
 
         // --- タスク部品 ---
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onMoveUp, onMoveDown, canMoveUp, canMoveDown, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false }) => {
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
@@ -392,16 +393,28 @@
 
             return (
                 <div
-                    className={`group flex items-start py-5 px-5 cursor-pointer border-b-2 transition-all ${springClass} ${disabledClass} ${
+                    className={`group flex items-start py-5 px-5 border-b-2 transition-all ${springClass} ${disabledClass} ${isDragging ? 'opacity-50 bg-blue-50' : ''} ${
                         task.completed
                             ? 'bg-gray-50 opacity-60 border-gray-100'
                             : isFocusedSection
                                 ? 'bg-white border-gray-200 hover:bg-gray-50'
                                 : 'bg-gray-100 border-gray-200'
                     }`}
-                    // 親要素のonClick削除 (チェックボックスのみで完了)
+                    draggable={!task.completed}
+                    onDragStart={(e) => {
+                        if (!task.completed && onDragStart) {
+                            onDragStart(e, task);
+                        }
+                    }}
                     onContextMenu={(e) => onContextMenu && onContextMenu(e, task)}
                 >
+                    {/* ドラッグハンドル */}
+                    {!task.completed && (
+                        <div className="pt-0.5 pr-2 flex-shrink-0 cursor-move text-gray-300 hover:text-gray-500 transition-colors">
+                            <Icons.GripVertical size={18} />
+                        </div>
+                    )}
+
                     <div className="pt-0.5 pr-4 flex-shrink-0 relative" ref={buttonRef} onClick={(e) => handleToggle(e)}>
                         {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
                         <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${
@@ -500,25 +513,6 @@
                                         setIsEditingTime(true);
                                     }}
                                 />
-                                {/* 上下移動ボタン */}
-                                <IconButton
-                                    icon={Icons.ChevronUp}
-                                    size={16}
-                                    className={`${canMoveUp ? 'text-gray-300 hover:text-gray-600 hover:bg-gray-50' : 'text-gray-200 cursor-not-allowed'}`}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (canMoveUp) onMoveUp();
-                                    }}
-                                />
-                                <IconButton
-                                    icon={Icons.ChevronDown}
-                                    size={16}
-                                    className={`${canMoveDown ? 'text-gray-300 hover:text-gray-600 hover:bg-gray-50' : 'text-gray-200 cursor-not-allowed'}`}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (canMoveDown) onMoveDown();
-                                    }}
-                                />
                                 {/* その他のボタン（ホバー時のみ表示） */}
                                 <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                     <IconButton icon={Icons.Star} size={18} active={task.isStarred} className="text-gray-300 hover:text-yellow-400 hover:bg-yellow-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
@@ -575,9 +569,13 @@
             const [floatingTexts, setFloatingTexts] = useState([]);
             
             const [contextMenu, setContextMenu] = useState(null);
-            
+
             // Progress Bar Animation State
             const [progressBounce, setProgressBounce] = useState(false);
+
+            // Drag & Drop State
+            const [draggedTaskId, setDraggedTaskId] = useState(null);
+            const [dragOverTaskId, setDragOverTaskId] = useState(null);
 
             const closeToast = useCallback(() => {
                 setToastMessage(null);
@@ -966,18 +964,48 @@
             const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
 
             // タスクの並び替え機能
-            const moveTask = (taskId, direction) => {
-                const index = tasks.findIndex(t => t.id === taskId);
-                if (index === -1) return;
+            // ドラッグ&ドロップ関数
+            const handleDragStart = (e, task) => {
+                setDraggedTaskId(task.id);
+                e.dataTransfer.effectAllowed = 'move';
+            };
+
+            const handleDragOver = (e, task) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                setDragOverTaskId(task.id);
+            };
+
+            const handleDrop = (e, dropTask) => {
+                e.preventDefault();
+
+                if (!draggedTaskId || draggedTaskId === dropTask.id) {
+                    setDraggedTaskId(null);
+                    setDragOverTaskId(null);
+                    return;
+                }
+
+                const draggedIndex = tasks.findIndex(t => t.id === draggedTaskId);
+                const dropIndex = tasks.findIndex(t => t.id === dropTask.id);
+
+                if (draggedIndex === -1 || dropIndex === -1) {
+                    setDraggedTaskId(null);
+                    setDragOverTaskId(null);
+                    return;
+                }
 
                 const newTasks = [...tasks];
-                const targetIndex = direction === 'up' ? index - 1 : index + 1;
+                const [draggedTask] = newTasks.splice(draggedIndex, 1);
+                newTasks.splice(dropIndex, 0, draggedTask);
 
-                if (targetIndex < 0 || targetIndex >= newTasks.length) return;
-
-                // 配列内で要素を交換
-                [newTasks[index], newTasks[targetIndex]] = [newTasks[targetIndex], newTasks[index]];
                 setTasks(newTasks);
+                setDraggedTaskId(null);
+                setDragOverTaskId(null);
+            };
+
+            const handleDragEnd = () => {
+                setDraggedTaskId(null);
+                setDragOverTaskId(null);
             };
 
             const visibleTasks = tasks.filter(t => activeListId === 'default' ? !t.listId || t.listId === 'default' : t.listId === activeListId);
@@ -1282,47 +1310,53 @@
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <TaskItem
-                                                        task={t}
-                                                        isMobile={isMobile}
-                                                        onXpGain={handleXpGain}
-                                                        onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
-                                                        onUpdate={updateTask}
-                                                        onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
-                                                        onMoveUp={() => moveTask(t.id, 'up')}
-                                                        onMoveDown={() => moveTask(t.id, 'down')}
-                                                        canMoveUp={index > 0}
-                                                        canMoveDown={index < incomplete.length - 1}
-                                                        isDeadlineView={activeListId==='deadline'}
-                                                        activeTheme={stats.currentTheme}
-                                                        onContextMenu={handleContextMenu}
-                                                        isFocusedSection={sectionNum === 1}
-                                                        isLastInSection={isLast}
-                                                    />
+                                                    <div
+                                                        onDragOver={(e) => handleDragOver(e, t)}
+                                                        onDrop={(e) => handleDrop(e, t)}
+                                                    >
+                                                        <TaskItem
+                                                            task={t}
+                                                            isMobile={isMobile}
+                                                            onXpGain={handleXpGain}
+                                                            onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
+                                                            onUpdate={updateTask}
+                                                            onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
+                                                            onDragStart={handleDragStart}
+                                                            isDragging={draggedTaskId === t.id}
+                                                            isDeadlineView={activeListId==='deadline'}
+                                                            activeTheme={stats.currentTheme}
+                                                            onContextMenu={handleContextMenu}
+                                                            isFocusedSection={sectionNum === 1}
+                                                            isLastInSection={isLast}
+                                                        />
+                                                    </div>
                                                 </React.Fragment>
                                             );
                                         }
                                         
                                         const isLast = isLastTaskInSection(index);
                                         return (
-                                            <TaskItem
+                                            <div
                                                 key={t.id}
-                                                task={t}
-                                                isMobile={isMobile}
-                                                onXpGain={handleXpGain}
-                                                onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
-                                                onUpdate={updateTask}
-                                                onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
-                                                onMoveUp={() => moveTask(t.id, 'up')}
-                                                onMoveDown={() => moveTask(t.id, 'down')}
-                                                canMoveUp={index > 0}
-                                                canMoveDown={index < incomplete.length - 1}
-                                                isDeadlineView={activeListId==='deadline'}
-                                                activeTheme={stats.currentTheme}
-                                                onContextMenu={handleContextMenu}
-                                                isFocusedSection={sectionCounter === 1}
-                                                isLastInSection={isLast}
-                                            />
+                                                onDragOver={(e) => handleDragOver(e, t)}
+                                                onDrop={(e) => handleDrop(e, t)}
+                                            >
+                                                <TaskItem
+                                                    task={t}
+                                                    isMobile={isMobile}
+                                                    onXpGain={handleXpGain}
+                                                    onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
+                                                    onUpdate={updateTask}
+                                                    onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
+                                                    onDragStart={handleDragStart}
+                                                    isDragging={draggedTaskId === t.id}
+                                                    isDeadlineView={activeListId==='deadline'}
+                                                    activeTheme={stats.currentTheme}
+                                                    onContextMenu={handleContextMenu}
+                                                    isFocusedSection={sectionCounter === 1}
+                                                    isLastInSection={isLast}
+                                                />
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -1346,11 +1380,9 @@
                                                         onToggle={() => updateTask(t.id, { completed: false })}
                                                         onUpdate={updateTask}
                                                         onDelete={(id)=>setTasks(tasks.filter(x=>x.id!==id))}
-                                                        onMoveUp={() => {}}
-                                                        onMoveDown={() => {}}
-                                                        canMoveUp={false}
-                                                        canMoveDown={false}
-                                                        isDeadlineView={activeListId==='deadline'} 
+                                                        onDragStart={null}
+                                                        isDragging={false}
+                                                        isDeadlineView={activeListId==='deadline'}
                                                         activeTheme={stats.currentTheme}
                                                     />
                                                 ))}
