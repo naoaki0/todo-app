@@ -617,32 +617,59 @@
             // Antigravity Integration - Auto-create tasks from URL parameters
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
-                const taskParam = params.get('task');
 
-                if (taskParam) {
-                    // Check if task already exists to avoid duplicates
-                    const taskExists = tasks.some(t => t.title === taskParam);
+                // Support multiple task parameters: ?task=A&task=B&task=C
+                const taskParams = params.getAll('task');
 
-                    if (!taskExists) {
-                        const newTask = {
-                            id: Date.now().toString(),
-                            title: taskParam,
-                            completed: false,
-                            listId: activeListId,
-                            createdAt: Date.now(),
-                            isSectionHead: tasks.length === 0
-                        };
+                // Support comma-separated tasks: ?tasks=A,B,C
+                const tasksParam = params.get('tasks');
+                const tasksFromComma = tasksParam ? tasksParam.split(',').map(t => t.trim()).filter(t => t) : [];
 
-                        setTasks(prevTasks => [...prevTasks, newTask]);
-                        setStats(s => ({...s, tasksCreated: s.tasksCreated + 1}));
-                        setToastMessage(`✨ Task added from Antigravity: ${taskParam}`);
+                // Combine all tasks
+                const allTasks = [...taskParams, ...tasksFromComma];
 
-                        // Clear URL parameters to avoid re-adding on refresh
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    } else {
-                        setToastMessage(`⚠️ Task already exists: ${taskParam}`);
-                        window.history.replaceState({}, document.title, window.location.pathname);
+                if (allTasks.length > 0) {
+                    const newTasks = [];
+                    let addedCount = 0;
+                    let skippedCount = 0;
+
+                    allTasks.forEach((taskTitle, index) => {
+                        // Check if task already exists to avoid duplicates
+                        const taskExists = tasks.some(t => t.title === taskTitle);
+
+                        if (!taskExists) {
+                            const newTask = {
+                                id: (Date.now() + index).toString(),
+                                title: taskTitle,
+                                completed: false,
+                                listId: activeListId,
+                                createdAt: Date.now() + index,
+                                isSectionHead: tasks.length === 0 && newTasks.length === 0
+                            };
+                            newTasks.push(newTask);
+                            addedCount++;
+                        } else {
+                            skippedCount++;
+                        }
+                    });
+
+                    if (newTasks.length > 0) {
+                        setTasks(prevTasks => [...prevTasks, ...newTasks]);
+                        setStats(s => ({...s, tasksCreated: s.tasksCreated + newTasks.length}));
+
+                        if (newTasks.length === 1) {
+                            setToastMessage(`✨ Task added from Antigravity: ${newTasks[0].title}`);
+                        } else {
+                            setToastMessage(`✨ ${newTasks.length} tasks added from Antigravity`);
+                        }
                     }
+
+                    if (skippedCount > 0 && addedCount === 0) {
+                        setToastMessage(`⚠️ All tasks already exist (${skippedCount} skipped)`);
+                    }
+
+                    // Clear URL parameters to avoid re-adding on refresh
+                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }, []);
 
