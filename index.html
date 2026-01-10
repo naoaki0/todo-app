@@ -1319,6 +1319,16 @@
                                     <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
                                 </div>
 
+                                {/* MVP開発リマインダー */}
+                                <div className="mb-4 bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
+                                    <p className="text-sm font-bold text-orange-800 mb-1">
+                                        恥ずかしい状態で顧客に届けられるか？
+                                    </p>
+                                    <p className="text-xs text-orange-600">
+                                        余計な機能を追加しようとしていないか。最低限で恥ずかしい状態こそ、正しいMVPの姿。
+                                    </p>
+                                </div>
+
                                 {/* タスク入力エリア */}
                                 <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
                                     <div className="w-full h-full flex items-center px-3 py-2 gap-2">
