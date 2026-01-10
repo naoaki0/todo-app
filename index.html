@@ -511,7 +511,6 @@
                                 />
                                 {/* その他のボタン（ホバー時のみ表示） */}
                                 <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                    <IconButton icon={Icons.Star} size={18} active={task.isStarred} className="text-gray-300 hover:text-yellow-400 hover:bg-yellow-50" onClick={(e) => { e.stopPropagation(); onUpdate(task.id, { isStarred: !task.isStarred }); }} />
                                     <IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
                                 </div>
                             </div>
