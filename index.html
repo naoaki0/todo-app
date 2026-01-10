@@ -619,11 +619,16 @@
                 const params = new URLSearchParams(window.location.search);
 
                 // Support multiple task parameters: ?task=A&task=B&task=C
-                const taskParams = params.getAll('task');
+                // Also split each parameter by semicolons or pipes: ?task=A;B||C
+                const taskParams = params.getAll('task')
+                    .flatMap(t => t.split(/[;|]+/).map(s => s.trim()).filter(s => s));
 
                 // Support comma-separated tasks: ?tasks=A,B,C
+                // Also split by semicolons or pipes: ?tasks=A,B;C||D
                 const tasksParam = params.get('tasks');
-                const tasksFromComma = tasksParam ? tasksParam.split(',').map(t => t.trim()).filter(t => t) : [];
+                const tasksFromComma = tasksParam
+                    ? tasksParam.split(/[,;|]+/).map(t => t.trim()).filter(t => t)
+                    : [];
 
                 // Combine all tasks
                 const allTasks = [...taskParams, ...tasksFromComma];
