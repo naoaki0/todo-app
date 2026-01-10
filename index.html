@@ -1316,29 +1316,67 @@
                                 </div>
 
                                 {/* タスク入力エリア */}
-                                <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 flex items-center shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
-                                    <div className="w-full h-full flex items-center px-3 py-2 gap-2">
-                                        <Icons.Plus className="text-gray-400 opacity-80" size={20} />
-                                        <input className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400" placeholder="MVP必須機能のみを追加" onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && e.target.value.trim()) {
-                                                // Section 1のタスク数をカウント
-                                                let section1Count = 0;
-                                                for (let t of tasks) {
-                                                    if (!t.completed && section1Count > 0 && t.isSectionHead) break;
-                                                    if (!t.completed) section1Count++;
-                                                }
+                                <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
+                                    <div className="w-full h-full flex items-start px-3 py-2 gap-2">
+                                        <Icons.Plus className="text-gray-400 opacity-80 mt-1" size={20} />
+                                        <textarea
+                                            className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400 resize-none min-h-[32px] max-h-[200px]"
+                                            placeholder="MVP必須機能のみを追加 (改行またはセミコロンで複数追加可)"
+                                            rows="1"
+                                            onInput={(e) => {
+                                                e.target.style.height = 'auto';
+                                                e.target.style.height = e.target.scrollHeight + 'px';
+                                            }}
+                                            onKeyDown={(e) => {
+                                                // Ctrl+Enter or Cmd+Enter to submit
+                                                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    const value = e.target.value.trim();
+                                                    if (!value) return;
 
-                                                // Section 1が5つ以上の場合は警告
-                                                if (section1Count >= 5) {
-                                                    setToastMessage("⚠️ MVP開発はシンプルに！タスクを減らすと集中力UP");
-                                                    AudioEngine.play([200, 150], 'sawtooth', 0.1, 0.1);
-                                                }
+                                                    // Split by newlines and semicolons
+                                                    const taskTitles = value
+                                                        .split(/[\n;]/)
+                                                        .map(t => t.trim())
+                                                        .filter(t => t);
 
-                                                setTasks([...tasks, { id: Date.now().toString(), title: e.target.value, completed: false, listId: activeListId, createdAt: Date.now(), isSectionHead: tasks.length === 0 }]);
-                                                setStats(s => ({...s, tasksCreated: s.tasksCreated + 1}));
-                                                e.target.value = '';
-                                            }
-                                        }} />
+                                                    if (taskTitles.length === 0) return;
+
+                                                    // Section 1のタスク数をカウント
+                                                    let section1Count = 0;
+                                                    for (let t of tasks) {
+                                                        if (!t.completed && section1Count > 0 && t.isSectionHead) break;
+                                                        if (!t.completed) section1Count++;
+                                                    }
+
+                                                    // Section 1が5つ以上の場合は警告
+                                                    if (section1Count + taskTitles.length > 5) {
+                                                        setToastMessage("⚠️ MVP開発はシンプルに！タスクを減らすと集中力UP");
+                                                        AudioEngine.play([200, 150], 'sawtooth', 0.1, 0.1);
+                                                    }
+
+                                                    // Create multiple tasks
+                                                    const newTasks = taskTitles.map((title, index) => ({
+                                                        id: (Date.now() + index).toString(),
+                                                        title: title,
+                                                        completed: false,
+                                                        listId: activeListId,
+                                                        createdAt: Date.now() + index,
+                                                        isSectionHead: tasks.length === 0 && index === 0
+                                                    }));
+
+                                                    setTasks([...tasks, ...newTasks]);
+                                                    setStats(s => ({...s, tasksCreated: s.tasksCreated + newTasks.length}));
+
+                                                    if (newTasks.length > 1) {
+                                                        setToastMessage(`✨ ${newTasks.length} tasks added`);
+                                                    }
+
+                                                    e.target.value = '';
+                                                    e.target.style.height = 'auto';
+                                                }
+                                            }}
+                                        />
                                     </div>
                                 </div>
 
