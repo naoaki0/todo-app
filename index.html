@@ -599,7 +599,7 @@
                 if (stats.devOathActive && stats.lastDate !== today) {
                     // Logic for oath check would go here
                 }
-                
+
                 if (stats.lastDate && stats.lastDate !== today) {
                     const last = new Date(stats.lastDate); const curr = new Date(today);
                     const diff = (curr - last) / (1000 * 60 * 60 * 24);
@@ -610,6 +610,38 @@
                         } else {
                             setStats(s => ({ ...s, streakBroken: true, savedStreak: s.streak, streak: 0 }));
                         }
+                    }
+                }
+            }, []);
+
+            // Antigravity Integration - Auto-create tasks from URL parameters
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const taskParam = params.get('task');
+
+                if (taskParam) {
+                    // Check if task already exists to avoid duplicates
+                    const taskExists = tasks.some(t => t.title === taskParam);
+
+                    if (!taskExists) {
+                        const newTask = {
+                            id: Date.now().toString(),
+                            title: taskParam,
+                            completed: false,
+                            listId: activeListId,
+                            createdAt: Date.now(),
+                            isSectionHead: tasks.length === 0
+                        };
+
+                        setTasks(prevTasks => [...prevTasks, newTask]);
+                        setStats(s => ({...s, tasksCreated: s.tasksCreated + 1}));
+                        setToastMessage(`✨ Task added from Antigravity: ${taskParam}`);
+
+                        // Clear URL parameters to avoid re-adding on refresh
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    } else {
+                        setToastMessage(`⚠️ Task already exists: ${taskParam}`);
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 }
             }, []);
