@@ -1322,11 +1322,11 @@
 
                                 {/* タスク入力エリア */}
                                 <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
-                                    <div className="w-full h-full flex items-start px-3 py-2 gap-2">
-                                        <Icons.Plus className="text-gray-400 opacity-80 mt-1" size={20} />
+                                    <div className="w-full h-full flex items-center px-3 py-2 gap-2">
+                                        <Icons.Plus className="text-gray-400 opacity-80" size={20} />
                                         <textarea
                                             className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400 resize-none min-h-[32px] max-h-[200px]"
-                                            placeholder="MVP必須機能のみを追加 (改行またはセミコロンで複数追加可)"
+                                            placeholder="MVP必須機能のみを追加"
                                             rows="1"
                                             onInput={(e) => {
                                                 e.target.style.height = 'auto';
