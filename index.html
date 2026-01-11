@@ -403,25 +403,37 @@
             );
         };
 
-        // ノーマル演出（25%）: 虹色キラキラ爆発
+        // ノーマル演出（25%）: 虹色クラッカー
         const RewardNormal = ({ onComplete, centerX, centerY }) => {
             const [particles, setParticles] = useState([]);
             const [rings, setRings] = useState([]);
 
             useEffect(() => {
-                // 虹色のパーティクル大量生成（80個）
+                // 虹色のクラッカーパーティクル（100個）
                 const rainbowColors = ['#FF6B9D', '#C44569', '#F8B500', '#4ECDC4', '#95E1D3', '#38B6FF', '#A8E6CF'];
                 const newParticles = [];
-                for (let i = 0; i < 80; i++) {
-                    const angle = (Math.PI * 2 * i) / 80;
-                    const speed = 150 + Math.random() * 150;
+                for (let i = 0; i < 100; i++) {
+                    const fromLeft = i % 2 === 0;
+
+                    // 左下または右下からの発射
+                    const startX = fromLeft ? '5%' : '95%';
+                    const startY = '5%';
+
+                    // 中央付近へのランダムな着地点
+                    const spreadX = (Math.random() - 0.5) * 500;
+                    const spreadY = (Math.random() - 0.5) * 500;
+                    const targetX = `${centerX + spreadX}px`;
+                    const targetY = `${centerY + spreadY}px`;
+
                     newParticles.push({
                         id: i,
-                        x: centerX,
-                        y: centerY,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
+                        startX,
+                        startY,
+                        targetX,
+                        targetY,
                         color: rainbowColors[i % rainbowColors.length],
+                        delay: Math.random() * 0.3,
+                        duration: 0.9 + Math.random() * 0.4,
                         size: 10 + Math.random() * 8,
                     });
                 }
@@ -470,26 +482,9 @@
                             }}
                         />
                     ))}
-                    {/* 虹色パーティクル */}
+                    {/* 虹色クラッカーパーティクル */}
                     {particles.map(p => (
-                        <div
-                            key={p.id}
-                            style={{
-                                position: 'fixed',
-                                left: p.x,
-                                top: p.y,
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                backgroundColor: p.color,
-                                borderRadius: '50%',
-                                pointerEvents: 'none',
-                                zIndex: 290,
-                                boxShadow: `0 0 15px ${p.color}`,
-                                animation: 'reward-particle-glow 2s ease-out forwards',
-                                '--vx': `${p.vx}px`,
-                                '--vy': `${p.vy}px`,
-                            }}
-                        />
+                        <CrackerConfettiParticle key={p.id} {...p} />
                     ))}
                 </>
             );
@@ -521,17 +516,31 @@
                     { id: 6, angle: 300 },
                 ]);
 
-                // レインボーパーティクル大量（300個）
+                // レインボークラッカー大量（300個）
                 const rainbowColors = ['#FF0080', '#FF8C00', '#FFD700', '#00FF00', '#00CED1', '#4169E1', '#9370DB'];
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
                 const newParticles = [];
                 for (let i = 0; i < 300; i++) {
+                    const fromLeft = i % 2 === 0;
+                    const startX = fromLeft ? '5%' : '95%';
+                    const startY = '5%';
+
+                    // 中央付近への着地点（広範囲）
+                    const spreadX = (Math.random() - 0.5) * 700;
+                    const spreadY = (Math.random() - 0.5) * 700;
+                    const targetX = `${centerX + spreadX}px`;
+                    const targetY = `${centerY + spreadY}px`;
+
                     newParticles.push({
                         id: i,
-                        x: Math.random() * window.innerWidth,
-                        y: -50,
+                        startX,
+                        startY,
+                        targetX,
+                        targetY,
                         color: rainbowColors[i % rainbowColors.length],
-                        delay: Math.random() * 1,
-                        duration: 2.5 + Math.random() * 1.5,
+                        delay: Math.random() * 0.5,
+                        duration: 1 + Math.random() * 0.6,
                         size: 14 + Math.random() * 10,
                     });
                 }
@@ -600,24 +609,9 @@
                             }}
                         />
                     ))}
-                    {/* レインボーパーティクル */}
+                    {/* レインボークラッカーパーティクル */}
                     {particles.map(p => (
-                        <div
-                            key={p.id}
-                            style={{
-                                position: 'fixed',
-                                left: p.x,
-                                top: p.y,
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                backgroundColor: p.color,
-                                borderRadius: '50%',
-                                pointerEvents: 'none',
-                                zIndex: 290,
-                                boxShadow: `0 0 20px ${p.color}`,
-                                animation: `reward-fall-glow ${p.duration}s ease-in ${p.delay}s forwards`,
-                            }}
-                        />
+                        <CrackerConfettiParticle key={p.id} {...p} />
                     ))}
                     {/* BIG!! テキスト */}
                     <div
@@ -677,17 +671,31 @@
                     { id: 4, delay: 0.9 },
                 ]);
 
-                // 金色パーティクル超大量（500個）
+                // 金色クラッカー超大量（500個）
                 const goldShades = ['#FFD700', '#FFA500', '#FFDB58', '#FFE55C', '#FFF8DC'];
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
                 const newParticles = [];
                 for (let i = 0; i < 500; i++) {
+                    const fromLeft = i % 2 === 0;
+                    const startX = fromLeft ? '5%' : '95%';
+                    const startY = '5%';
+
+                    // 中央付近への着地点（超広範囲）
+                    const spreadX = (Math.random() - 0.5) * 900;
+                    const spreadY = (Math.random() - 0.5) * 900;
+                    const targetX = `${centerX + spreadX}px`;
+                    const targetY = `${centerY + spreadY}px`;
+
                     newParticles.push({
                         id: i,
-                        x: Math.random() * window.innerWidth,
-                        y: -100,
+                        startX,
+                        startY,
+                        targetX,
+                        targetY,
                         color: goldShades[i % goldShades.length],
-                        delay: Math.random() * 1.2,
-                        duration: 3 + Math.random() * 2,
+                        delay: Math.random() * 0.6,
+                        duration: 1.2 + Math.random() * 0.8,
                         size: 12 + Math.random() * 16,
                     });
                 }
@@ -783,24 +791,9 @@
                             }}
                         />
                     ))}
-                    {/* 黄金パーティクル超大量 */}
+                    {/* 黄金クラッカーパーティクル超大量 */}
                     {particles.map(p => (
-                        <div
-                            key={p.id}
-                            style={{
-                                position: 'fixed',
-                                left: p.x,
-                                top: p.y,
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                backgroundColor: p.color,
-                                borderRadius: '50%',
-                                pointerEvents: 'none',
-                                zIndex: 290,
-                                boxShadow: `0 0 30px ${p.color}`,
-                                animation: `reward-fall-mega-glow ${p.duration}s ease-in ${p.delay}s forwards`,
-                            }}
-                        />
+                        <CrackerConfettiParticle key={p.id} {...p} />
                     ))}
                     {/* JACKPOT!!! テキスト（巨大＆脈動） */}
                     <div
