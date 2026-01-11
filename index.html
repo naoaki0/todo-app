@@ -1355,12 +1355,12 @@
 
                             {/* Gem Unit */}
                             <button className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl transition-all group ${isStreakActive ? 'hover:bg-gray-50' : ''}`}>
-                                <Icons.Gem 
-                                    size={26} 
-                                    fill="currentColor" 
-                                    className={`transition-transform duration-500 ${!stats.streakBroken && isStreakActive ? "text-duo-pink" : "text-[#e5e5e5]"}`} 
+                                <Icons.Gem
+                                    size={26}
+                                    fill="currentColor"
+                                    className={`transition-transform duration-500 ${!stats.streakBroken && isStreakActive ? "text-cyan-400" : "text-[#e5e5e5]"}`}
                                 />
-                                <span className={`text-lg font-black transition-colors duration-500 ${!stats.streakBroken && isStreakActive ? "text-duo-pink" : "text-[#e5e5e5]"}`}>
+                                <span className={`text-lg font-black transition-colors duration-500 ${!stats.streakBroken && isStreakActive ? "text-cyan-400" : "text-[#e5e5e5]"}`}>
                                     {stats.gems}
                                 </span>
                             </button>
