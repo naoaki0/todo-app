@@ -1522,7 +1522,7 @@
                 return () => window.removeEventListener('click', handleClick);
             }, []);
 
-            // スリープ検知：PCスリープから復帰したら宝箱表示（クールダウンなし）
+            // スリープ検知：PCスリープから復帰したら宝箱表示
             useEffect(() => {
                 let lastCheckTime = Date.now();
 
@@ -1530,9 +1530,10 @@
                     const now = Date.now();
                     const timeSinceLastCheck = now - lastCheckTime;
 
-                    // 通常は1秒だが、3秒以上経過していたらスリープがあったと判定
-                    if (timeSinceLastCheck > 3000) {
-                        console.log('Sleep detected, showing wakeup chest');
+                    // 5分以上経過していたらPCスリープと判定（タブ切り替え程度では発動しない）
+                    const SLEEP_THRESHOLD = 5 * 60 * 1000; // 5分
+                    if (timeSinceLastCheck > SLEEP_THRESHOLD) {
+                        console.log('PC sleep detected (5+ minutes), showing wakeup chest');
                         setShowChestModal(true);
                     }
 
