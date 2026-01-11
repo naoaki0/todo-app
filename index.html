@@ -332,6 +332,98 @@
             );
         };
 
+        // --- ログインガチャモーダル ---
+        const LoginGachaModal = ({ onClose }) => {
+            const [state, setState] = useState('idle');
+            const [reward, setReward] = useState(null);
+
+            const handleSpin = () => {
+                if (state !== 'idle') return;
+                setState('spinning');
+                AudioEngine.play([300, 400, 500], 'sine', 0.15, 0.1);
+
+                setTimeout(() => {
+                    const roll = Math.random() * 100;
+                    let amount = 0;
+
+                    // シンプルな確率分布
+                    if (roll < 50) {
+                        amount = 5;
+                    } else if (roll < 80) {
+                        amount = 10;
+                    } else if (roll < 95) {
+                        amount = 20;
+                    } else {
+                        amount = 50;
+                    }
+
+                    setReward(amount);
+                    setState('result');
+                    AudioEngine.play([600, 800, 1000], 'sine', 0.2, 0.15);
+
+                    // 10分間の制限時間付きボーナスとして保存
+                    const expiry = Date.now() + 10 * 60 * 1000; // 10分後
+                    onClose(amount, expiry);
+                }, 1200);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[300] flex items-center justify-center backdrop-blur-md animate-in fade-in">
+                    <div className="flex flex-col items-center max-w-md mx-4">
+                        <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl p-8 shadow-2xl border-4 border-white/20">
+                            <div className="text-center mb-6">
+                                <h2 className="text-3xl font-black text-white mb-2">おかえりなさい！</h2>
+                                <p className="text-white/80 text-sm">復帰ボーナスを獲得しよう</p>
+                            </div>
+
+                            <div className="bg-white/10 rounded-2xl p-8 mb-6 flex items-center justify-center min-h-[200px]">
+                                {state === 'idle' && (
+                                    <div className="text-center">
+                                        <div className="text-8xl mb-4 animate-bounce-soft">🎰</div>
+                                        <p className="text-white font-bold text-lg">スロットを回す</p>
+                                    </div>
+                                )}
+                                {state === 'spinning' && (
+                                    <div className="text-center">
+                                        <div className="text-8xl animate-spin-slow">🎰</div>
+                                    </div>
+                                )}
+                                {state === 'result' && (
+                                    <div className="text-center animate-in zoom-in">
+                                        <div className="text-6xl mb-4">💎</div>
+                                        <p className="text-yellow-300 text-5xl font-black">+{reward}💎</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {state === 'idle' && (
+                                <button
+                                    onClick={handleSpin}
+                                    className="w-full bg-yellow-400 text-purple-900 px-8 py-4 rounded-2xl font-black text-2xl border-b-4 border-yellow-600 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105 hover:bg-yellow-300"
+                                >
+                                    スロットを回す
+                                </button>
+                            )}
+                            {state === 'result' && (
+                                <div className="text-center">
+                                    <div className="bg-red-500/20 border-2 border-red-400 rounded-xl p-4 mb-4">
+                                        <p className="text-red-200 font-bold text-lg mb-1">⚠️ 制限時間: 10分</p>
+                                        <p className="text-red-100 text-sm">10分以内にタスクを完了しないと<br/>このボーナスは消滅します</p>
+                                    </div>
+                                    <button
+                                        onClick={() => onClose(reward, Date.now() + 10 * 60 * 1000)}
+                                        className="w-full bg-white text-purple-900 px-8 py-4 rounded-2xl font-black text-xl border-b-4 border-gray-300 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105"
+                                    >
+                                        今すぐ作業を開始する
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
 
         // --- タスク部品 ---
         const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false }) => {
@@ -545,6 +637,9 @@
                 flowCapacitorEndTime: 0,
                 tasksCreated: 0,
                 tasksPurged: 0,
+                lastActiveTime: Date.now(), // 最後にアクティブだった時刻
+                tempBonus: 0, // 仮獲得ボーナス
+                tempBonusExpiry: 0, // ボーナスの有効期限
             }));
             
             const SECTION_SIZE = 4;
@@ -562,6 +657,7 @@
             const [progressGlow, setProgressGlow] = useState(false);
             const [showIgnition, setShowIgnition] = useState(false);
             const [floatingTexts, setFloatingTexts] = useState([]);
+            const [showLoginGacha, setShowLoginGacha] = useState(false);
             
             const [contextMenu, setContextMenu] = useState(null);
 
@@ -592,6 +688,28 @@
                 localStorage.setItem('duo_v18_stats', JSON.stringify(stats));
             }, [tasks, stats]);
 
+            // スリープ検知とログインガチャ
+            useEffect(() => {
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'visible') {
+                        const now = Date.now();
+                        const timeSinceLastActive = now - (stats.lastActiveTime || now);
+                        const thirtyMinutes = 30 * 60 * 1000;
+
+                        // 30分以上経過していたらガチャ表示
+                        if (timeSinceLastActive >= thirtyMinutes) {
+                            setShowLoginGacha(true);
+                        }
+
+                        // 最終アクティブ時刻を更新
+                        setStats(s => ({ ...s, lastActiveTime: now }));
+                    }
+                };
+
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+            }, [stats.lastActiveTime]);
+
             useEffect(() => {
                 const today = getAdjustedToday();
                 // Dev's Oath Check
@@ -612,6 +730,25 @@
                     }
                 }
             }, []);
+
+            // Temp Bonus期限切れチェックとカウントダウン更新
+            useEffect(() => {
+                if (stats.tempBonus <= 0 || stats.tempBonusExpiry <= 0) return;
+
+                const interval = setInterval(() => {
+                    if (Date.now() >= stats.tempBonusExpiry) {
+                        setStats(s => ({ ...s, tempBonus: 0, tempBonusExpiry: 0 }));
+                        setToastMessage("💔 ボーナスが消滅しました...");
+                        AudioEngine.play([200, 150, 100], 'sawtooth', 0.15, 0.1);
+                        clearInterval(interval);
+                    } else {
+                        // Force re-render to update countdown
+                        setStats(s => ({ ...s }));
+                    }
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }, [stats.tempBonus, stats.tempBonusExpiry]);
 
             // Antigravity Integration - Auto-create tasks from URL parameters
             useEffect(() => {
@@ -926,6 +1063,14 @@
                     if (wagerBonus > 0) newGems += wagerBonus;
                     if (oathBonus > 0) newGems += oathBonus;
 
+                    // Temp Bonus確定処理
+                    let tempBonusConfirmed = 0;
+                    if (prev.tempBonus > 0 && prev.tempBonusExpiry > Date.now()) {
+                        tempBonusConfirmed = prev.tempBonus;
+                        newGems += tempBonusConfirmed;
+                        setToastMessage(`💎 ボーナス確定！+${tempBonusConfirmed}💎を獲得しました`);
+                    }
+
                     if (wagerComplete) setToastMessage("倍か無か達成！100💎獲得！");
 
                     // Floating Text Style Logic
@@ -976,12 +1121,14 @@
                         setTimeout(() => setFloatingTexts(prev => prev.filter(t => t.id !== id)), 1000);
                     }
 
-                    return { 
-                        ...prev, xp: newXp, level: newLevel, gems: newGems, streak: newStreak, lastDate: today, 
+                    return {
+                        ...prev, xp: newXp, level: newLevel, gems: newGems, streak: newStreak, lastDate: today,
                         wager: newWager,
                         streakBroken: false,
                         devLogs: newLogs,
-                        devOathActive: oathBonus > 0 ? false : prev.devOathActive
+                        devOathActive: oathBonus > 0 ? false : prev.devOathActive,
+                        tempBonus: tempBonusConfirmed > 0 ? 0 : prev.tempBonus,
+                        tempBonusExpiry: tempBonusConfirmed > 0 ? 0 : prev.tempBonusExpiry
                     };
                 });
             };
@@ -1158,6 +1305,22 @@
                             </button>
                         </div>
                     </header>
+
+                    {/* Bonus Countdown Bar */}
+                    {stats.tempBonus > 0 && stats.tempBonusExpiry > Date.now() && (
+                        <div className="fixed top-16 left-0 right-0 bg-gradient-to-r from-red-500 to-orange-500 text-white z-[90] animate-pulse">
+                            <div className="px-6 py-3 flex items-center justify-between max-w-4xl mx-auto">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">⏰</span>
+                                    <div>
+                                        <p className="font-black text-sm">ボーナス消滅まで: {Math.ceil((stats.tempBonusExpiry - Date.now()) / 1000 / 60)}分</p>
+                                        <p className="text-xs opacity-90">💎 {stats.tempBonus}💎 が消滅します！今すぐタスクを完了して確定させよう</p>
+                                    </div>
+                                </div>
+                                <div className="text-3xl font-black">💎 {stats.tempBonus}</div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Sidebar */}
                     {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/40 z-[80] backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />}
@@ -1513,6 +1676,11 @@
                     {floatingTexts.map(t => <FloatingText key={t.id} x={t.x} y={t.y} text={t.text} color={t.color} scale={t.scale} />)}
                     {/* PerformanceOverlay removed */}
                     {showChestModal && <ChestModal onClose={() => setShowChestModal(false)} onReward={handleReward} />}
+                    {showLoginGacha && <LoginGachaModal onClose={(amount, expiry) => {
+                        setStats(s => ({ ...s, tempBonus: amount, tempBonusExpiry: expiry }));
+                        setShowLoginGacha(false);
+                        setToastMessage(`💎 ${amount}💎のボーナスを獲得！10分以内にタスクを完了して確定させよう`);
+                    }} />}
                     {showIgnition && <IgnitionModal />}
                     {contextMenu && (
                         <ContextMenu 
