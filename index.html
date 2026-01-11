@@ -688,27 +688,25 @@
                 localStorage.setItem('duo_v18_stats', JSON.stringify(stats));
             }, [tasks, stats]);
 
-            // スリープ検知とログインガチャ
+            // スリープ検知とログインガチャ（スリープからの復帰時のみ）
             useEffect(() => {
-                const handleVisibilityChange = () => {
-                    if (document.visibilityState === 'visible') {
-                        const now = Date.now();
-                        const timeSinceLastActive = now - (stats.lastActiveTime || now);
-                        const thirtyMinutes = 30 * 60 * 1000;
+                let lastCheckTime = Date.now();
 
-                        // 30分以上経過していたらガチャ表示
-                        if (timeSinceLastActive >= thirtyMinutes) {
-                            setShowLoginGacha(true);
-                        }
+                const interval = setInterval(() => {
+                    const now = Date.now();
+                    const timeSinceLastCheck = now - lastCheckTime;
 
-                        // 最終アクティブ時刻を更新
-                        setStats(s => ({ ...s, lastActiveTime: now }));
+                    // 通常は1秒だが、3秒以上経過していたらスリープがあったと判定
+                    if (timeSinceLastCheck > 3000) {
+                        // スリープから復帰したので、ガチャを表示
+                        setShowLoginGacha(true);
                     }
-                };
 
-                document.addEventListener('visibilitychange', handleVisibilityChange);
-                return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-            }, [stats.lastActiveTime]);
+                    lastCheckTime = now;
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }, []);
 
             useEffect(() => {
                 const today = getAdjustedToday();
