@@ -82,6 +82,17 @@
         @keyframes confetti-explode { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 60% { opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
         @keyframes cherry-fall { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: 0; } }
         @keyframes confetti-rise { 0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; } 50% { opacity: 1; } 100% { transform: translateX(var(--random-x)) translateY(-100vh) rotate(var(--random-rotation)); opacity: 0; } }
+
+        /* 中毒性MAX報酬システムのアニメーション */
+        @keyframes near-miss-flash { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes reward-particle { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(var(--vx), var(--vy)); opacity: 0; } }
+        @keyframes reward-fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+        @keyframes big-flash { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes jackpot-flash { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes screen-shake { 0%, 100% { transform: translate(0, 0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 5px); } 20%, 40%, 60%, 80% { transform: translate(5px, -5px); } }
+        @keyframes jackpot-text { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; } 50% { transform: translate(-50%, -50%) scale(1); } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+        @keyframes anticipation-glow { 0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0); } 50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); } }
+        @keyframes anticipation-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -223,6 +234,39 @@
             const d = new Date(); d.setHours(d.getHours() - 3); return d.toISOString().split('T')[0];
         };
 
+        // 中毒性MAX：報酬ティア決定関数（変動比率強化）
+        const determineRewardTier = (pityCounter, isFeverMode) => {
+            // 基本確率
+            let whiffChance = 60;
+            let normalChance = 25;
+            let bigChance = 10;
+            let jackpotChance = 5;
+
+            // 天井システム：スカが続くと確率上昇
+            const pityBonus = Math.min(pityCounter * 2, 30); // 最大30%ブースト
+            jackpotChance += pityBonus * 0.5;
+            bigChance += pityBonus * 0.5;
+            whiffChance -= pityBonus;
+
+            // フィーバーモード：レア確率2倍
+            if (isFeverMode) {
+                const originalBig = bigChance;
+                const originalJackpot = jackpotChance;
+                bigChance = Math.min(originalBig * 2, 40);
+                jackpotChance = Math.min(originalJackpot * 2, 30);
+                const boost = (bigChance - originalBig) + (jackpotChance - originalJackpot);
+                whiffChance -= boost;
+                normalChance = Math.max(normalChance - boost * 0.3, 10);
+            }
+
+            // 抽選
+            const roll = Math.random() * 100;
+            if (roll < jackpotChance) return 'jackpot';
+            if (roll < jackpotChance + bigChance) return 'big';
+            if (roll < jackpotChance + bigChance + normalChance) return 'normal';
+            return 'whiff';
+        };
+
         const Confetti = ({ type, theme }) => {
             const performanceColors = ['bg-yellow-400', 'bg-yellow-300', 'bg-gray-300', 'bg-gray-200'];
             const colors = performanceColors; 
@@ -253,6 +297,231 @@
                         />
                     ))}
                 </div>
+            );
+        };
+
+        // --- 中毒性MAX：4段階報酬演出システム ---
+
+        // ニアミス演出：金色のフラッシュ
+        const NearMissFlash = () => {
+            return (
+                <div
+                    className="fixed inset-0 pointer-events-none z-[300]"
+                    style={{
+                        background: 'radial-gradient(circle, rgba(255,215,0,0.4) 0%, transparent 70%)',
+                        animation: 'near-miss-flash 0.3s ease-out forwards',
+                    }}
+                />
+            );
+        };
+
+        // スカ演出（60%）: 最小限のSE + ニアミス10%
+        const RewardWhiff = ({ onComplete, showNearMiss }) => {
+            useEffect(() => {
+                // 地味なSE
+                AudioEngine.play([300, 250], 'sawtooth', 0.05, 0.03);
+                setTimeout(onComplete, 300);
+            }, [onComplete]);
+
+            return showNearMiss ? <NearMissFlash /> : null;
+        };
+
+        // ノーマル演出（25%）: 桜吹雪
+        const RewardNormal = ({ onComplete, centerX, centerY }) => {
+            const [particles, setParticles] = useState([]);
+
+            useEffect(() => {
+                // 桜吹雪のパーティクル生成（30個）
+                const newParticles = [];
+                for (let i = 0; i < 30; i++) {
+                    const angle = (Math.PI * 2 * i) / 30;
+                    const speed = 100 + Math.random() * 100;
+                    newParticles.push({
+                        id: i,
+                        x: centerX,
+                        y: centerY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        color: '#FFB7C5', // 桜色
+                        size: 8 + Math.random() * 4,
+                    });
+                }
+                setParticles(newParticles);
+
+                // SE
+                AudioEngine.play([400, 600, 800], 'sine', 0.15, 0.08);
+
+                setTimeout(() => {
+                    setParticles([]);
+                    onComplete();
+                }, 1500);
+            }, [centerX, centerY, onComplete]);
+
+            return (
+                <>
+                    {particles.map(p => (
+                        <div
+                            key={p.id}
+                            style={{
+                                position: 'fixed',
+                                left: p.x,
+                                top: p.y,
+                                width: `${p.size}px`,
+                                height: `${p.size}px`,
+                                backgroundColor: p.color,
+                                borderRadius: '50%',
+                                pointerEvents: 'none',
+                                zIndex: 250,
+                                boxShadow: `0 0 8px ${p.color}`,
+                                animation: 'reward-particle 1.5s ease-out forwards',
+                                '--vx': `${p.vx}px`,
+                                '--vy': `${p.vy}px`,
+                            }}
+                        />
+                    ))}
+                </>
+            );
+        };
+
+        // ビッグ演出（10%）: 画面全体を覆う豪華な花吹雪
+        const RewardBig = ({ onComplete }) => {
+            const [particles, setParticles] = useState([]);
+
+            useEffect(() => {
+                // 画面全体から花吹雪（100個）
+                const newParticles = [];
+                for (let i = 0; i < 100; i++) {
+                    newParticles.push({
+                        id: i,
+                        x: Math.random() * window.innerWidth,
+                        y: -20,
+                        color: ['#FF69B4', '#FFB7C5', '#FFC0CB', '#FF1493'][Math.floor(Math.random() * 4)],
+                        delay: Math.random() * 0.5,
+                        duration: 2 + Math.random() * 1,
+                    });
+                }
+                setParticles(newParticles);
+
+                // 豪華なSE
+                AudioEngine.play([523, 659, 784, 1047, 1319], 'triangle', 0.25, 0.15);
+
+                setTimeout(() => {
+                    setParticles([]);
+                    onComplete();
+                }, 3000);
+            }, [onComplete]);
+
+            return (
+                <>
+                    {/* 画面フラッシュ */}
+                    <div
+                        className="fixed inset-0 pointer-events-none z-[280]"
+                        style={{
+                            background: 'radial-gradient(circle, rgba(255,105,180,0.3) 0%, transparent 70%)',
+                            animation: 'big-flash 0.5s ease-out forwards',
+                        }}
+                    />
+                    {/* パーティクル */}
+                    {particles.map(p => (
+                        <div
+                            key={p.id}
+                            style={{
+                                position: 'fixed',
+                                left: p.x,
+                                top: p.y,
+                                width: '16px',
+                                height: '16px',
+                                backgroundColor: p.color,
+                                borderRadius: '50%',
+                                pointerEvents: 'none',
+                                zIndex: 290,
+                                boxShadow: `0 0 15px ${p.color}`,
+                                animation: `reward-fall ${p.duration}s ease-in ${p.delay}s forwards`,
+                            }}
+                        />
+                    ))}
+                </>
+            );
+        };
+
+        // ジャックポット演出（5%）: 金色の吹雪 + 画面振動
+        const RewardJackpot = ({ onComplete }) => {
+            const [particles, setParticles] = useState([]);
+
+            useEffect(() => {
+                // 画面振動
+                if (navigator.vibrate) {
+                    navigator.vibrate([100, 50, 100, 50, 200]);
+                }
+
+                // 金色の花吹雪（150個）
+                const newParticles = [];
+                for (let i = 0; i < 150; i++) {
+                    newParticles.push({
+                        id: i,
+                        x: Math.random() * window.innerWidth,
+                        y: -20,
+                        color: '#FFD700',
+                        delay: Math.random() * 0.8,
+                        duration: 2.5 + Math.random() * 1.5,
+                        size: 12 + Math.random() * 8,
+                    });
+                }
+                setParticles(newParticles);
+
+                // 祝砲SE
+                AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.35, 0.2);
+
+                setTimeout(() => {
+                    setParticles([]);
+                    onComplete();
+                }, 4000);
+            }, [onComplete]);
+
+            return (
+                <>
+                    {/* 金色のフラッシュ */}
+                    <div
+                        className="fixed inset-0 pointer-events-none z-[280]"
+                        style={{
+                            background: 'radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(255,165,0,0.3) 50%, transparent 100%)',
+                            animation: 'jackpot-flash 0.8s ease-out forwards',
+                        }}
+                    />
+                    {/* 画面振動エフェクト */}
+                    <div
+                        className="fixed inset-0 pointer-events-none z-[285]"
+                        style={{ animation: 'screen-shake 0.5s ease-out forwards' }}
+                    />
+                    {/* 金色パーティクル */}
+                    {particles.map(p => (
+                        <div
+                            key={p.id}
+                            style={{
+                                position: 'fixed',
+                                left: p.x,
+                                top: p.y,
+                                width: `${p.size}px`,
+                                height: `${p.size}px`,
+                                backgroundColor: p.color,
+                                borderRadius: '50%',
+                                pointerEvents: 'none',
+                                zIndex: 290,
+                                boxShadow: '0 0 20px rgba(255, 215, 0, 0.8)',
+                                animation: `reward-fall ${p.duration}s ease-in ${p.delay}s forwards`,
+                            }}
+                        />
+                    ))}
+                    {/* ジャックポットテキスト */}
+                    <div
+                        className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[295]"
+                        style={{ animation: 'jackpot-text 2s ease-out forwards' }}
+                    >
+                        <div className="text-8xl font-black text-yellow-400" style={{ textShadow: '0 0 30px rgba(255,215,0,1), 0 0 60px rgba(255,215,0,0.8)' }}>
+                            JACKPOT!!!
+                        </div>
+                    </div>
+                </>
             );
         };
 
@@ -512,7 +781,7 @@
 
 
         // --- タスク部品 ---
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false }) => {
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false, setRewardEffect, stats, setStats, setToastMessage }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
@@ -533,39 +802,69 @@
                 return () => clearInterval(timer);
             }, [task.challengeEndTime, task.completed]);
 
-            const handleToggle = (e) => {
-                e.stopPropagation(); // チェックボックスクリック時のみ発火させるため必須
+            // 中毒性MAX：新しいhandleToggle（期待の空白 + 変動比率強化）
+            const handleToggle = async (e) => {
+                e.stopPropagation();
                 if (task.completed || isCompleting) return onToggle(task);
-                
+
                 const rect = buttonRef.current ? buttonRef.current.getBoundingClientRect() : null;
-                const isChallenge = task.challengeEndTime && task.challengeEndTime > Date.now();
-                
-                // Checkbox Ignition Logic
+                const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+                const centerY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+
+                setIsCompleting(true);
+
+                // フェーズ1: 予兆アニメーション（期待の空白 - 0.8秒）
                 setAnimateCheckbox(true);
-                // "Kakin!" High pitch sound
-                AudioEngine.play([1200, 1800], 'square', 0.1, 0.05);
+                AudioEngine.play([800, 1000], 'sine', 0.08, 0.04);
 
-                const shouldShowConfetti = isChallenge || isLastInSection;
+                // 0.8秒の遅延（脳に「来るか！？」と予測させる）
+                await new Promise(resolve => setTimeout(resolve, 800));
 
-                if (shouldShowConfetti) {
-                    setConfettiType('performance');
-                    setIsCompleting(true);
-                    AudioEngine.play([523.25, 659.25, 783.99, 1046.50], 'triangle', 0.12, 0.06);
-                } else {
-                     // Small sparks for normal completion
-                     setConfettiType('ignition');
-                }
-                
-                setTimeout(() => { 
+                // フェーズ2: 報酬ティア決定
+                const isFeverMode = stats.feverEndTime > Date.now();
+                const tier = determineRewardTier(stats.pityCounter, isFeverMode);
+                console.log(`Reward Tier: ${tier}, Pity: ${stats.pityCounter}, Fever: ${isFeverMode}`);
+
+                // ニアミス判定（スカの10%）
+                const showNearMiss = tier === 'whiff' && Math.random() < 0.1;
+
+                // フェーズ3: タスク完了処理
+                onToggle(task);
+                onXpGain(task, rect, setConfettiType);
+
+                // フェーズ4: 報酬演出の発火
+                const effectComplete = () => {
+                    setRewardEffect(null);
                     setIsCompleting(false);
                     setAnimateCheckbox(false);
-                    onToggle(task); 
-                    onXpGain(task, rect, setConfettiType);
-                }, 400); 
+                };
+
+                if (tier === 'whiff') {
+                    setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} />);
+                    // スカなので天井カウンター+1
+                    setStats(prev => ({ ...prev, pityCounter: prev.pityCounter + 1 }));
+                } else if (tier === 'normal') {
+                    setRewardEffect(<RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                    // ノーマルなので天井カウンターリセット
+                    setStats(prev => ({ ...prev, pityCounter: 0 }));
+                } else if (tier === 'big') {
+                    setRewardEffect(<RewardBig onComplete={effectComplete} />);
+                    // ビッグ！天井リセット + フィーバーモード開始（3分）
+                    const feverEnd = Date.now() + 3 * 60 * 1000;
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd }));
+                    setToastMessage('🔥 FEVER MODE!! 3分間レア確率2倍！');
+                } else if (tier === 'jackpot') {
+                    setRewardEffect(<RewardJackpot onComplete={effectComplete} />);
+                    // ジャックポット！！！天井リセット + フィーバーモード開始（3分）
+                    const feverEnd = Date.now() + 3 * 60 * 1000;
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd }));
+                    setToastMessage('🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
+                }
             };
 
             const springClass = isCompleting ? "animate-spring" : "";
             const checkboxPop = animateCheckbox ? "animate-checkbox-pop" : "";
+            const anticipationGlow = animateCheckbox ? "animate-anticipation-glow animate-anticipation-pulse" : "";
             // Section 1以外はクリック不可 (pointer-events-none)
             const disabledClass = !isFocusedSection && !task.completed ? "pointer-events-none opacity-50 grayscale" : "";
 
@@ -595,11 +894,11 @@
 
                     <div className="pt-0.5 pr-4 flex-shrink-0 relative" ref={buttonRef} onClick={(e) => handleToggle(e)}>
                         {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
-                        <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${
-                            task.completed || isCompleting 
-                                ? 'bg-duo-blue border-duo-blue scale-110' 
+                        <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${
+                            task.completed || isCompleting
+                                ? 'bg-duo-blue border-duo-blue scale-110'
                                 : isFocusedSection
-                                    ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50' 
+                                    ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50'
                                     : 'border-gray-300 bg-gray-200'
                         }`}>
                             {(task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
@@ -724,6 +1023,8 @@
                 tasksCreated: 0,
                 tasksPurged: 0,
                 lastWakeupChestTime: 0, // 最後にスリープ復帰宝箱を開けた時刻
+                pityCounter: 0, // 天井カウンター（スカが続くと上昇）
+                feverEndTime: 0, // フィーバーモード終了時刻
             }));
             
             const SECTION_SIZE = 4;
@@ -741,6 +1042,9 @@
             const [progressGlow, setProgressGlow] = useState(false);
             const [showIgnition, setShowIgnition] = useState(false);
             const [floatingTexts, setFloatingTexts] = useState([]);
+
+            // 中毒性MAX：報酬演出システムのstate
+            const [rewardEffect, setRewardEffect] = useState(null);
 
             const [contextMenu, setContextMenu] = useState(null);
 
@@ -1650,6 +1954,10 @@
                                                             onContextMenu={handleContextMenu}
                                                             isFocusedSection={sectionNum === 1}
                                                             isLastInSection={isLast}
+                                                            setRewardEffect={setRewardEffect}
+                                                            stats={stats}
+                                                            setStats={setStats}
+                                                            setToastMessage={setToastMessage}
                                                         />
                                                     </div>
                                                 </React.Fragment>
@@ -1677,6 +1985,10 @@
                                                     onContextMenu={handleContextMenu}
                                                     isFocusedSection={sectionCounter === 1}
                                                     isLastInSection={isLast}
+                                                    setRewardEffect={setRewardEffect}
+                                                    stats={stats}
+                                                    setStats={setStats}
+                                                    setToastMessage={setToastMessage}
                                                 />
                                             </div>
                                         );
@@ -1706,6 +2018,10 @@
                                                         isDragging={false}
                                                         isDeadlineView={activeListId==='deadline'}
                                                         activeTheme={stats.currentTheme}
+                                                        setRewardEffect={setRewardEffect}
+                                                        stats={stats}
+                                                        setStats={setStats}
+                                                        setToastMessage={setToastMessage}
                                                     />
                                                 ))}
                                             </div>
@@ -1719,6 +2035,8 @@
                     {/* Effects */}
                     {toastMessage && <Toast message={toastMessage} onClose={closeToast} />}
                     {floatingTexts.map(t => <FloatingText key={t.id} x={t.x} y={t.y} text={t.text} color={t.color} scale={t.scale} />)}
+                    {/* 中毒性MAX：報酬演出 */}
+                    {rewardEffect}
                     {/* PerformanceOverlay removed */}
                     {showChestModal && <ChestModal onClose={() => setShowChestModal(false)} onReward={handleReward} />}
                     {showIgnition && <IgnitionModal />}
