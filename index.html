@@ -332,90 +332,175 @@
             );
         };
 
-        // --- ログインガチャモーダル ---
+        // --- ログインガチャモーダル（3リールスロット）---
         const LoginGachaModal = ({ onClose }) => {
-            const [state, setState] = useState('idle');
-            const [reward, setReward] = useState(null);
+            const [state, setState] = useState('idle'); // idle, spinning, reel1, reel2, reel3, result
+            const [reels, setReels] = useState([null, null, null]);
+            const [finalReward, setFinalReward] = useState(null);
+            const [isReach, setIsReach] = useState(false);
+
+            // レア度定義
+            const rewards = [
+                { icon: '💎', amount: 5, rarity: 'common', color: 'text-gray-400', bg: 'bg-gray-500', chance: 40 },
+                { icon: '💎', amount: 10, rarity: 'rare', color: 'text-blue-400', bg: 'bg-blue-500', chance: 30 },
+                { icon: '💎', amount: 25, rarity: 'epic', color: 'text-purple-400', bg: 'bg-purple-500', chance: 20 },
+                { icon: '💎', amount: 50, rarity: 'legendary', color: 'text-yellow-400', bg: 'bg-yellow-500', chance: 8 },
+                { icon: '💎', amount: 100, rarity: 'mythic', color: 'text-pink-400', bg: 'bg-gradient-to-r from-pink-500 to-purple-500', chance: 2 },
+            ];
+
+            const getRandomReward = () => {
+                const roll = Math.random() * 100;
+                let cumulative = 0;
+                for (const reward of rewards) {
+                    cumulative += reward.chance;
+                    if (roll < cumulative) return reward;
+                }
+                return rewards[0];
+            };
 
             const handleSpin = () => {
                 if (state !== 'idle') return;
                 setState('spinning');
-                AudioEngine.play([300, 400, 500], 'sine', 0.15, 0.1);
+                setReels([null, null, null]);
+                setIsReach(false);
+                AudioEngine.play([400, 500, 600], 'square', 0.1, 0.05);
 
+                let r1, r2, r3;
+                let reachOccurred = false;
+
+                // リール1停止（600ms後）
                 setTimeout(() => {
-                    const roll = Math.random() * 100;
-                    let amount = 0;
+                    r1 = getRandomReward();
+                    setReels([r1, null, null]);
+                    setState('reel1');
+                    AudioEngine.play([600], 'sine', 0.15, 0.05);
 
-                    // シンプルな確率分布
-                    if (roll < 50) {
-                        amount = 5;
-                    } else if (roll < 80) {
-                        amount = 10;
-                    } else if (roll < 95) {
-                        amount = 20;
-                    } else {
-                        amount = 50;
-                    }
+                    // リール2停止（1200ms後）
+                    setTimeout(() => {
+                        // 30%の確率でリーチ（r1と同じ）
+                        if (Math.random() < 0.3) {
+                            r2 = r1;
+                            reachOccurred = true;
+                            setIsReach(true);
+                            AudioEngine.play([800, 900, 1000], 'sine', 0.2, 0.1);
+                        } else {
+                            // 違うものを選ぶ
+                            do {
+                                r2 = getRandomReward();
+                            } while (r2.amount === r1.amount);
+                        }
 
-                    setReward(amount);
-                    setState('result');
-                    AudioEngine.play([600, 800, 1000], 'sine', 0.2, 0.15);
+                        setReels([r1, r2, null]);
+                        setState('reel2');
+                        AudioEngine.play([700], 'sine', 0.15, 0.05);
 
-                    // 10分間の制限時間付きボーナスとして保存
-                    const expiry = Date.now() + 10 * 60 * 1000; // 10分後
-                    onClose(amount, expiry);
-                }, 1200);
+                        // リール3停止（800ms後、リーチ時は1200ms）
+                        setTimeout(() => {
+                            let finalAmount = 0;
+
+                            if (reachOccurred) {
+                                // リーチ時: 50%で成功、50%でニアミス
+                                if (Math.random() < 0.5) {
+                                    r3 = r1; // 大当たり！
+                                    finalAmount = r1.amount * 3; // 3倍
+                                    AudioEngine.play([1000, 1200, 1400, 1600], 'sine', 0.25, 0.15);
+                                } else {
+                                    // ニアミス（わざと外す）
+                                    do {
+                                        r3 = getRandomReward();
+                                    } while (r3.amount === r1.amount);
+                                    finalAmount = 5; // 最低保証
+                                    AudioEngine.play([400, 300, 200], 'sawtooth', 0.1, 0.1);
+                                }
+                            } else {
+                                r3 = getRandomReward();
+                                finalAmount = r3.amount;
+                                AudioEngine.play([800], 'sine', 0.15, 0.05);
+                            }
+
+                            setReels([r1, r2, r3]);
+                            setFinalReward({ amount: finalAmount, isJackpot: reachOccurred && r3.amount === r1.amount, rarity: r3.rarity });
+                            setState('result');
+                        }, reachOccurred ? 1200 : 800);
+                    }, 600);
+                }, 600);
             };
 
             return (
-                <div className="fixed inset-0 bg-black/80 z-[300] flex items-center justify-center backdrop-blur-md animate-in fade-in">
-                    <div className="flex flex-col items-center max-w-md mx-4">
-                        <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-3xl p-8 shadow-2xl border-4 border-white/20">
+                <div className="fixed inset-0 bg-black/90 z-[300] flex items-center justify-center backdrop-blur-md animate-in fade-in">
+                    <div className="flex flex-col items-center max-w-lg mx-4">
+                        <div className="bg-gradient-to-br from-purple-700 to-pink-700 rounded-3xl p-8 shadow-2xl border-4 border-yellow-400/50">
                             <div className="text-center mb-6">
-                                <h2 className="text-3xl font-black text-white mb-2">おかえりなさい！</h2>
-                                <p className="text-white/80 text-sm">復帰ボーナスを獲得しよう</p>
+                                <h2 className="text-4xl font-black text-yellow-300 mb-2 drop-shadow-lg">🎰 LOGIN BONUS 🎰</h2>
+                                <p className="text-white/90 text-sm">3つ揃えば大当たり！</p>
                             </div>
 
-                            <div className="bg-white/10 rounded-2xl p-8 mb-6 flex items-center justify-center min-h-[200px]">
-                                {state === 'idle' && (
-                                    <div className="text-center">
-                                        <div className="text-8xl mb-4 animate-bounce-soft">🎰</div>
-                                        <p className="text-white font-bold text-lg">スロットを回す</p>
-                                    </div>
-                                )}
-                                {state === 'spinning' && (
-                                    <div className="text-center">
-                                        <div className="text-8xl animate-spin-slow">🎰</div>
-                                    </div>
-                                )}
-                                {state === 'result' && (
-                                    <div className="text-center animate-in zoom-in">
-                                        <div className="text-6xl mb-4">💎</div>
-                                        <p className="text-yellow-300 text-5xl font-black">+{reward}💎</p>
+                            {/* スロットリール */}
+                            <div className="bg-black/40 rounded-2xl p-6 mb-6">
+                                <div className="flex gap-4 justify-center">
+                                    {[0, 1, 2].map(i => (
+                                        <div key={i} className={`w-24 h-32 bg-white/10 rounded-xl border-4 border-yellow-400/30 flex items-center justify-center relative overflow-hidden ${state === 'spinning' && reels[i] === null ? 'animate-slot-spin' : ''} ${isReach && i === 2 && state === 'reel2' ? 'animate-pulse border-yellow-400' : ''}`}>
+                                            {reels[i] ? (
+                                                <div className={`flex flex-col items-center animate-in zoom-in ${reels[i].rarity === 'mythic' ? 'animate-rainbow' : ''}`}>
+                                                    <div className="text-5xl mb-1">{reels[i].icon}</div>
+                                                    <div className={`text-2xl font-black ${reels[i].color} drop-shadow-lg`}>
+                                                        {reels[i].amount}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-6xl opacity-20 animate-pulse">?</div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {isReach && state === 'reel2' && (
+                                    <div className="text-center mt-4">
+                                        <p className="text-yellow-300 text-2xl font-black animate-pulse">🔥 リーチ！ 🔥</p>
                                     </div>
                                 )}
                             </div>
 
+                            {/* ボタンエリア */}
                             {state === 'idle' && (
                                 <button
                                     onClick={handleSpin}
-                                    className="w-full bg-yellow-400 text-purple-900 px-8 py-4 rounded-2xl font-black text-2xl border-b-4 border-yellow-600 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105 hover:bg-yellow-300"
+                                    className="w-full bg-yellow-400 text-purple-900 px-8 py-5 rounded-2xl font-black text-3xl border-b-4 border-yellow-600 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105 hover:bg-yellow-300 shadow-xl"
                                 >
                                     スロットを回す
                                 </button>
                             )}
+
                             {state === 'result' && (
                                 <div className="text-center">
+                                    {finalReward.isJackpot ? (
+                                        <div className="mb-4 animate-in zoom-in">
+                                            <div className="text-6xl mb-2">🎊🎊🎊</div>
+                                            <p className="text-yellow-300 text-4xl font-black mb-2 animate-bounce">大当たり！</p>
+                                            <p className="text-white text-5xl font-black">💎 {finalReward.amount}💎</p>
+                                        </div>
+                                    ) : (
+                                        <div className="mb-4 animate-in slide-in-from-bottom">
+                                            <p className="text-white text-3xl font-black">💎 {finalReward.amount}💎</p>
+                                        </div>
+                                    )}
+
                                     <div className="bg-red-500/20 border-2 border-red-400 rounded-xl p-4 mb-4">
                                         <p className="text-red-200 font-bold text-lg mb-1">⚠️ 制限時間: 10分</p>
                                         <p className="text-red-100 text-sm">10分以内にタスクを完了しないと<br/>このボーナスは消滅します</p>
                                     </div>
                                     <button
-                                        onClick={() => onClose(reward, Date.now() + 10 * 60 * 1000)}
-                                        className="w-full bg-white text-purple-900 px-8 py-4 rounded-2xl font-black text-xl border-b-4 border-gray-300 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105"
+                                        onClick={() => onClose(finalReward.amount, Date.now() + 10 * 60 * 1000)}
+                                        className="w-full bg-white text-purple-900 px-8 py-4 rounded-2xl font-black text-xl border-b-4 border-gray-300 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105 shadow-lg"
                                     >
                                         今すぐ作業を開始する
                                     </button>
+                                </div>
+                            )}
+
+                            {(state === 'spinning' || state === 'reel1' || state === 'reel2') && (
+                                <div className="text-center">
+                                    <p className="text-white text-xl font-bold animate-pulse">回転中...</p>
                                 </div>
                             )}
                         </div>
