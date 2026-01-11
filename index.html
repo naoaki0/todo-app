@@ -81,6 +81,7 @@
         body { font-family: 'Roboto', 'Noto Sans JP', sans-serif; -webkit-font-smoothing: antialiased; }
         @keyframes confetti-explode { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 60% { opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
         @keyframes cherry-fall { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: 0; } }
+        @keyframes confetti-rise { 0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; } 50% { opacity: 1; } 100% { transform: translateX(var(--random-x)) translateY(-100vh) rotate(var(--random-rotation)); opacity: 0; } }
         
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -255,8 +256,93 @@
             );
         };
 
+        // --- 花吹雪パーティクルシステム ---
+        const ConfettiParticle = ({ x, y, color, delay, duration }) => {
+            const randomX = Math.random() * 100 - 50; // -50 to 50
+            const randomRotation = Math.random() * 720 - 360;
+            const randomScale = 0.5 + Math.random() * 0.5;
+
+            return (
+                <div
+                    style={{
+                        position: 'fixed',
+                        left: x,
+                        bottom: y,
+                        width: '12px',
+                        height: '12px',
+                        backgroundColor: color,
+                        opacity: 0.9,
+                        borderRadius: '2px',
+                        pointerEvents: 'none',
+                        zIndex: 250,
+                        animation: `confetti-rise ${duration}s ease-out ${delay}s forwards`,
+                        transform: `scale(${randomScale})`,
+                        boxShadow: color === '#FFD700' ? '0 0 10px rgba(255, 215, 0, 0.8)' : '0 0 10px rgba(192, 192, 192, 0.8)',
+                        '--random-x': `${randomX}px`,
+                        '--random-rotation': `${randomRotation}deg`,
+                    }}
+                />
+            );
+        };
+
+        const ConfettiSystem = ({ rarity }) => {
+            const [particles, setParticles] = useState([]);
+
+            useEffect(() => {
+                // レアリティに応じてパーティクル数を決定
+                let count = 0;
+                let goldRatio = 0;
+
+                if (rarity === 'common') {
+                    count = 20;
+                    goldRatio = 0.1; // 10% gold
+                } else if (rarity === 'rare') {
+                    count = 40;
+                    goldRatio = 0.3; // 30% gold
+                } else if (rarity === 'epic') {
+                    count = 60;
+                    goldRatio = 0.5; // 50% gold
+                } else if (rarity === 'legendary') {
+                    count = 100;
+                    goldRatio = 0.7; // 70% gold
+                } else if (rarity === 'mythic') {
+                    count = 150;
+                    goldRatio = 0.9; // 90% gold
+                }
+
+                const newParticles = [];
+                for (let i = 0; i < count; i++) {
+                    const isGold = Math.random() < goldRatio;
+                    const fromLeft = i % 2 === 0; // 左右交互に
+
+                    newParticles.push({
+                        id: i,
+                        x: fromLeft ? '5%' : '95%',
+                        y: '0',
+                        color: isGold ? '#FFD700' : '#C0C0C0',
+                        delay: Math.random() * 0.5,
+                        duration: 1.5 + Math.random() * 1,
+                    });
+                }
+
+                setParticles(newParticles);
+
+                // 3秒後にクリーンアップ
+                const timeout = setTimeout(() => setParticles([]), 3000);
+                return () => clearTimeout(timeout);
+            }, [rarity]);
+
+            return (
+                <>
+                    {particles.map(p => (
+                        <ConfettiParticle key={p.id} {...p} />
+                    ))}
+                </>
+            );
+        };
+
         // --- 宝箱モーダル ---
-        const ChestModal = ({ onClose, onReward }) => {
+        const ChestModal = ({ onClose, onReward, isWakeupChest = false }) => {
             const [state, setState] = useState('idle');
             const [reward, setReward] = useState(null);
 
@@ -264,35 +350,118 @@
                 if (state !== 'idle') return;
                 setState('shaking');
                 AudioEngine.play([200, 250, 300], 'sawtooth', 0.1, 0.05);
-                
+
                 setTimeout(() => {
                     const roll = Math.random() * 100;
                     console.log("Chest Roll:", roll);
                     let result = {};
 
-                    if (roll < 70) { 
-                        result = { type: 'gems', amount: 10, text: '10 Gems', icon: Icons.Gem }; 
-                    } else if (roll < 90) { 
-                        result = { type: 'gems', amount: 40, text: '40 Gems!', icon: Icons.Gem }; 
-                    } else if (roll < 99) { 
-                        if (Math.random() < 0.5) {
-                             result = { type: 'gems', amount: 100, text: '100 Gems!!', icon: Icons.Gem };
+                    // レアリティベースの報酬テーブル（中毒性重視）
+                    if (roll < 40) {
+                        // Common (40%)
+                        result = {
+                            type: 'gems',
+                            amount: 15,
+                            text: '💎 15 Gems',
+                            icon: Icons.Gem,
+                            rarity: 'common',
+                            rarityText: 'COMMON'
+                        };
+                    } else if (roll < 70) {
+                        // Rare (30%)
+                        result = {
+                            type: 'gems',
+                            amount: 50,
+                            text: '💎 50 Gems!',
+                            icon: Icons.Gem,
+                            rarity: 'rare',
+                            rarityText: 'RARE'
+                        };
+                    } else if (roll < 88) {
+                        // Epic (18%)
+                        const isGems = Math.random() < 0.6;
+                        if (isGems) {
+                            result = {
+                                type: 'gems',
+                                amount: 120,
+                                text: '💎 120 Gems!!',
+                                icon: Icons.Gem,
+                                rarity: 'epic',
+                                rarityText: 'EPIC'
+                            };
                         } else {
-                             result = { type: 'item', itemId: 'freeze', text: '連続フリーズ', icon: Icons.Snowflake };
+                            result = {
+                                type: 'item',
+                                itemId: 'freeze',
+                                text: '❄️ 連続フリーズ',
+                                icon: Icons.Snowflake,
+                                rarity: 'epic',
+                                rarityText: 'EPIC'
+                            };
                         }
-                    } else { 
-                        result = { type: 'item', itemId: 'ticket', text: '蘇生チケット', icon: Icons.Ticket }; 
+                    } else if (roll < 97) {
+                        // Legendary (9%)
+                        const choice = Math.random();
+                        if (choice < 0.5) {
+                            result = {
+                                type: 'gems',
+                                amount: 300,
+                                text: '💎 300 Gems!!!',
+                                icon: Icons.Gem,
+                                rarity: 'legendary',
+                                rarityText: 'LEGENDARY'
+                            };
+                        } else {
+                            result = {
+                                type: 'item',
+                                itemId: 'ticket',
+                                text: '🎫 蘇生チケット',
+                                icon: Icons.Ticket,
+                                rarity: 'legendary',
+                                rarityText: 'LEGENDARY'
+                            };
+                        }
+                    } else {
+                        // Mythic (3%)
+                        result = {
+                            type: 'gems',
+                            amount: 777,
+                            text: '💎 777 JACKPOT!!!',
+                            icon: Icons.Gem,
+                            rarity: 'mythic',
+                            rarityText: 'MYTHIC'
+                        };
                     }
 
                     setReward(result);
                     setState('opened');
-                    AudioEngine.play([400, 600, 800, 1200], 'sine', 0.2, 0.1);
+
+                    // レアリティに応じた効果音
+                    if (result.rarity === 'mythic') {
+                        AudioEngine.play([600, 800, 1000, 1200, 1500], 'sine', 0.3, 0.15);
+                    } else if (result.rarity === 'legendary') {
+                        AudioEngine.play([500, 700, 900, 1100], 'sine', 0.25, 0.12);
+                    } else {
+                        AudioEngine.play([400, 600, 800, 1000], 'sine', 0.2, 0.1);
+                    }
+
                     onReward(result);
                 }, 800);
             };
 
+            const getRarityColor = (rarity) => {
+                if (rarity === 'common') return 'text-gray-300';
+                if (rarity === 'rare') return 'text-blue-400';
+                if (rarity === 'epic') return 'text-purple-400';
+                if (rarity === 'legendary') return 'text-yellow-400';
+                if (rarity === 'mythic') return 'text-red-500';
+                return 'text-white';
+            };
+
             return (
                 <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in">
+                    {state === 'opened' && reward && <ConfettiSystem rarity={reward.rarity} />}
+
                     <div className="flex flex-col items-center">
                         <div className="relative mb-8 cursor-pointer group" onClick={handleOpen}>
                             {state === 'idle' && (
@@ -315,11 +484,19 @@
                         </div>
 
                         <div className="text-white text-center min-h-[100px]">
-                            {state === 'idle' && <p className="text-2xl font-black animate-pulse">セクション完了！<br/>宝箱を開ける</p>}
+                            {state === 'idle' && (
+                                <p className="text-2xl font-black animate-pulse">
+                                    {isWakeupChest ? 'おかえり！' : 'セクション完了！'}
+                                    <br/>
+                                    宝箱を開ける
+                                </p>
+                            )}
                             {state === 'shaking' && <p className="text-2xl font-black text-yellow-300">ゴゴゴゴ...</p>}
                             {state === 'opened' && (
                                 <div className="animate-in zoom-in slide-in-from-bottom duration-500">
-                                    <p className="text-yellow-300 text-sm font-bold uppercase tracking-widest mb-1">GET REWARD</p>
+                                    <p className={`text-sm font-black uppercase tracking-widest mb-1 ${getRarityColor(reward.rarity)}`}>
+                                        {reward.rarityText}
+                                    </p>
                                     <p className="text-4xl font-black mb-6">{reward?.text}</p>
                                     <button onClick={onClose} className="bg-white text-duo-green px-8 py-3 rounded-2xl font-black text-xl border-b-4 border-gray-200 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105">
                                         受け取る
@@ -546,6 +723,7 @@
                 flowCapacitorEndTime: 0,
                 tasksCreated: 0,
                 tasksPurged: 0,
+                lastWakeupChestTime: 0, // 最後にスリープ復帰宝箱を開けた時刻
             }));
             
             const SECTION_SIZE = 4;
@@ -587,6 +765,35 @@
                 window.addEventListener('click', handleClick);
                 return () => window.removeEventListener('click', handleClick);
             }, []);
+
+            // スリープ検知：PCスリープから復帰したら宝箱表示
+            useEffect(() => {
+                let lastCheckTime = Date.now();
+
+                const interval = setInterval(() => {
+                    const now = Date.now();
+                    const timeSinceLastCheck = now - lastCheckTime;
+
+                    // 通常は1秒だが、3秒以上経過していたらスリープがあったと判定
+                    if (timeSinceLastCheck > 3000) {
+                        // 前回の宝箱から30分以上経過している場合のみ表示
+                        const timeSinceLastChest = now - (stats.lastWakeupChestTime || 0);
+                        const MIN_INTERVAL = 30 * 60 * 1000; // 30分
+
+                        if (timeSinceLastChest >= MIN_INTERVAL) {
+                            console.log('Sleep detected, showing wakeup chest');
+                            setShowChestModal(true);
+                            setStats(prev => ({ ...prev, lastWakeupChestTime: now }));
+                        } else {
+                            console.log('Sleep detected but chest shown recently, skipping');
+                        }
+                    }
+
+                    lastCheckTime = now;
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }, [stats.lastWakeupChestTime]);
 
             useEffect(() => {
                 localStorage.setItem('duo_v18_tasks', JSON.stringify(tasks));
