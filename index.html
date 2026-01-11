@@ -359,8 +359,15 @@
                 }
                 setParticles(newParticles);
 
-                // 残念SE
-                AudioEngine.play([400, 350, 300, 250], 'sawtooth', 0.08, 0.05);
+                // 🎰 残念SE: より長く、より落胆感のある音
+                if (showNearMiss) {
+                    // ニアミス: 一瞬「当たり！？」と思わせてから落とす
+                    AudioEngine.play([800, 1000], 'sine', 0.15, 0.1);
+                    setTimeout(() => AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.15, 0.2), 100);
+                } else {
+                    // 通常スカ: ガッカリ音
+                    AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.12, 0.18);
+                }
 
                 setTimeout(() => {
                     setParticles([]);
@@ -442,8 +449,15 @@
                 // 拡散リング3つ
                 setRings([{ id: 1 }, { id: 2 }, { id: 3 }]);
 
-                // 華やかSE
-                AudioEngine.play([523, 659, 784, 1047], 'sine', 0.2, 0.12);
+                // 🎰 当たりSE: ベル音 → コイン音連続
+                // ベル音（チーン！）
+                AudioEngine.play([2093, 2093], 'sine', 0.25, 0.12);
+                // コインがチャリンチャリン落ちる音
+                setTimeout(() => AudioEngine.play([880, 1047], 'triangle', 0.18, 0.06), 150);
+                setTimeout(() => AudioEngine.play([932, 1109], 'triangle', 0.16, 0.05), 250);
+                setTimeout(() => AudioEngine.play([987, 1175], 'triangle', 0.14, 0.05), 340);
+                setTimeout(() => AudioEngine.play([1047, 1245], 'triangle', 0.12, 0.04), 420);
+                setTimeout(() => AudioEngine.play([1109, 1319], 'triangle', 0.1, 0.04), 490);
 
                 setTimeout(() => {
                     setParticles([]);
@@ -546,9 +560,22 @@
                 }
                 setParticles(newParticles);
 
-                // 豪華なSE連打
-                AudioEngine.play([523, 659, 784, 1047, 1319, 1568], 'triangle', 0.3, 0.18);
-                setTimeout(() => AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.28, 0.16), 200);
+                // 🎰 BIG当たりSE: ドラムロール → ファンファーレ → ベル連打
+                // ドラムロール風（連続音）
+                AudioEngine.play([200, 210, 220, 230], 'sawtooth', 0.2, 0.05);
+                setTimeout(() => AudioEngine.play([210, 220, 230, 240], 'sawtooth', 0.22, 0.05), 60);
+                setTimeout(() => AudioEngine.play([220, 230, 240, 250], 'sawtooth', 0.24, 0.05), 120);
+                setTimeout(() => AudioEngine.play([230, 240, 250, 260], 'sawtooth', 0.26, 0.05), 180);
+
+                // ファンファーレ（豪華な上昇音階）
+                setTimeout(() => AudioEngine.play([523, 659, 784, 1047, 1319, 1568], 'triangle', 0.32, 0.2), 300);
+                setTimeout(() => AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.3, 0.18), 500);
+
+                // ベル連打（チーンチーンチーン！）
+                setTimeout(() => AudioEngine.play([2093], 'sine', 0.28, 0.08), 800);
+                setTimeout(() => AudioEngine.play([2349], 'sine', 0.3, 0.08), 950);
+                setTimeout(() => AudioEngine.play([2637], 'sine', 0.32, 0.08), 1100);
+                setTimeout(() => AudioEngine.play([2093, 2349, 2637], 'sine', 0.35, 0.12), 1250);
 
                 setTimeout(() => {
                     setParticles([]);
@@ -701,10 +728,36 @@
                 }
                 setParticles(newParticles);
 
-                // 祝砲SE 連打
-                AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.38, 0.22);
-                setTimeout(() => AudioEngine.play([784, 1047, 1319, 1568, 2093, 2637], 'triangle', 0.36, 0.2), 150);
-                setTimeout(() => AudioEngine.play([1047, 1319, 1568, 2093, 2637, 3136], 'sine', 0.34, 0.18), 300);
+                // 🎰 JACKPOT究極SE: サイレン → 爆発 → ファンファーレ → ベル狂乱 → 5秒間鳴り続ける
+                // サイレン音（上昇下降を繰り返す）
+                AudioEngine.play([400, 800], 'sawtooth', 0.3, 0.15);
+                setTimeout(() => AudioEngine.play([800, 400], 'sawtooth', 0.3, 0.15), 150);
+                setTimeout(() => AudioEngine.play([400, 900], 'sawtooth', 0.32, 0.15), 300);
+                setTimeout(() => AudioEngine.play([900, 400], 'sawtooth', 0.32, 0.15), 450);
+
+                // 爆発音（ドカーン！）
+                setTimeout(() => AudioEngine.play([100, 80, 60, 40], 'sawtooth', 0.4, 0.2), 600);
+
+                // 究極ファンファーレ（3連続上昇音階）
+                setTimeout(() => AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.38, 0.22), 850);
+                setTimeout(() => AudioEngine.play([784, 1047, 1319, 1568, 2093, 2637], 'triangle', 0.36, 0.2), 1050);
+                setTimeout(() => AudioEngine.play([1047, 1319, 1568, 2093, 2637, 3136], 'sine', 0.34, 0.18), 1250);
+
+                // ベル狂乱連打（10回以上のベル音）
+                setTimeout(() => AudioEngine.play([2093], 'sine', 0.35, 0.08), 1500);
+                setTimeout(() => AudioEngine.play([2349], 'sine', 0.36, 0.08), 1620);
+                setTimeout(() => AudioEngine.play([2637], 'sine', 0.37, 0.08), 1740);
+                setTimeout(() => AudioEngine.play([2093, 2349], 'sine', 0.38, 0.09), 1860);
+                setTimeout(() => AudioEngine.play([2349, 2637], 'sine', 0.38, 0.09), 1980);
+                setTimeout(() => AudioEngine.play([2637, 3136], 'sine', 0.38, 0.09), 2100);
+                setTimeout(() => AudioEngine.play([2093, 2349, 2637], 'sine', 0.39, 0.1), 2220);
+                setTimeout(() => AudioEngine.play([2349, 2637, 3136], 'sine', 0.39, 0.1), 2340);
+                setTimeout(() => AudioEngine.play([2093, 2637], 'sine', 0.4, 0.1), 2460);
+                setTimeout(() => AudioEngine.play([2349, 3136], 'sine', 0.4, 0.1), 2580);
+                setTimeout(() => AudioEngine.play([2093, 2349, 2637, 3136], 'sine', 0.42, 0.15), 2700);
+
+                // 最後の大爆発音（超強調）
+                setTimeout(() => AudioEngine.play([3136, 2637, 2093, 1568, 1319, 1047], 'sine', 0.45, 0.3), 2900);
 
                 setTimeout(() => {
                     setParticles([]);
@@ -1128,10 +1181,28 @@
 
                 // フェーズ1: 予兆アニメーション（期待の空白 - 0.8秒）
                 setAnimateCheckbox(true);
-                AudioEngine.play([800, 1000], 'sine', 0.08, 0.04);
+
+                // 🎰 クリック音: 心地よいカチッ
+                AudioEngine.play([1200, 600], 'square', 0.08, 0.02);
+
+                // 🎰 スロットマシン風ドラムロール（0.8秒間）
+                // ティックタック...と加速していく期待感
+                setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 0);
+                setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 80);
+                setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 160);
+                setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 240);
+                setTimeout(() => AudioEngine.play([650], 'square', 0.05, 0.025), 320);
+                setTimeout(() => AudioEngine.play([420], 'square', 0.05, 0.025), 400);
+                setTimeout(() => AudioEngine.play([700], 'square', 0.06, 0.025), 480);
+                setTimeout(() => AudioEngine.play([450], 'square', 0.06, 0.025), 560);
+                setTimeout(() => AudioEngine.play([800], 'square', 0.07, 0.025), 640);
+                setTimeout(() => AudioEngine.play([500], 'square', 0.07, 0.025), 720);
 
                 // 0.8秒の遅延（脳に「来るか！？」と予測させる）
                 await new Promise(resolve => setTimeout(resolve, 800));
+
+                // 🎰 リール停止音: カシャン！
+                AudioEngine.play([300, 200], 'square', 0.18, 0.08);
 
                 // フェーズ2: 報酬ティア決定
                 const isFeverMode = stats.feverEndTime > Date.now();
