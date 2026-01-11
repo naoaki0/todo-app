@@ -1395,7 +1395,8 @@
                                     {incomplete.map((t, index) => {
                                         const isFirst = index === 0;
                                         const showSectionHeader = isFirst || t.isSectionHead;
-                                        
+                                        const isFirstTask = index === 0; // 一番上のタスク
+
                                         if (showSectionHeader) {
                                             sectionCounter++;
                                             const sectionNum = sectionCounter;
@@ -1425,6 +1426,7 @@
                                                         )}
                                                     </div>
                                                     <div
+                                                        className={`transition-all duration-300 ${!isFirstTask ? 'opacity-30 hover:opacity-100 scale-95' : 'scale-100'}`}
                                                         onDragOver={(e) => handleDragOver(e, t)}
                                                         onDrop={(e) => handleDrop(e, t)}
                                                     >
@@ -1447,11 +1449,12 @@
                                                 </React.Fragment>
                                             );
                                         }
-                                        
+
                                         const isLast = isLastTaskInSection(index);
                                         return (
                                             <div
                                                 key={t.id}
+                                                className={`transition-all duration-300 ${!isFirstTask ? 'opacity-30 hover:opacity-100 scale-95' : 'scale-100'}`}
                                                 onDragOver={(e) => handleDragOver(e, t)}
                                                 onDrop={(e) => handleDrop(e, t)}
                                             >
