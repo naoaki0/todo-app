@@ -257,13 +257,14 @@
             const d = new Date(); d.setHours(d.getHours() - 3); return d.toISOString().split('T')[0];
         };
 
-        // 中毒性MAX：報酬ティア決定関数（変動比率強化）
+        // 🎰 LDWS理論：報酬ティア決定関数（損失を勝利に偽装）
         const determineRewardTier = (pityCounter, isFeverMode) => {
-            // 基本確率
-            let whiffChance = 60;
-            let normalChance = 25;
-            let bigChance = 10;
-            let jackpotChance = 5;
+            // 基本確率（LDWS構造）
+            let whiffChance = 30;      // 完全ハズレ（悔しさ）
+            let smallChance = 40;      // 小当たり（延命措置・LDWs）
+            let normalChance = 22;     // 満足感（習慣化）
+            let bigChance = 7;         // 強い快楽（中毒の維持）
+            let jackpotChance = 1;     // 神話的成功（射幸心の核心）
 
             // 天井システム：スカが続くと確率上昇
             const pityBonus = Math.min(pityCounter * 2, 30); // 最大30%ブースト
@@ -279,7 +280,7 @@
                 jackpotChance = Math.min(originalJackpot * 2, 30);
                 const boost = (bigChance - originalBig) + (jackpotChance - originalJackpot);
                 whiffChance -= boost;
-                normalChance = Math.max(normalChance - boost * 0.3, 10);
+                smallChance = Math.max(smallChance - boost * 0.3, 10);
             }
 
             // 抽選
@@ -287,6 +288,7 @@
             if (roll < jackpotChance) return 'jackpot';
             if (roll < jackpotChance + bigChance) return 'big';
             if (roll < jackpotChance + bigChance + normalChance) return 'normal';
+            if (roll < jackpotChance + bigChance + normalChance + smallChance) return 'small';
             return 'whiff';
         };
 
@@ -410,7 +412,68 @@
             );
         };
 
-        // ノーマル演出（25%）: 虹色クラッカー
+        // 🎰 小当たり演出（40%）: LDWs - 地味だが「当たった」という感触
+        const RewardSmallWin = ({ onComplete, centerX, centerY }) => {
+            const [particles, setParticles] = useState([]);
+
+            useEffect(() => {
+                // 控えめな金色パーティクル（30個）
+                const goldShades = ['#FFD700', '#FFC700', '#FFB700'];
+                const newParticles = [];
+                for (let i = 0; i < 30; i++) {
+                    const fromLeft = i % 2 === 0;
+                    const startX = fromLeft ? '5%' : '95%';
+                    const startY = '5%';
+
+                    // 狭い範囲に集中（中央±200px）
+                    const spreadX = (Math.random() - 0.5) * 200;
+                    const spreadY = (Math.random() - 0.5) * 200;
+                    const targetX = `${centerX + spreadX}px`;
+                    const targetY = `${centerY + spreadY}px`;
+
+                    newParticles.push({
+                        id: i,
+                        startX,
+                        startY,
+                        targetX,
+                        targetY,
+                        color: goldShades[i % goldShades.length],
+                        delay: Math.random() * 0.2,
+                        duration: 0.7 + Math.random() * 0.3,
+                        size: 6 + Math.random() * 4,
+                    });
+                }
+                setParticles(newParticles);
+
+                // 🎰 小当たりSE: 控えめなチリン音（1回だけ）
+                AudioEngine.play([1047], 'sine', 0.15, 0.08);
+                setTimeout(() => AudioEngine.play([1319], 'triangle', 0.12, 0.06), 100);
+
+                setTimeout(() => {
+                    setParticles([]);
+                    onComplete();
+                }, 1200);
+            }, [centerX, centerY, onComplete]);
+
+            return (
+                <>
+                    {/* 控えめな光フラッシュ */}
+                    <div
+                        className="fixed inset-0 pointer-events-none z-[280]"
+                        style={{
+                            background: 'radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 50%)',
+                            animation: 'normal-flash 0.5s ease-out forwards',
+                        }}
+                    />
+                    {/* 小当たりクラッカーパーティクル */}
+                    {particles.map(p => (
+                        <CrackerConfettiParticle key={p.id} {...p} />
+                    ))}
+                </>
+            );
+        };
+
+        // ノーマル演出（22%）: 虹色クラッカー
         const RewardNormal = ({ onComplete, centerX, centerY }) => {
             const [particles, setParticles] = useState([]);
             const [rings, setRings] = useState([]);
@@ -1227,6 +1290,11 @@
                     setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} />);
                     // スカなので天井カウンター+1
                     setStats(prev => ({ ...prev, pityCounter: prev.pityCounter + 1 }));
+                } else if (tier === 'small') {
+                    // 🎰 小当たり（LDWs）: 地味だが「当たった」感覚
+                    setRewardEffect(<RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                    // 小当たりは天井カウンターリセット（プレイヤーを延命させる）
+                    setStats(prev => ({ ...prev, pityCounter: 0 }));
                 } else if (tier === 'normal') {
                     setRewardEffect(<RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
                     // ノーマルなので天井カウンターリセット
