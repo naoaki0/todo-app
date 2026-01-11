@@ -1522,7 +1522,7 @@
                 return () => window.removeEventListener('click', handleClick);
             }, []);
 
-            // スリープ検知：PCスリープから復帰したら宝箱表示
+            // スリープ検知：PCスリープから復帰したら宝箱表示（クールダウンなし）
             useEffect(() => {
                 let lastCheckTime = Date.now();
 
@@ -1532,24 +1532,15 @@
 
                     // 通常は1秒だが、3秒以上経過していたらスリープがあったと判定
                     if (timeSinceLastCheck > 3000) {
-                        // 前回の宝箱から30分以上経過している場合のみ表示
-                        const timeSinceLastChest = now - (stats.lastWakeupChestTime || 0);
-                        const MIN_INTERVAL = 30 * 60 * 1000; // 30分
-
-                        if (timeSinceLastChest >= MIN_INTERVAL) {
-                            console.log('Sleep detected, showing wakeup chest');
-                            setShowChestModal(true);
-                            setStats(prev => ({ ...prev, lastWakeupChestTime: now }));
-                        } else {
-                            console.log('Sleep detected but chest shown recently, skipping');
-                        }
+                        console.log('Sleep detected, showing wakeup chest');
+                        setShowChestModal(true);
                     }
 
                     lastCheckTime = now;
                 }, 1000);
 
                 return () => clearInterval(interval);
-            }, [stats.lastWakeupChestTime]);
+            }, []);
 
             useEffect(() => {
                 localStorage.setItem('duo_v18_tasks', JSON.stringify(tasks));
