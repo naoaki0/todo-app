@@ -1481,7 +1481,7 @@
             
             const SECTION_SIZE = 4;
 
-            const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [activeListId, setActiveListId] = useState('default');
             const [isShopOpen, setIsShopOpen] = useState(false);
             const [isDoubleChance, setIsDoubleChance] = useState(false);
@@ -1530,10 +1530,9 @@
                     const now = Date.now();
                     const timeSinceLastCheck = now - lastCheckTime;
 
-                    // 5分以上経過していたらPCスリープと判定（タブ切り替え程度では発動しない）
-                    const SLEEP_THRESHOLD = 5 * 60 * 1000; // 5分
-                    if (timeSinceLastCheck > SLEEP_THRESHOLD) {
-                        console.log('PC sleep detected (5+ minutes), showing wakeup chest');
+                    // 3秒以上経過していたらスリープと判定
+                    if (timeSinceLastCheck > 3000) {
+                        console.log('Sleep detected, showing wakeup chest');
                         setShowChestModal(true);
                     }
 
