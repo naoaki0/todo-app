@@ -52,6 +52,7 @@
                         'log-fade': 'log-fade 3s ease-out forwards',
                         'checkbox-pop': 'checkbox-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                         'bounce-hard': 'bounce-hard 0.5s infinite',
+                        'glitch': 'glitch 0.2s cubic-bezier(.25, .46, .45, .94) both infinite',
                     },
                     keyframes: {
                         shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
@@ -68,7 +69,8 @@
                         'scale-in': { '0%': { transform: 'scale(0.8)', opacity: 0 }, '100%': { transform: 'scale(1)', opacity: 1 } },
                         'tech-slide': { '0%': { transform: 'translateX(-20px)', opacity: 0 }, '100%': { transform: 'translateX(0)', opacity: 1 } },
                         'log-fade': { '0%': { color: '#FFD700', transform: 'translateX(-10px)' }, '20%': { color: '#FFD700', transform: 'translateX(0)' }, '100%': { color: '#4b5563' } },
-                        'checkbox-pop': { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.5)' }, '100%': { transform: 'scale(1)' } }
+                        'checkbox-pop': { '0%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.5)' }, '100%': { transform: 'scale(1)' } },
+                        'glitch': { '0%': { transform: 'translate(0)' }, '20%': { transform: 'translate(-2px, 2px)' }, '40%': { transform: 'translate(-2px, -2px)' }, '60%': { transform: 'translate(2px, 2px)' }, '80%': { transform: 'translate(2px, -2px)' }, '100%': { transform: 'translate(0)' } }
                     }
                 }
             }
@@ -80,105 +82,34 @@
     <style>
         body { font-family: 'Roboto', 'Noto Sans JP', sans-serif; -webkit-font-smoothing: antialiased; }
         @keyframes confetti-explode { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 60% { opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
-        @keyframes cherry-fall { 0% { transform: translate(0, 0) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: 0; } }
         @keyframes confetti-rise { 0% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; } 50% { opacity: 1; } 100% { transform: translateX(var(--random-x)) translateY(-100vh) rotate(var(--random-rotation)); opacity: 0; } }
 
         /* 中毒性MAX報酬システムのアニメーション */
         @keyframes near-miss-flash { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes reward-particle { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(var(--vx), var(--vy)); opacity: 0; } }
-        @keyframes reward-fall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
-        @keyframes big-flash { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes jackpot-flash { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes screen-shake { 0%, 100% { transform: translate(0, 0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 5px); } 20%, 40%, 60%, 80% { transform: translate(5px, -5px); } }
-        @keyframes jackpot-text { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; } 50% { transform: translate(-50%, -50%) scale(1); } 100% { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
-        @keyframes anticipation-glow { 0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0); } 50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.8); } }
-        @keyframes anticipation-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        @keyframes cracker-shoot { 0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(calc(var(--target-x) - 50vw), calc(var(--target-y) - 50vh)) rotate(var(--rotation)) scale(0.3); opacity: 0; } }
-
-        /* 完全依存レベルの演出アニメーション */
-        @keyframes near-miss-intense { 0% { opacity: 0; } 30% { opacity: 1; } 70% { opacity: 0.8; } 100% { opacity: 0; } }
-        @keyframes whiff-darken { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes whiff-fade { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(var(--vx), var(--vy)); opacity: 0; } }
-        @keyframes normal-flash { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes ring-expand { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(15); opacity: 0; } }
-        @keyframes reward-particle-glow { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(var(--vx), var(--vy)); opacity: 0; } }
-        @keyframes big-rainbow-flash { 0% { opacity: 0; } 30% { opacity: 1; } 70% { opacity: 0.8; } 100% { opacity: 0; } }
-        @keyframes beam-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-        @keyframes explosion { 0% { transform: scale(0); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
-        @keyframes reward-fall-glow { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(1080deg); opacity: 0; } }
-        @keyframes big-text { 0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; } 30% { transform: translate(-50%, -50%) scale(1.3) rotate(5deg); opacity: 1; } 50% { transform: translate(-50%, -50%) scale(1) rotate(0deg); } 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0; } }
-        @keyframes jackpot-mega-flash { 0% { opacity: 0; } 20% { opacity: 1; } 50% { opacity: 0.9; } 80% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes screen-shake-intense { 0%, 100% { transform: translate(0, 0); } 5%, 15%, 25%, 35%, 45%, 55%, 65%, 75%, 85%, 95% { transform: translate(-10px, 10px); } 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90% { transform: translate(10px, -10px); } }
-        @keyframes mega-wave-expand { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(30); opacity: 0; } }
-        @keyframes spiral-rotate-cw { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes spiral-rotate-ccw { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
-        @keyframes starburst-pulse { 0% { opacity: 0; transform: scale(0); } 30% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.5); } }
-        @keyframes reward-fall-mega-glow { 0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translateY(100vh) rotate(1440deg) scale(0.5); opacity: 0; } }
-        @keyframes jackpot-mega-text { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; } 40% { transform: translate(-50%, -50%) scale(0.9); } 50% { transform: translate(-50%, -50%) scale(1.1); } 60% { transform: translate(-50%, -50%) scale(1); } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
-        @keyframes jackpot-subtext { 0% { opacity: 0; transform: translateY(50px); } 50% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
-
-        /* 中毒性MAX宝箱アニメーション */
-        @keyframes chest-float { 0%, 100% { transform: translateY(0px) rotate(-2deg); } 50% { transform: translateY(-15px) rotate(2deg); } }
-        @keyframes chest-shake-anticipation { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
-        @keyframes chest-lid-open { 0% { transform: rotateX(0deg); transform-origin: bottom; } 100% { transform: rotateX(-120deg); transform-origin: bottom; } }
-        @keyframes chest-glow-pulse { 0%, 100% { box-shadow: 0 0 20px rgba(150, 180, 255, 0.5), 0 0 40px rgba(100, 150, 255, 0.3); } 50% { box-shadow: 0 0 40px rgba(150, 180, 255, 0.8), 0 0 80px rgba(100, 150, 255, 0.6), 0 0 120px rgba(80, 130, 255, 0.4); } }
-        @keyframes sparkle-twinkle { 0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(180deg); } }
-        @keyframes light-ray-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes chest-burst-open { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 0; } }
         @keyframes reward-emerge { 0% { transform: translateY(50px) scale(0); opacity: 0; } 60% { transform: translateY(-20px) scale(1.2); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-
-        /* ギャンブル依存性：宝箱の予告＆ニアミス演出 */
-        @keyframes chest-anticipation-shake { 0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); } 10% { transform: translate(-8px, -8px) rotate(-10deg) scale(1.05); } 20% { transform: translate(8px, 8px) rotate(10deg) scale(1.05); } 30% { transform: translate(-8px, 8px) rotate(-10deg) scale(1.05); } 40% { transform: translate(8px, -8px) rotate(10deg) scale(1.05); } 50% { transform: translate(-6px, -6px) rotate(-8deg) scale(1.03); } 60% { transform: translate(6px, 6px) rotate(8deg) scale(1.03); } 70% { transform: translate(-4px, 4px) rotate(-5deg) scale(1.02); } 80% { transform: translate(4px, -4px) rotate(5deg) scale(1.02); } 90% { transform: translate(-2px, 2px) rotate(-2deg) scale(1.01); } }
-        @keyframes chest-color-tease { 0% { filter: hue-rotate(0deg) brightness(1) saturate(1); } 20% { filter: hue-rotate(60deg) brightness(1.3) saturate(1.8); } 40% { filter: hue-rotate(120deg) brightness(1.5) saturate(2); } 60% { filter: hue-rotate(180deg) brightness(1.7) saturate(2.2); } 80% { filter: hue-rotate(240deg) brightness(1.5) saturate(2); } 100% { filter: hue-rotate(300deg) brightness(1.3) saturate(1.8); } }
-        @keyframes chest-glow-intensify { 0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); } 25% { box-shadow: 0 0 60px rgba(255, 100, 255, 1), 0 0 100px rgba(255, 100, 255, 0.8); } 50% { box-shadow: 0 0 80px rgba(255, 50, 50, 1), 0 0 120px rgba(255, 50, 50, 0.9), 0 0 160px rgba(255, 50, 50, 0.7); } 75% { box-shadow: 0 0 60px rgba(100, 255, 255, 1), 0 0 100px rgba(100, 255, 255, 0.8); } 100% { box-shadow: 0 0 80px rgba(255, 215, 0, 1), 0 0 120px rgba(255, 215, 0, 0.9); } }
-        @keyframes near-miss-flash { 0% { opacity: 0; transform: scale(1); } 30% { opacity: 1; transform: scale(1.2); } 60% { opacity: 0.8; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.3); } }
-        @keyframes heartbeat-pulse { 0%, 100% { transform: scale(1); } 10% { transform: scale(1.1); } 20% { transform: scale(1); } 30% { transform: scale(1.15); } 40% { transform: scale(1); } }
-
-        /* カジノグレード演出：物理なし・高級ジュース */
-        @keyframes spatial-distortion { 0% { transform: scale(1) skewX(0deg); } 25% { transform: scale(1.05) skewX(5deg); } 50% { transform: scale(0.95) skewX(-5deg); } 75% { transform: scale(1.02) skewX(2deg); } 100% { transform: scale(1) skewX(0deg); } }
-        @keyframes chromatic-aberration { 0% { text-shadow: 0 0 0 rgba(255,0,0,0), 0 0 0 rgba(0,255,255,0); } 50% { text-shadow: -5px 0 0 rgba(255,0,0,0.8), 5px 0 0 rgba(0,255,255,0.8); } 100% { text-shadow: 0 0 0 rgba(255,0,0,0), 0 0 0 rgba(0,255,255,0); } }
-        @keyframes light-convergence { 0% { transform: scale(3); opacity: 0; } 50% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
         @keyframes whiteout-burst { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
-        @keyframes screen-shake-brutal { 0%, 100% { transform: translate(0, 0); } 10% { transform: translate(-15px, 10px); } 20% { transform: translate(15px, -10px); } 30% { transform: translate(-10px, -15px); } 40% { transform: translate(10px, 15px); } 50% { transform: translate(-12px, 8px); } 60% { transform: translate(12px, -8px); } 70% { transform: translate(-8px, -12px); } 80% { transform: translate(8px, 12px); } 90% { transform: translate(-5px, 5px); } }
+        @keyframes spatial-distortion { 0% { transform: scale(1) skewX(0deg); } 25% { transform: scale(1.05) skewX(5deg); } 50% { transform: scale(0.95) skewX(-5deg); } 75% { transform: scale(1.02) skewX(2deg); } 100% { transform: scale(1) skewX(0deg); } }
         @keyframes resistance-denial { 0% { transform: translateX(0) rotate(0deg); } 10% { transform: translateX(-20px) rotate(-15deg); } 20% { transform: translateX(15px) rotate(10deg); } 30% { transform: translateX(-10px) rotate(-8deg); } 40% { transform: translateX(5px) rotate(5deg); } 50% { transform: translateX(-3px) rotate(-3deg); } 100% { transform: translateX(0) rotate(0deg); } }
         @keyframes jackpot-peek { 0% { opacity: 0; transform: translateY(30px) scale(0.5); } 40% { opacity: 1; transform: translateY(0) scale(1); } 60% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-30px) scale(0.8); } }
-        @keyframes charge-buildup { 0% { box-shadow: 0 0 0 rgba(100,150,255,0); transform: scale(1); } 100% { box-shadow: 0 0 50px rgba(100,150,255,1), 0 0 100px rgba(100,150,255,0.8), 0 0 150px rgba(100,150,255,0.6); transform: scale(1.15); } }
-        @keyframes roulette-spin { 0% { transform: translateY(0); } 100% { transform: translateY(-500%); } }
-        @keyframes roulette-slowdown { 0% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
-        @keyframes slot-stop-slam { 0% { transform: translateY(0) scale(1); } 20% { transform: translateY(-30px) scale(1.15); } 50% { transform: translateY(10px) scale(0.9); } 80% { transform: translateY(-5px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
+        @keyframes light-ray-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes chest-burst-open { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 0; } }
+        @keyframes chest-glow-intensify { 0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); } 25% { box-shadow: 0 0 60px rgba(255, 100, 255, 1), 0 0 100px rgba(255, 100, 255, 0.8); } 50% { box-shadow: 0 0 80px rgba(255, 50, 50, 1), 0 0 120px rgba(255, 50, 50, 0.9), 0 0 160px rgba(255, 50, 50, 0.7); } 75% { box-shadow: 0 0 60px rgba(100, 255, 255, 1), 0 0 100px rgba(100, 255, 255, 0.8); } 100% { box-shadow: 0 0 80px rgba(255, 215, 0, 1), 0 0 120px rgba(255, 215, 0, 0.9); } }
+        
+        /* 連打用カスタムアニメーション */
+        @keyframes neon-pulse-scan { 0% { transform: scale(0.8); opacity: 0.1; } 50% { opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
+        @keyframes shake-brutal-x { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes cracker-shoot { 0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(calc(var(--target-x) - 50vw), calc(var(--target-y) - 50vh)) rotate(var(--rotation)) scale(0.3); opacity: 0; } }
+        
+        /* 3D Chest Animations */
+        @keyframes chest-3d-idle { 0%, 100% { transform: rotateY(-20deg) rotateX(10deg); } 50% { transform: rotateY(-10deg) rotateX(5deg) translateY(-5px); } }
+        @keyframes chest-3d-mashing { 0% { transform: rotateY(-20deg) rotateX(10deg) scale(1); } 50% { transform: rotateY(-20deg) rotateX(10deg) scale(1.05); } 100% { transform: rotateY(-20deg) rotateX(10deg) scale(1); } }
 
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
 
         .progress-glow { filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8)) brightness(1.2); }
-        .fire-active { animation: flame-grow 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        /* --- 3D宝箱用 高度スタイル --- */
-        .chest-scene { perspective: 1200px; transform-style: preserve-3d; }
-        .chest-3d { transform-style: preserve-3d; width: 100%; height: 100%; position: relative; }
-        .face { position: absolute; backface-visibility: visible; }
-        
-        /* 高級マットブラックの質感 */
-        .mat-black-surface {
-            background: linear-gradient(135deg, #222 0%, #1a1a1a 100%);
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
-        }
-        /* プラチナシルバーの金属光沢（縁取り用） */
-        .platinum-rim {
-            background: linear-gradient(90deg, #555 0%, #999 20%, #fff 50%, #999 80%, #555 100%);
-            box-shadow: 0 0 5px rgba(255,255,255,0.3);
-        }
-
-        /* アニメーション: 呼吸するような待機状態 */
-        @keyframes chest-breathe {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-4px) scale(1.01); }
-        }
-        /* アニメーション: 隙間からの光漏れ */
-        @keyframes leak-light {
-            0%, 100% { opacity: 0.3; transform: scaleX(0.8); }
-            50% { opacity: 0.8; transform: scaleX(1.1); filter: blur(4px); }
-        }   
+        .preserve-3d { transform-style: preserve-3d; }
     </style>
 </head>
 <body class="bg-white h-screen overflow-hidden text-duo-text">
@@ -251,7 +182,6 @@
             Trash: (p) => <SvgIcon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></SvgIcon>,
         };
 
-        // --- 共通UI部品 ---
         const juicyBtnClass = "transition-all duration-150 transform hover:scale-105 active:scale-95 active:translate-y-1";
 
         const IconButton = ({ icon: Icon, onClick, className = "", active = false, size = 20, color="text-google-textSec", ...props }) => (
@@ -287,7 +217,6 @@
             </div>
         );
 
-        // --- Context Menu ---
         const ContextMenu = ({ x, y, onDivide, onMerge, onPurge, showMerge, showPurge }) => (
             <div className="fixed z-[9999] bg-white border-2 border-gray-200 rounded-xl shadow-floating py-1 w-56 animate-scale-in" style={{ left: x, top: y }}>
                 <button onClick={onDivide} className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 font-bold text-gray-600 text-sm">
@@ -308,38 +237,20 @@
             </div>
         );
 
-        // --- ユーティリティ ---
         const getAdjustedToday = () => {
             const d = new Date(); d.setHours(d.getHours() - 3); return d.toISOString().split('T')[0];
         };
 
-        // 🎰 LDWS理論：報酬ティア決定関数（損失を勝利に偽装）
         const determineRewardTier = (pityCounter, isFeverMode) => {
-            // 基本確率（LDWS構造）
-            let whiffChance = 45;      // 完全ハズレ（悔しさ）
-            let smallChance = 35;      // 小当たり（延命措置・LDWs）
-            let normalChance = 14;     // 満足感（習慣化）
-            let bigChance = 5;         // 強い快楽（中毒の維持）
-            let jackpotChance = 1;     // 神話的成功（射幸心の核心）
-
-            // 天井システム：スカが続くと確率上昇
-            const pityBonus = Math.min(pityCounter * 2, 30); // 最大30%ブースト
-            jackpotChance += pityBonus * 0.5;
-            bigChance += pityBonus * 0.5;
-            whiffChance -= pityBonus;
-
-            // フィーバーモード：レア確率2倍
+            let whiffChance = 45; let smallChance = 35; let normalChance = 14; let bigChance = 5; let jackpotChance = 1;
+            const pityBonus = Math.min(pityCounter * 2, 30);
+            jackpotChance += pityBonus * 0.5; bigChance += pityBonus * 0.5; whiffChance -= pityBonus;
             if (isFeverMode) {
-                const originalBig = bigChance;
-                const originalJackpot = jackpotChance;
-                bigChance = Math.min(originalBig * 2, 40);
-                jackpotChance = Math.min(originalJackpot * 2, 30);
+                const originalBig = bigChance; const originalJackpot = jackpotChance;
+                bigChance = Math.min(originalBig * 2, 40); jackpotChance = Math.min(originalJackpot * 2, 30);
                 const boost = (bigChance - originalBig) + (jackpotChance - originalJackpot);
-                whiffChance -= boost;
-                smallChance = Math.max(smallChance - boost * 0.3, 10);
+                whiffChance -= boost; smallChance = Math.max(smallChance - boost * 0.3, 10);
             }
-
-            // 抽選
             const roll = Math.random() * 100;
             if (roll < jackpotChance) return 'jackpot';
             if (roll < jackpotChance + bigChance) return 'big';
@@ -351,812 +262,504 @@
         const Confetti = ({ type, theme }) => {
             const performanceColors = ['bg-yellow-400', 'bg-yellow-300', 'bg-gray-300', 'bg-gray-200'];
             const colors = performanceColors; 
-            
-            // Checkbox Ignition (Small Confetti)
             const isSmall = type === 'ignition';
             const particlesCount = isSmall ? 8 : (type === 'big' || type === 'performance' ? 45 : 12);
-            
             const particles = Array.from({ length: particlesCount }).map((_, i) => ({
-                id: i, 
-                tx: (Math.random()-0.5)*(isSmall ? 60 : 240), 
-                ty: (Math.random()-0.5)*(isSmall ? 60 : 240), 
-                size: Math.random()*(isSmall ? 3 : 7)+2, 
-                color: colors[Math.floor(Math.random()*colors.length)],
-                rotation: Math.random() * 360
+                id: i, tx: (Math.random()-0.5)*(isSmall ? 60 : 240), ty: (Math.random()-0.5)*(isSmall ? 60 : 240), 
+                size: Math.random()*(isSmall ? 3 : 7)+2, color: colors[Math.floor(Math.random()*colors.length)], rotation: Math.random() * 360
             }));
-
             return (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 overflow-visible">
                     {particles.map(p => (
-                        <div key={p.id} className={`absolute rounded-full ${p.color}`} 
-                            style={{ 
-                                width: p.size, 
-                                height: p.size, 
-                                '--tx': `${p.tx}px`, '--ty': `${p.ty}px`,
-                                animation: 'confetti-explode 0.4s ease-out forwards',
-                            }} 
-                        />
+                        <div key={p.id} className={`absolute rounded-full ${p.color}`} style={{ width: p.size, height: p.size, '--tx': `${p.tx}px`, '--ty': `${p.ty}px`, animation: 'confetti-explode 0.4s ease-out forwards' }} />
                     ))}
                 </div>
             );
         };
 
-        // --- 完全依存レベル：4段階報酬演出システム ---
-
-        // ニアミス演出：金色のフラッシュ
-        const NearMissFlash = () => {
-            return (
-                <div
-                    className="fixed inset-0 pointer-events-none z-[300]"
-                    style={{
-                        background: 'radial-gradient(circle, rgba(255,215,0,0.6) 0%, rgba(255,165,0,0.3) 40%, transparent 70%)',
-                        animation: 'near-miss-intense 0.4s ease-out forwards',
-                    }}
-                />
-            );
-        };
-
-        // スカ演出（60%）: 悔しさを増幅
-        const RewardWhiff = ({ onComplete, showNearMiss }) => {
-            const [particles, setParticles] = useState([]);
-
-            useEffect(() => {
-                // 悔しい演出：暗いパーティクルが消える
-                const newParticles = [];
-                for (let i = 0; i < 15; i++) {
-                    const angle = (Math.PI * 2 * i) / 15;
-                    newParticles.push({
-                        id: i,
-                        x: window.innerWidth / 2,
-                        y: window.innerHeight / 2,
-                        vx: Math.cos(angle) * 80,
-                        vy: Math.sin(angle) * 80,
-                        color: '#888888',
-                        size: 6,
-                    });
-                }
-                setParticles(newParticles);
-
-                // 🎰 残念SE: より長く、より落胆感のある音
-                if (showNearMiss) {
-                    // ニアミス: 一瞬「当たり！？」と思わせてから落とす
-                    AudioEngine.play([800, 1000], 'sine', 0.15, 0.1);
-                    setTimeout(() => AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.15, 0.2), 100);
-                } else {
-                    // 通常スカ: ガッカリ音
-                    AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.12, 0.18);
-                }
-
-                setTimeout(() => {
-                    setParticles([]);
-                    onComplete();
-                }, 600);
-            }, [onComplete]);
-
-            return (
-                <>
-                    {showNearMiss && <NearMissFlash />}
-                    {/* 暗転エフェクト */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[290]"
-                        style={{
-                            background: 'rgba(0, 0, 0, 0.3)',
-                            animation: 'whiff-darken 0.6s ease-out forwards',
-                        }}
-                    />
-                    {/* 悔しいパーティクル */}
-                    {particles.map(p => (
-                        <div
-                            key={p.id}
-                            style={{
-                                position: 'fixed',
-                                left: p.x,
-                                top: p.y,
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                backgroundColor: p.color,
-                                borderRadius: '50%',
-                                pointerEvents: 'none',
-                                zIndex: 295,
-                                animation: 'whiff-fade 0.6s ease-out forwards',
-                                '--vx': `${p.vx}px`,
-                                '--vy': `${p.vy}px`,
-                            }}
-                        />
-                    ))}
-                </>
-            );
-        };
-
-        // 🎰 小当たり演出（40%）: LDWs - 地味だが「当たった」という感触
-        const RewardSmallWin = ({ onComplete, centerX, centerY }) => {
-            const [particles, setParticles] = useState([]);
-
-            useEffect(() => {
-                // 控えめな金色パーティクル（30個）
-                const goldShades = ['#FFD700', '#FFC700', '#FFB700'];
-                const newParticles = [];
-                for (let i = 0; i < 30; i++) {
-                    const fromLeft = i % 2 === 0;
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
-
-                    // 狭い範囲に集中（中央±200px）
-                    const spreadX = (Math.random() - 0.5) * 200;
-                    const spreadY = (Math.random() - 0.5) * 200;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
-
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: goldShades[i % goldShades.length],
-                        delay: Math.random() * 0.2,
-                        duration: 0.7 + Math.random() * 0.3,
-                        size: 6 + Math.random() * 4,
-                    });
-                }
-                setParticles(newParticles);
-
-                // 🎰 小当たりSE: 控えめなチリン音（1回だけ）
-                AudioEngine.play([1047], 'sine', 0.15, 0.08);
-                setTimeout(() => AudioEngine.play([1319], 'triangle', 0.12, 0.06), 100);
-
-                setTimeout(() => {
-                    setParticles([]);
-                    onComplete();
-                }, 1200);
-            }, [centerX, centerY, onComplete]);
-
-            return (
-                <>
-                    {/* 控えめな光フラッシュ */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[280]"
-                        style={{
-                            background: 'radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 50%)',
-                            animation: 'normal-flash 0.5s ease-out forwards',
-                        }}
-                    />
-                    {/* 小当たりクラッカーパーティクル */}
-                    {particles.map(p => (
-                        <CrackerConfettiParticle key={p.id} {...p} />
-                    ))}
-                </>
-            );
-        };
-
-        // ノーマル演出（22%）: 虹色クラッカー
-        const RewardNormal = ({ onComplete, centerX, centerY }) => {
-            const [particles, setParticles] = useState([]);
-            const [rings, setRings] = useState([]);
-
-            useEffect(() => {
-                // 虹色のクラッカーパーティクル（100個）
-                const rainbowColors = ['#FF6B9D', '#C44569', '#F8B500', '#4ECDC4', '#95E1D3', '#38B6FF', '#A8E6CF'];
-                const newParticles = [];
-                for (let i = 0; i < 100; i++) {
-                    const fromLeft = i % 2 === 0;
-
-                    // 左下または右下からの発射
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
-
-                    // 中央付近へのランダムな着地点
-                    const spreadX = (Math.random() - 0.5) * 500;
-                    const spreadY = (Math.random() - 0.5) * 500;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
-
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: rainbowColors[i % rainbowColors.length],
-                        delay: Math.random() * 0.3,
-                        duration: 0.9 + Math.random() * 0.4,
-                        size: 10 + Math.random() * 8,
-                    });
-                }
-                setParticles(newParticles);
-
-                // 拡散リング3つ
-                setRings([{ id: 1 }, { id: 2 }, { id: 3 }]);
-
-                // 🎰 当たりSE: ベル音 → コイン音連続
-                // ベル音（チーン！）
-                AudioEngine.play([2093, 2093], 'sine', 0.25, 0.12);
-                // コインがチャリンチャリン落ちる音
-                setTimeout(() => AudioEngine.play([880, 1047], 'triangle', 0.18, 0.06), 150);
-                setTimeout(() => AudioEngine.play([932, 1109], 'triangle', 0.16, 0.05), 250);
-                setTimeout(() => AudioEngine.play([987, 1175], 'triangle', 0.14, 0.05), 340);
-                setTimeout(() => AudioEngine.play([1047, 1245], 'triangle', 0.12, 0.04), 420);
-                setTimeout(() => AudioEngine.play([1109, 1319], 'triangle', 0.1, 0.04), 490);
-
-                setTimeout(() => {
-                    setParticles([]);
-                    setRings([]);
-                    onComplete();
-                }, 2000);
-            }, [centerX, centerY, onComplete]);
-
-            return (
-                <>
-                    {/* 虹色フラッシュ */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[280]"
-                        style={{
-                            background: 'radial-gradient(circle, rgba(255,107,157,0.4) 0%, rgba(62,207,196,0.3) 50%, transparent 70%)',
-                            animation: 'normal-flash 0.8s ease-out forwards',
-                        }}
-                    />
-                    {/* 拡散リング */}
-                    {rings.map((r, i) => (
-                        <div
-                            key={r.id}
-                            style={{
-                                position: 'fixed',
-                                left: centerX,
-                                top: centerY,
-                                width: '50px',
-                                height: '50px',
-                                marginLeft: '-25px',
-                                marginTop: '-25px',
-                                border: '4px solid rgba(255, 107, 157, 0.8)',
-                                borderRadius: '50%',
-                                pointerEvents: 'none',
-                                zIndex: 285,
-                                animation: `ring-expand 1s ease-out ${i * 0.15}s forwards`,
-                            }}
-                        />
-                    ))}
-                    {/* 虹色クラッカーパーティクル */}
-                    {particles.map(p => (
-                        <CrackerConfettiParticle key={p.id} {...p} />
-                    ))}
-                </>
-            );
-        };
-
-        // ビッグ演出（10%）: 圧倒的レインボー爆発
-        const RewardBig = ({ onComplete }) => {
-            const [particles, setParticles] = useState([]);
-            const [explosions, setExplosions] = useState([]);
-            const [lightBeams, setLightBeams] = useState([]);
-
-            useEffect(() => {
-                // 連続爆発エフェクト
-                setExplosions([
-                    { id: 1, delay: 0, x: '30%', y: '30%' },
-                    { id: 2, delay: 0.15, x: '70%', y: '40%' },
-                    { id: 3, delay: 0.3, x: '50%', y: '60%' },
-                    { id: 4, delay: 0.45, x: '20%', y: '70%' },
-                    { id: 5, delay: 0.6, x: '80%', y: '20%' },
-                ]);
-
-                // 光線エフェクト
-                setLightBeams([
-                    { id: 1, angle: 0 },
-                    { id: 2, angle: 60 },
-                    { id: 3, angle: 120 },
-                    { id: 4, angle: 180 },
-                    { id: 5, angle: 240 },
-                    { id: 6, angle: 300 },
-                ]);
-
-                // レインボークラッカー大量（300個）
-                const rainbowColors = ['#FF0080', '#FF8C00', '#FFD700', '#00FF00', '#00CED1', '#4169E1', '#9370DB'];
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                const newParticles = [];
-                for (let i = 0; i < 300; i++) {
-                    const fromLeft = i % 2 === 0;
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
-
-                    // 中央付近への着地点（広範囲）
-                    const spreadX = (Math.random() - 0.5) * 700;
-                    const spreadY = (Math.random() - 0.5) * 700;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
-
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: rainbowColors[i % rainbowColors.length],
-                        delay: Math.random() * 0.5,
-                        duration: 1 + Math.random() * 0.6,
-                        size: 14 + Math.random() * 10,
-                    });
-                }
-                setParticles(newParticles);
-
-                // 🎰 BIG当たりSE: ドラムロール → ファンファーレ → ベル連打
-                // ドラムロール風（連続音）
-                AudioEngine.play([200, 210, 220, 230], 'sawtooth', 0.2, 0.05);
-                setTimeout(() => AudioEngine.play([210, 220, 230, 240], 'sawtooth', 0.22, 0.05), 60);
-                setTimeout(() => AudioEngine.play([220, 230, 240, 250], 'sawtooth', 0.24, 0.05), 120);
-                setTimeout(() => AudioEngine.play([230, 240, 250, 260], 'sawtooth', 0.26, 0.05), 180);
-
-                // ファンファーレ（豪華な上昇音階）
-                setTimeout(() => AudioEngine.play([523, 659, 784, 1047, 1319, 1568], 'triangle', 0.32, 0.2), 300);
-                setTimeout(() => AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.3, 0.18), 500);
-
-                // ベル連打（チーンチーンチーン！）
-                setTimeout(() => AudioEngine.play([2093], 'sine', 0.28, 0.08), 800);
-                setTimeout(() => AudioEngine.play([2349], 'sine', 0.3, 0.08), 950);
-                setTimeout(() => AudioEngine.play([2637], 'sine', 0.32, 0.08), 1100);
-                setTimeout(() => AudioEngine.play([2093, 2349, 2637], 'sine', 0.35, 0.12), 1250);
-
-                setTimeout(() => {
-                    setParticles([]);
-                    setExplosions([]);
-                    setLightBeams([]);
-                    onComplete();
-                }, 4000);
-            }, [onComplete]);
-
-            return (
-                <>
-                    {/* レインボーフラッシュ */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[280]"
-                        style={{
-                            background: 'radial-gradient(circle, rgba(255,0,128,0.5) 0%, rgba(255,215,0,0.4) 30%, rgba(0,206,209,0.3) 60%, transparent 100%)',
-                            animation: 'big-rainbow-flash 1.5s ease-out forwards',
-                        }}
-                    />
-                    {/* 光線 */}
-                    {lightBeams.map(b => (
-                        <div
-                            key={b.id}
-                            style={{
-                                position: 'fixed',
-                                left: '50%',
-                                top: '50%',
-                                width: '1000px',
-                                height: '8px',
-                                marginLeft: '-500px',
-                                marginTop: '-4px',
-                                background: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.8) 50%, transparent 100%)',
-                                transform: `rotate(${b.angle}deg)`,
-                                transformOrigin: 'center',
-                                pointerEvents: 'none',
-                                zIndex: 285,
-                                animation: 'beam-pulse 2s ease-in-out infinite',
-                            }}
-                        />
-                    ))}
-                    {/* 連続爆発 */}
-                    {explosions.map(exp => (
-                        <div
-                            key={exp.id}
-                            style={{
-                                position: 'fixed',
-                                left: exp.x,
-                                top: exp.y,
-                                width: '100px',
-                                height: '100px',
-                                marginLeft: '-50px',
-                                marginTop: '-50px',
-                                borderRadius: '50%',
-                                background: 'radial-gradient(circle, rgba(255,215,0,0.9) 0%, rgba(255,0,128,0.6) 50%, transparent 100%)',
-                                pointerEvents: 'none',
-                                zIndex: 288,
-                                animation: `explosion ${0.8}s ease-out ${exp.delay}s forwards`,
-                            }}
-                        />
-                    ))}
-                    {/* レインボークラッカーパーティクル */}
-                    {particles.map(p => (
-                        <CrackerConfettiParticle key={p.id} {...p} />
-                    ))}
-                    {/* BIG!! テキスト */}
-                    <div
-                        className="fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[295]"
-                        style={{ animation: 'big-text 2.5s ease-out forwards' }}
-                    >
-                        <div className="text-9xl font-black" style={{
-                            background: 'linear-gradient(45deg, #FF0080, #FF8C00, #FFD700, #00FF00, #00CED1, #4169E1)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            textShadow: '0 0 40px rgba(255,215,0,0.8)',
-                        }}>
-                            BIG!!!
-                        </div>
-                    </div>
-                </>
-            );
-        };
-
-        // ジャックポット演出（5%）: 究極の黄金爆発 - 完全依存レベル
-        const RewardJackpot = ({ onComplete }) => {
-            const [particles, setParticles] = useState([]);
-            const [starBursts, setStarBursts] = useState([]);
-            const [spirals, setSpirals] = useState([]);
-            const [waves, setWaves] = useState([]);
-
-            useEffect(() => {
-                // 画面振動（強烈）
-                if (navigator.vibrate) {
-                    navigator.vibrate([150, 50, 150, 50, 200, 50, 300]);
-                }
-
-                // 星型バースト
-                const newStarBursts = [];
-                for (let i = 0; i < 12; i++) {
-                    const angle = (Math.PI * 2 * i) / 12;
-                    newStarBursts.push({
-                        id: i,
-                        angle,
-                        delay: i * 0.05,
-                    });
-                }
-                setStarBursts(newStarBursts);
-
-                // 螺旋エフェクト
-                setSpirals([
-                    { id: 1, direction: 1, delay: 0 },
-                    { id: 2, direction: -1, delay: 0.2 },
-                    { id: 3, direction: 1, delay: 0.4 },
-                ]);
-
-                // 波動エフェクト
-                setWaves([
-                    { id: 1, delay: 0 },
-                    { id: 2, delay: 0.3 },
-                    { id: 3, delay: 0.6 },
-                    { id: 4, delay: 0.9 },
-                ]);
-
-                // 金色クラッカー超大量（500個）
-                const goldShades = ['#FFD700', '#FFA500', '#FFDB58', '#FFE55C', '#FFF8DC'];
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                const newParticles = [];
-                for (let i = 0; i < 500; i++) {
-                    const fromLeft = i % 2 === 0;
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
-
-                    // 中央付近への着地点（超広範囲）
-                    const spreadX = (Math.random() - 0.5) * 900;
-                    const spreadY = (Math.random() - 0.5) * 900;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
-
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: goldShades[i % goldShades.length],
-                        delay: Math.random() * 0.6,
-                        duration: 1.2 + Math.random() * 0.8,
-                        size: 12 + Math.random() * 16,
-                    });
-                }
-                setParticles(newParticles);
-
-                // 🎰 JACKPOT究極SE: サイレン → 爆発 → ファンファーレ → ベル狂乱 → 5秒間鳴り続ける
-                // サイレン音（上昇下降を繰り返す）
-                AudioEngine.play([400, 800], 'sawtooth', 0.3, 0.15);
-                setTimeout(() => AudioEngine.play([800, 400], 'sawtooth', 0.3, 0.15), 150);
-                setTimeout(() => AudioEngine.play([400, 900], 'sawtooth', 0.32, 0.15), 300);
-                setTimeout(() => AudioEngine.play([900, 400], 'sawtooth', 0.32, 0.15), 450);
-
-                // 爆発音（ドカーン！）
-                setTimeout(() => AudioEngine.play([100, 80, 60, 40], 'sawtooth', 0.4, 0.2), 600);
-
-                // 究極ファンファーレ（3連続上昇音階）
-                setTimeout(() => AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.38, 0.22), 850);
-                setTimeout(() => AudioEngine.play([784, 1047, 1319, 1568, 2093, 2637], 'triangle', 0.36, 0.2), 1050);
-                setTimeout(() => AudioEngine.play([1047, 1319, 1568, 2093, 2637, 3136], 'sine', 0.34, 0.18), 1250);
-
-                // ベル狂乱連打（10回以上のベル音）
-                setTimeout(() => AudioEngine.play([2093], 'sine', 0.35, 0.08), 1500);
-                setTimeout(() => AudioEngine.play([2349], 'sine', 0.36, 0.08), 1620);
-                setTimeout(() => AudioEngine.play([2637], 'sine', 0.37, 0.08), 1740);
-                setTimeout(() => AudioEngine.play([2093, 2349], 'sine', 0.38, 0.09), 1860);
-                setTimeout(() => AudioEngine.play([2349, 2637], 'sine', 0.38, 0.09), 1980);
-                setTimeout(() => AudioEngine.play([2637, 3136], 'sine', 0.38, 0.09), 2100);
-                setTimeout(() => AudioEngine.play([2093, 2349, 2637], 'sine', 0.39, 0.1), 2220);
-                setTimeout(() => AudioEngine.play([2349, 2637, 3136], 'sine', 0.39, 0.1), 2340);
-                setTimeout(() => AudioEngine.play([2093, 2637], 'sine', 0.4, 0.1), 2460);
-                setTimeout(() => AudioEngine.play([2349, 3136], 'sine', 0.4, 0.1), 2580);
-                setTimeout(() => AudioEngine.play([2093, 2349, 2637, 3136], 'sine', 0.42, 0.15), 2700);
-
-                // 最後の大爆発音（超強調）
-                setTimeout(() => AudioEngine.play([3136, 2637, 2093, 1568, 1319, 1047], 'sine', 0.45, 0.3), 2900);
-
-                setTimeout(() => {
-                    setParticles([]);
-                    setStarBursts([]);
-                    setSpirals([]);
-                    setWaves([]);
-                    onComplete();
-                }, 5000);
-            }, [onComplete]);
-
-            return (
-                <>
-                    {/* 黄金フラッシュ（強烈） */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[280]"
-                        style={{
-                            background: 'radial-gradient(circle, rgba(255,215,0,0.9) 0%, rgba(255,165,0,0.7) 30%, rgba(255,215,0,0.5) 60%, transparent 100%)',
-                            animation: 'jackpot-mega-flash 2s ease-out forwards',
-                        }}
-                    />
-                    {/* 画面振動エフェクト（強化） */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[282]"
-                        style={{ animation: 'screen-shake-intense 1s ease-out forwards' }}
-                    />
-                    {/* 波動リング */}
-                    {waves.map(w => (
-                        <div
-                            key={w.id}
-                            style={{
-                                position: 'fixed',
-                                left: '50%',
-                                top: '50%',
-                                width: '50px',
-                                height: '50px',
-                                marginLeft: '-25px',
-                                marginTop: '-25px',
-                                border: '6px solid rgba(255, 215, 0, 0.9)',
-                                borderRadius: '50%',
-                                pointerEvents: 'none',
-                                zIndex: 285,
-                                animation: `mega-wave-expand 2s ease-out ${w.delay}s forwards`,
-                            }}
-                        />
-                    ))}
-                    {/* 螺旋 */}
-                    {spirals.map(sp => (
-                        <div
-                            key={sp.id}
-                            style={{
-                                position: 'fixed',
-                                left: '50%',
-                                top: '50%',
-                                width: '2000px',
-                                height: '2000px',
-                                marginLeft: '-1000px',
-                                marginTop: '-1000px',
-                                background: 'conic-gradient(from 0deg, transparent 0%, rgba(255,215,0,0.3) 10%, transparent 20%, rgba(255,215,0,0.3) 30%, transparent 40%)',
-                                borderRadius: '50%',
-                                pointerEvents: 'none',
-                                zIndex: 283,
-                                animation: `spiral-rotate-${sp.direction > 0 ? 'cw' : 'ccw'} 3s linear ${sp.delay}s infinite`,
-                            }}
-                        />
-                    ))}
-                    {/* 星型バースト */}
-                    {starBursts.map(sb => (
-                        <div
-                            key={sb.id}
-                            style={{
-                                position: 'fixed',
-                                left: '50%',
-                                top: '50%',
-                                width: '2000px',
-                                height: '20px',
-                                marginLeft: '-1000px',
-                                marginTop: '-10px',
-                                background: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.9) 50%, transparent 100%)',
-                                transform: `rotate(${sb.angle}rad)`,
-                                transformOrigin: 'center',
-                                pointerEvents: 'none',
-                                zIndex: 288,
-                                animation: `starburst-pulse 2s ease-out ${sb.delay}s forwards`,
-                            }}
-                        />
-                    ))}
-                    {/* 黄金クラッカーパーティクル超大量 */}
-                    {particles.map(p => (
-                        <CrackerConfettiParticle key={p.id} {...p} />
-                    ))}
-                    {/* JACKPOT!!! テキスト（巨大＆脈動） */}
-                    <div
-                        className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[295]"
-                        style={{ animation: 'jackpot-mega-text 3s ease-out forwards' }}
-                    >
-                        <div className="text-[12rem] font-black" style={{
-                            background: 'linear-gradient(45deg, #FFD700, #FFA500, #FFD700, #FFF8DC, #FFD700)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            textShadow: '0 0 60px rgba(255,215,0,1), 0 0 120px rgba(255,215,0,0.8), 0 0 180px rgba(255,165,0,0.6)',
-                            filter: 'drop-shadow(0 0 40px rgba(255,215,0,1))',
-                        }}>
-                            JACKPOT!!!
-                        </div>
-                    </div>
-                    {/* サブテキスト */}
-                    <div
-                        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 translate-y-12 pointer-events-none z-[295]"
-                        style={{ animation: 'jackpot-subtext 3s ease-out 0.5s forwards', opacity: 0 }}
-                    >
-                        <div className="text-4xl font-black text-yellow-300" style={{ textShadow: '0 0 20px rgba(255,215,0,1)' }}>
-                            🔥 FEVER MODE ACTIVATED 🔥
-                        </div>
-                    </div>
-                </>
-            );
-        };
-
-        // --- クラッカー風花吹雪パーティクルシステム（宝箱用）---
         const CrackerConfettiParticle = ({ startX, startY, targetX, targetY, color, delay, duration, size }) => {
             const randomRotation = Math.random() * 1080 - 540;
-
-            return (
-                <div
-                    style={{
-                        position: 'fixed',
-                        left: startX,
-                        bottom: startY,
-                        width: `${size}px`,
-                        height: `${size}px`,
-                        backgroundColor: color,
-                        opacity: 0.95,
-                        borderRadius: '50%',
-                        pointerEvents: 'none',
-                        zIndex: 250,
-                        animation: `cracker-shoot ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}s forwards`,
-                        transform: 'scale(1)',
-                        boxShadow: color === '#FFD700' ? '0 0 15px rgba(255, 215, 0, 1)' : '0 0 15px rgba(192, 192, 192, 1)',
-                        '--target-x': targetX,
-                        '--target-y': targetY,
-                        '--rotation': `${randomRotation}deg`,
-                    }}
-                />
-            );
+            return <div style={{ position: 'fixed', left: startX, bottom: startY, width: `${size}px`, height: `${size}px`, backgroundColor: color, opacity: 0.95, borderRadius: '50%', pointerEvents: 'none', zIndex: 250, animation: `cracker-shoot ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${delay}s forwards`, transform: 'scale(1)', boxShadow: color === '#FFD700' ? '0 0 15px rgba(255, 215, 0, 1)' : '0 0 15px rgba(192, 192, 192, 1)', '--target-x': targetX, '--target-y': targetY, '--rotation': `${randomRotation}deg` }} />;
         };
 
         const ConfettiSystem = ({ rarity }) => {
             const [particles, setParticles] = useState([]);
-
             useEffect(() => {
-                // レアリティに応じてパーティクル数を決定
-                let count = 0;
-                let goldRatio = 0;
-
-                if (rarity === 'common') {
-                    count = 30;
-                    goldRatio = 0.1;
-                } else if (rarity === 'rare') {
-                    count = 60;
-                    goldRatio = 0.3;
-                } else if (rarity === 'epic') {
-                    count = 100;
-                    goldRatio = 0.5;
-                } else if (rarity === 'legendary') {
-                    count = 150;
-                    goldRatio = 0.7;
-                } else if (rarity === 'mythic') {
-                    count = 250;
-                    goldRatio = 0.9;
-                }
-
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-
+                let count = rarity === 'mythic' ? 250 : rarity === 'legendary' ? 150 : rarity === 'epic' ? 100 : 30;
                 const newParticles = [];
                 for (let i = 0; i < count; i++) {
-                    const isGold = Math.random() < goldRatio;
-                    const fromLeft = i % 2 === 0;
-
-                    // 左下または右下からの発射位置
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
-
-                    // 中央付近へのランダムな着地点
-                    const spreadX = (Math.random() - 0.5) * 400;
-                    const spreadY = (Math.random() - 0.5) * 400;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
-
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: isGold ? '#FFD700' : '#C0C0C0',
-                        delay: Math.random() * 0.3,
-                        duration: 0.8 + Math.random() * 0.4,
-                        size: 10 + Math.random() * 8,
-                    });
+                    newParticles.push({ id: i, startX: i%2===0?'5%':'95%', startY: '5%', targetX: `${window.innerWidth/2 + (Math.random()-0.5)*400}px`, targetY: `${window.innerHeight/2 + (Math.random()-0.5)*400}px`, color: Math.random() < 0.5 ? '#FFD700' : '#C0C0C0', delay: Math.random() * 0.3, duration: 0.8 + Math.random() * 0.4, size: 10 + Math.random() * 8 });
                 }
-
                 setParticles(newParticles);
-
-                // 2.5秒後にクリーンアップ
                 const timeout = setTimeout(() => setParticles([]), 3000);
                 return () => clearTimeout(timeout);
             }, [rarity]);
-
-            return (
-                <>
-                    {particles.map(p => (
-                        <CrackerConfettiParticle key={p.id} {...p} />
-                    ))}
-                </>
-            );
+            return <>{particles.map(p => <CrackerConfettiParticle key={p.id} {...p} />)}</>;
         };
 
-        // --- 宝箱モーダル（重厚連打・ドーパミンハック版） ---
+        // --- ChestModal (Heavy Mashing + 3D CSS) ---
         const ChestModal = ({ onClose, onReward, onStartFocus, isWakeupChest = false }) => {
-            const [state, setState] = useState('idle'); // idle, locked, whiteout, opened
+            const [state, setState] = useState('idle'); // idle, resisting, mashing, silence, opened
             const [reward, setReward] = useState(null);
-            
-            // 連打システム用ステート
-            const [tapData, setTapData] = useState({ current: 0, required: 15, progress: 0 });
-            const [shakeIntensity, setShakeIntensity] = useState(0);
-            const [isNearMissSlow, setIsNearMissSlow] = useState(false);
-            
-            // 報酬ルーレット用
-            const [rouletteSymbols, setRouletteSymbols] = useState([]);
-            const [rouletteIndex, setRouletteIndex] = useState(0);
+            const [tapsRequired, setTapsRequired] = useState(0);
+            const [currentTaps, setCurrentTaps] = useState(0);
+            const [showJackpotTease, setShowJackpotTease] = useState(false);
+            const [mashPower, setMashPower] = useState(0); // 0.0 to 1.0
 
-            // ルーレットシンボル定義
-            const allSymbols = [
-                { rarity: 'common', text: '💎 15 Gems', color: 'text-gray-400' },
-                { rarity: 'rare', text: '💎 50 Gems!', color: 'text-cyan-400' },
-                { rarity: 'epic', text: '💎 120 Gems!!', color: 'text-purple-400' },
-                { rarity: 'legendary', text: '💎 300 Gems!!!', color: 'text-yellow-400' },
-                { rarity: 'mythic', text: '💎 777 JACKPOT', color: 'text-red-500' },
-            ];
-
-            // 報酬決定ロジック（確率計算）
-            const determineReward = () => {
+            const getReward = () => {
                 const roll = Math.random() * 100;
-                let result = {};
-                if (roll < 40) result = { type: 'gems', amount: 15, text: '💎 15 Gems', icon: Icons.Gem, rarity: 'common', rarityText: 'COMMON' };
-                else if (roll < 70) result = { type: 'gems', amount: 50, text: '💎 50 Gems!', icon: Icons.Gem, rarity: 'rare', rarityText: 'RARE' };
-                else if (roll < 88) result = { type: 'gems', amount: 120, text: '💎 120 Gems!!', icon: Icons.Gem, rarity: 'epic', rarityText: 'EPIC' };
-                else if (roll < 97) result = { type: 'gems', amount: 300, text: '💎 300 Gems!!!', icon: Icons.Gem, rarity: 'legendary', rarityText: 'LEGENDARY' };
-                else result = { type: 'gems', amount: 777, text: '💎 777 JACKPOT', icon: Icons.Gem, rarity: 'mythic', rarityText: 'MYTHIC' };
-                return result;
+                if (roll < 40) return { type: 'gems', amount: 15, text: '💎 15 Gems', icon: Icons.Gem, rarity: 'common', rarityText: 'COMMON' };
+                if (roll < 70) return { type: 'gems', amount: 50, text: '💎 50 Gems!', icon: Icons.Gem, rarity: 'rare', rarityText: 'RARE' };
+                if (roll < 88) return { type: 'gems', amount: 120, text: '💎 120 Gems!!', icon: Icons.Gem, rarity: 'epic', rarityText: 'EPIC' };
+                if (roll < 97) return { type: 'gems', amount: 300, text: '💎 300 Gems!!!', icon: Icons.Gem, rarity: 'legendary', rarityText: 'LEGENDARY' };
+                return { type: 'gems', amount: 777, text: '💎 777 JACKPOT!!!', icon: Icons.Gem, rarity: 'mythic', rarityText: 'MYTHIC' };
             };
 
-            // タップハンドラー（中核ロジック）
-            const handleTap = async () => {
-                // 既に完了あるいは演出中は無視
-                if (state === 'whiteout' || state === 'opened') return;
+            const getRarityColor = (rarity) => {
+                if (rarity === 'common') return 'text-gray-300';
+                if (rarity === 'rare') return 'text-blue-400';
+                if (rarity === 'epic') return 'text-purple-400';
+                if (rarity === 'legendary') return 'text-yellow-400';
+                if (rarity === 'mythic') return 'text-red-500';
+                return 'text-white';
+            };
 
-                // フェーズ1: 初回タップ時の運命分岐 (50%でロック)
+            const handleInteraction = async () => {
+                if (state === 'opened' || state === 'silence') return;
+
                 if (state === 'idle') {
-                    const isLocked = Math.random() < 0.5;
-                    
-                    if (isLocked) {
-                        // ロックモードへ移行（重厚な金属音）
-                        setState('locked');
-                        const required = 10 + Math.floor(Math.random() * 6); // 10-15回
-                        setTapData({ current: 0, required, progress: 0 });
-                        
-                        // ガキン！という重いロック音
-                        AudioEngine.play([150, 100], 'sawtooth', 0.4, 0.1);
-                        AudioEngine.play([50], 'square', 0.5, 0.2); // 重低音
+                    // 50% 抵抗発生 -> Lock-on
+                    if (Math.random() < 0.5) {
+                        setState('mashing');
+                        const req = Math.floor(Math.random() * 6) + 10; // 10-15 taps
+                        setTapsRequired(req);
+                        setCurrentTaps(0);
+                        AudioEngine.play([150, 100, 80], 'sawtooth', 0.3, 0.1);
                         return;
                     } else {
-                        // 即開放（ラッキーパターン）
-                        triggerOpenSequence();
+                        proceedToOpen();
                         return;
                     }
                 }
 
-                // フェーズ2: 加速連打 (Mashing)
-                if (state === 'locked') {
-                    const newCurrent = tapData.curr
+                if (state === 'mashing') {
+                    const nextTaps = currentTaps + 1;
+                    setCurrentTaps(nextTaps);
+                    const progress = nextTaps / tapsRequired;
+                    setMashPower(progress);
 
+                    const pitchBase = 200 + (progress * 600);
+                    AudioEngine.play([pitchBase, pitchBase * 1.5], 'square', 0.1 + (progress * 0.2), 0.05);
+
+                    if (progress >= 0.9 && !showJackpotTease && nextTaps < tapsRequired) {
+                        setShowJackpotTease(true);
+                        setTimeout(() => setShowJackpotTease(false), 300);
+                        AudioEngine.play([1200, 1500], 'sine', 0.05, 0.1); 
+                    }
+
+                    if (nextTaps >= tapsRequired) {
+                        proceedToOpen();
+                    }
+                }
+            };
+
+            const proceedToOpen = async () => {
+                setState('silence');
+                await new Promise(r => setTimeout(r, 200));
+                const result = getReward();
+                setReward(result);
+                setState('opened');
+                onReward(result);
+                AudioEngine.play([50, 100, 200, 400], 'sawtooth', 0.4, 0.1);
+                if (result.rarity === 'mythic' || result.rarity === 'legendary') {
+                    setTimeout(() => AudioEngine.play([800, 1200, 1500, 2000], 'sine', 0.3, 0.1), 100);
+                }
+            };
+
+            // 3D Chest Visual Component
+            const ChestVisual = ({ state, mashPower }) => {
+                const shakeX = state === 'mashing' ? (Math.random() - 0.5) * mashPower * 20 : 0;
+                const shakeY = state === 'mashing' ? (Math.random() - 0.5) * mashPower * 20 : 0;
+                const scale = state === 'mashing' ? 1 + mashPower * 0.1 : 1;
+                
+                // 3D Transform Styles
+                const chestStyle = {
+                    transformStyle: 'preserve-3d',
+                    transform: `translate3d(${shakeX}px, ${shakeY}px, 0) scale(${scale}) rotateX(-10deg) rotateY(-20deg)`,
+                    transition: state === 'mashing' ? 'none' : 'transform 0.5s ease-out'
+                };
+
+                const lidStyle = {
+                    transformStyle: 'preserve-3d',
+                    transformOrigin: 'top',
+                    transform: state === 'opened' ? 'rotateX(110deg)' : 'rotateX(0deg)',
+                    transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                };
+
+                // Face styles
+                const faceCommon = "absolute border border-gray-800 bg-gradient-to-b from-gray-700 to-gray-900";
+                const goldTrim = "absolute bg-yellow-600/40 border border-yellow-500/30";
+
+                return (
+                    <div className="relative w-40 h-40" style={{ perspective: '800px' }}>
+                        {/* Background Effects */}
+                        {state === 'mashing' && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="absolute w-64 h-64 rounded-full border-4 border-red-500 opacity-0" style={{ animation: `neon-pulse-scan ${0.5 - (mashPower * 0.3)}s linear infinite` }}></div>
+                            </div>
+                        )}
+                        {showJackpotTease && (
+                            <div className="absolute -top-32 left-1/2 -translate-x-1/2 font-black text-4xl text-yellow-400 whitespace-nowrap z-50 animate-bounce" style={{ textShadow: '0 0 20px rgba(255,215,0,1)' }}>JACKPOT!?</div>
+                        )}
+
+                        <div className="w-full h-full relative" style={chestStyle}>
+                            
+                            {/* BASE (Body) */}
+                            <div className="absolute bottom-0 left-0 w-32 h-20 left-4 top-16" style={{ transformStyle: 'preserve-3d' }}>
+                                {/* Front */}
+                                <div className={`${faceCommon} w-32 h-20`} style={{ transform: 'translateZ(16px)' }}>
+                                    <div className="absolute top-2 left-2 right-2 h-1 bg-black/30"></div>
+                                    {/* Lock */}
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-8 bg-gray-300 border border-gray-500 rounded-b-lg shadow-md"></div>
+                                </div>
+                                {/* Back */}
+                                <div className={`${faceCommon} w-32 h-20`} style={{ transform: 'translateZ(-16px) rotateY(180deg)' }}></div>
+                                {/* Right */}
+                                <div className={`${faceCommon} w-32 h-20`} style={{ width: '32px', transform: 'rotateY(90deg) translateZ(16px)', left: '16px' }}></div>
+                                <div className="absolute w-8 h-20 bg-gray-800 border border-gray-700" style={{ transform: 'rotateY(90deg) translateZ(16px)', right: '-4px', top:0 }}></div>
+                                <div className="absolute w-8 h-20 bg-gray-800 border border-gray-700" style={{ transform: 'rotateY(-90deg) translateZ(16px)', left: '-4px', top:0 }}></div>
+                                
+                                {/* Bottom */}
+                                <div className={`${faceCommon} w-32 h-32`} style={{ height: '32px', transform: 'rotateX(-90deg) translateZ(20px)', top: '0' }}></div>
+
+                                {/* Inner Content (Glow) */}
+                                <div className="absolute inset-0 bg-yellow-400/20" style={{ transform: 'translateZ(0)', boxShadow: '0 0 20px yellow' }}></div>
+                            </div>
+
+                            {/* LID (Top) */}
+                            <div className="absolute w-32 h-12 left-4 top-16" style={lidStyle}>
+                                {/* Lid Front */}
+                                <div className={`${faceCommon} w-32 h-12`} style={{ transform: 'translateZ(16px)' }}>
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-4 bg-gray-300 border border-gray-500 rounded-t-lg"></div>
+                                </div>
+                                {/* Lid Top */}
+                                <div className={`${faceCommon} w-32 h-32`} style={{ height: '32px', transform: 'rotateX(90deg) translateZ(16px)', top: '-16px' }}>
+                                    <div className="absolute inset-2 border border-gray-500/50"></div>
+                                </div>
+                                {/* Lid Back */}
+                                <div className={`${faceCommon} w-32 h-12`} style={{ transform: 'translateZ(-16px) rotateY(180deg)' }}></div>
+                                {/* Lid Sides */}
+                                <div className="absolute w-8 h-12 bg-gray-700 border border-gray-600" style={{ transform: 'rotateY(90deg) translateZ(16px)', right: '-4px' }}></div>
+                                <div className="absolute w-8 h-12 bg-gray-700 border border-gray-600" style={{ transform: 'rotateY(-90deg) translateZ(16px)', left: '-4px' }}></div>
+                            </div>
+
+                            {/* Open Effects */}
+                            {state === 'opened' && (
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-40 bg-white/50 blur-md" style={{ transform: 'translateY(-100px) rotate(0deg)' }}></div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center backdrop-blur-md animate-in fade-in select-none" onClick={handleInteraction}>
+                    {state === 'silence' && <div className="fixed inset-0 bg-white z-[210] animate-none"></div>}
+                    {state === 'opened' && reward && <ConfettiSystem rarity={reward.rarity} />}
+
+                    <div className="flex flex-col items-center w-full max-w-md pointer-events-none">
+                        <div className="relative mb-12 transform transition-transform duration-75">
+                            <ChestVisual state={state} mashPower={mashPower} />
+                            
+                            {state === 'opened' && reward && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50" style={{ animation: 'reward-emerge 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
+                                    <div className="text-8xl drop-shadow-2xl filter brightness-110">
+                                        {reward?.icon && <reward.icon size={100} className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]" fill={reward.type==='gems'?"currentColor":"none"} />}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="text-white text-center min-h-[140px] px-4 w-full">
+                            {state === 'idle' && (
+                                <div className="animate-pulse">
+                                    <p className="text-3xl font-black mb-2 text-yellow-300 drop-shadow-lg tracking-wider">{isWakeupChest ? 'おかえりなさい' : 'SECTION CLEAR'}</p>
+                                    <p className="text-lg font-bold text-gray-300">タップして報酬を獲得</p>
+                                </div>
+                            )}
+                            {state === 'mashing' && (
+                                <div>
+                                    <p className="text-5xl font-black text-red-500 drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] animate-pulse tracking-widest" style={{ transform: `scale(${1 + mashPower * 0.5})`, filter: `blur(${mashPower * 1}px)` }}>LOCKED!</p>
+                                    <p className="text-xl font-bold text-white mt-2 animate-bounce">TAP TO BREAK!!</p>
+                                    <div className="w-64 h-3 bg-gray-800 rounded-full mt-4 mx-auto overflow-hidden border border-gray-600">
+                                        <div className="h-full bg-red-600 transition-all duration-75" style={{ width: `${mashPower * 100}%` }}></div>
+                                    </div>
+                                </div>
+                            )}
+                            {state === 'opened' && (
+                                <div className="animate-in slide-in-from-bottom-10 duration-500 pointer-events-auto">
+                                    <p className={`text-sm font-black uppercase tracking-[0.3em] mb-2 ${getRarityColor(reward.rarity)} drop-shadow-md`}>{reward.rarityText}</p>
+                                    <p className="text-5xl font-black mb-8 drop-shadow-lg text-white tracking-tighter">{reward?.text}</p>
+                                    <button onClick={(e) => { e.stopPropagation(); onStartFocus(); }} className="bg-white text-black px-12 py-4 rounded-full font-black text-xl border-4 border-transparent hover:border-yellow-300 shadow-[0_0_30px_rgba(255,255,255,0.3)] active:scale-95 transition-all hover:scale-105 hover:shadow-[0_0_50px_rgba(255,215,0,0.5)] flex items-center justify-center gap-2 mx-auto">
+                                        <Icons.Zap size={24} className="text-black" fill="currentColor"/> START FOCUS
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- TaskItem (Focus Layout) ---
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false, setRewardEffect, stats, setStats, setToastMessage }) => {
+            const [isCompleting, setIsCompleting] = useState(false);
+            const [confettiType, setConfettiType] = useState(null);
+            const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
+            const [animateCheckbox, setAnimateCheckbox] = useState(false);
+            const [isEditingTime, setIsEditingTime] = useState(false);
+            const [editTimeValue, setEditTimeValue] = useState('9.5');
+            const buttonRef = useRef(null);
+
+            useEffect(() => {
+                if (!task.challengeEndTime || task.completed) { setChallengeTimeLeft(null); return; }
+                const update = () => {
+                    const diff = task.challengeEndTime - Date.now();
+                    const sec = diff <= 0 ? 0 : Math.ceil(diff / 1000);
+                    setChallengeTimeLeft(sec);
+                };
+                update();
+                const timer = setInterval(update, 1000);
+                return () => clearInterval(timer);
+            }, [task.challengeEndTime, task.completed]);
+
+            const handleToggle = async (e) => {
+                e.stopPropagation();
+                if (task.completed || isCompleting) return onToggle(task);
+                setIsCompleting(true);
+                setAnimateCheckbox(true);
+                AudioEngine.play([1200, 600], 'square', 0.08, 0.02);
+                setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 0);
+                setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 80);
+                setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 160);
+                setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 240);
+                await new Promise(resolve => setTimeout(resolve, 800));
+                AudioEngine.play([300, 200], 'square', 0.18, 0.08);
+                onToggle(task);
+                onXpGain(task, buttonRef.current?.getBoundingClientRect(), setConfettiType);
+                setIsCompleting(false);
+                setAnimateCheckbox(false);
+            };
+
+            const springClass = isCompleting ? "animate-spring" : "";
+            const checkboxPop = animateCheckbox ? "animate-checkbox-pop" : "";
+            const anticipationGlow = animateCheckbox ? "animate-anticipation-glow animate-anticipation-pulse" : "";
+            const disabledClass = !isFocusedSection && !task.completed ? "pointer-events-none opacity-50 grayscale" : "";
+
+            return (
+                <div className={`group flex items-start py-5 px-5 border-b-2 transition-all ${springClass} ${disabledClass} ${isDragging ? 'opacity-50 bg-blue-50' : ''} ${task.completed ? 'bg-gray-50 opacity-60 border-gray-100' : isFocusedSection ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-gray-100 border-gray-200'}`} draggable={!task.completed} onDragStart={(e) => !task.completed && onDragStart && onDragStart(e, task)} onContextMenu={(e) => onContextMenu && onContextMenu(e, task)}>
+                    {!task.completed && <div className="pt-0.5 pr-2 flex-shrink-0 cursor-move text-gray-300 hover:text-gray-500 transition-colors"><Icons.GripVertical size={18} /></div>}
+                    <div className="pt-0.5 pr-4 flex-shrink-0 relative" ref={buttonRef} onClick={(e) => handleToggle(e)}>
+                        {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
+                        <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${task.completed || isCompleting ? 'bg-duo-blue border-duo-blue scale-110' : isFocusedSection ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50' : 'border-gray-300 bg-gray-200'}`}>
+                            {(task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
+                        </div>
+                    </div>
+                    <div className="flex-grow min-w-0 pr-2 pt-0.5"><div className={`text-lg font-black leading-tight ${task.completed ? 'text-gray-400 line-through' : isFocusedSection ? 'text-gray-900' : 'text-gray-500'}`}>{task.title}</div></div>
+                    <div className="flex items-center gap-1">
+                        {!task.completed && (
+                            <div className="flex items-center gap-1">
+                                {challengeTimeLeft !== null ? (
+                                    <span className={`text-[11px] font-black px-3 py-1 rounded-xl border-b-2 shadow-sm ${challengeTimeLeft > 0 ? 'bg-duo-pink text-white border-duo-pinkBorder animate-pulse' : 'bg-gray-200 text-gray-500 border-gray-300'}`}>{challengeTimeLeft > 0 ? `${Math.floor(challengeTimeLeft / 60)}:${(challengeTimeLeft % 60).toString().padStart(2, '0')}` : 'TIME OVER'}</span>
+                                ) : (
+                                    <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-gray-50 text-gray-400 border border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors" onClick={(e) => { e.stopPropagation(); setEditTimeValue(String(task.challengeDuration || 9.5)); setIsEditingTime(true); }}>{task.challengeDuration || 9.5}min</span>
+                                )}
+                                {isEditingTime && (
+                                    <div className="fixed inset-0 bg-black/50 z-[300] flex items-center justify-center" onClick={() => setIsEditingTime(false)}>
+                                        <div className="bg-white rounded-2xl p-6 shadow-floating w-80 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                                            <h3 className="text-lg font-black mb-4 text-gray-700">Set Time Limit</h3>
+                                            <div className="flex items-center gap-2 mb-4"><input type="number" step="0.5" min="0.5" value={editTimeValue} onChange={(e) => setEditTimeValue(e.target.value)} className="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl font-bold text-lg text-center"/><span className="font-bold text-gray-500">min</span></div>
+                                            <div className="flex gap-2"><button onClick={() => { onUpdate(task.id, { challengeDuration: parseFloat(editTimeValue) }); setIsEditingTime(false); }} className="flex-1 bg-duo-blue text-white font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform">Save</button><button onClick={() => setIsEditingTime(false)} className="flex-1 bg-gray-200 text-gray-600 font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform">Cancel</button></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {!task.completed && <div className="flex items-center gap-1"><IconButton icon={Icons.Flame} size={18} className={challengeTimeLeft !== null ? "text-orange-500" : "text-gray-300 hover:text-orange-400 hover:bg-orange-50"} onClick={(e) => { e.stopPropagation(); const duration = (task.challengeDuration || 9.5) * 60 * 1000; onUpdate(task.id, { challengeEndTime: Date.now() + duration }); }} /><div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}><IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} /></div></div>}
+                        {task.completed && <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}><IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} /></div>}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- メインアプリ ---
+        const App = () => {
+            const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
+            const [tasks, setTasks] = useState(() => load('duo_v18_tasks', []));
+            const [stats, setStats] = useState(() => load('duo_v18_stats', {
+                xp: 0, level: 1, gems: 100, streak: 0, lastDate: null, streakFreeze: 0,
+                wager: { active: false }, focusPotion: false, resurrectionTickets: 0,
+                themes: ['default'], currentTheme: 'default',
+                streakBroken: false, savedStreak: 0, completedSections: 0, devLogs: [],
+                mvpScrutinizerActive: true, devOathActive: false, flowCapacitorEndTime: 0,
+                tasksCreated: 0, tasksPurged: 0, lastWakeupChestTime: 0, pityCounter: 0, feverEndTime: 0,
+            }));
+            
+            const SECTION_SIZE = 4;
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [activeListId, setActiveListId] = useState('default');
+            const [isShopOpen, setIsShopOpen] = useState(false);
+            const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+            const [timerState, setTimerState] = useState({ active: false, time: 52 * 60, mode: 'work' });
+            const [isCompletedOpen, setIsCompletedOpen] = useState(false);
+            const [toastMessage, setToastMessage] = useState(null);
+            const [showChestModal, setShowChestModal] = useState(false);
+            const [levelGlow, setLevelGlow] = useState(false);
+            const [progressGlow, setProgressGlow] = useState(false);
+            const [showIgnition, setShowIgnition] = useState(false);
+            const [floatingTexts, setFloatingTexts] = useState([]);
+            const [rewardEffect, setRewardEffect] = useState(null);
+            const [contextMenu, setContextMenu] = useState(null);
+            const [progressBounce, setProgressBounce] = useState(false);
+            const [draggedTaskId, setDraggedTaskId] = useState(null);
+            const [dragOverTaskId, setDragOverTaskId] = useState(null);
+
+            const closeToast = useCallback(() => setToastMessage(null), []);
+
+            useEffect(() => {
+                const h = () => { const m = window.innerWidth < 768; setIsMobile(m); if(!m) setIsSidebarOpen(true); };
+                window.addEventListener('resize', h); return () => window.removeEventListener('resize', h);
+            }, []);
+
+            useEffect(() => {
+                const handleClick = () => setContextMenu(null);
+                window.addEventListener('click', handleClick);
+                return () => window.removeEventListener('click', handleClick);
+            }, []);
+
+            const startFocusSession = () => {
+                setShowChestModal(false);
+                setTimerState({ active: true, time: 52 * 60, mode: 'work' });
+                setToastMessage("🔥 FOCUS MODE STARTED! 🔥");
+                AudioEngine.play([200, 400, 800], 'square', 0.2, 0.1);
+                const firstTask = document.querySelector('.group');
+                if (firstTask) firstTask.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+
+            useEffect(() => {
+                localStorage.setItem('duo_v18_tasks', JSON.stringify(tasks));
+                localStorage.setItem('duo_v18_stats', JSON.stringify(stats));
+            }, [tasks, stats]);
+
+            useEffect(() => {
+                let timer = null;
+                if (timerState.active && timerState.time > 0) {
+                    timer = setInterval(() => setTimerState(s => ({ ...s, time: s.time - 1 })), 1000);
+                } else if (timerState.time === 0) {
+                    const isWork = timerState.mode === 'work';
+                    setTimerState({ active: false, mode: isWork ? 'break' : 'work', time: isWork ? 17 * 60 : 52 * 60 });
+                    AudioEngine.play([880, 440], 'sine', 0.15, 0.2);
+                }
+                return () => clearInterval(timer);
+            }, [timerState.active, timerState.time]);
+
+            const switchTimerMode = (mode) => {
+                const time = mode === 'work' ? 52 * 60 : 17 * 60;
+                setTimerState({ active: false, mode, time });
+            };
+
+            const handleReward = (reward) => {
+                if (reward.type === 'gems') {
+                    setStats(prev => ({ ...prev, gems: prev.gems + reward.amount }));
+                } else if (reward.itemId === 'freeze') {
+                    setStats(prev => ({ ...prev, streakFreeze: prev.streakFreeze + 1 }));
+                } else if (reward.itemId === 'ticket') {
+                    setStats(prev => ({ ...prev, resurrectionTickets: prev.resurrectionTickets + 1 }));
+                }
+            };
+
+            const updateTask = (id, updates) => setTasks(tasks.map(t => t.id === id ? { ...t, ...updates } : t));
+            const handleDragStart = (e, task) => { setDraggedTaskId(task.id); e.dataTransfer.effectAllowed = 'move'; };
+            const handleDragOver = (e, task) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverTaskId(task.id); };
+            const handleDrop = (e, dropTask) => {
+                e.preventDefault();
+                if (!draggedTaskId || draggedTaskId === dropTask.id) { setDraggedTaskId(null); setDragOverTaskId(null); return; }
+                const draggedIndex = tasks.findIndex(t => t.id === draggedTaskId);
+                const dropIndex = tasks.findIndex(t => t.id === dropTask.id);
+                if (draggedIndex === -1 || dropIndex === -1) { setDraggedTaskId(null); setDragOverTaskId(null); return; }
+                const newTasks = [...tasks];
+                const [draggedTask] = newTasks.splice(draggedIndex, 1);
+                newTasks.splice(dropIndex, 0, draggedTask);
+                setTasks(newTasks);
+                setDraggedTaskId(null);
+                setDragOverTaskId(null);
+            };
+
+            const visibleTasks = tasks.filter(t => activeListId === 'default' ? !t.listId || t.listId === 'default' : t.listId === activeListId);
+            const incomplete = visibleTasks.filter(t => !t.completed);
+            const completed = visibleTasks.filter(t => t.completed);
+            const totalTasks = tasks.length;
+            const completedTasksCount = tasks.filter(t => t.completed).length;
+            const completionRate = totalTasks === 0 ? 0 : Math.round((completedTasksCount / totalTasks) * 100);
+
+            const buyItem = (cost, action) => {
+                if (stats.gems < cost) { setToastMessage("ジェムが足りません！💎"); return; }
+                setStats(prev => ({ ...prev, gems: prev.gems - cost })); action();
+            };
+            const unlockTheme = (n, c) => buyItem(c, () => setStats(s => ({...s, themes: [...s.themes, n], currentTheme: n})));
+            const handleXpGain = (task, rect, setConfettiType) => { 
+                setStats(prev => ({ ...prev, gems: prev.gems + 2, xp: prev.xp + 10 }));
+                setConfettiType && setConfettiType('ignition');
+            };
+            const resurrectStreak = () => { if(stats.streakBroken && stats.resurrectionTickets > 0) setStats(s => ({...s, streakBroken: false, resurrectionTickets: s.resurrectionTickets - 1})); };
+            const handleContextMenu = (e, task) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, task }); };
+            const toggleSectionBreak = () => { if(!contextMenu) return; const idx = tasks.findIndex(t=>t.id===contextMenu.task.id); if(idx!==-1 && idx < tasks.length-1) { const next=tasks[idx+1]; setTasks(tasks.map((t,i)=>i===idx+1?{...t,isSectionHead:!next.isSectionHead}:t)); } setContextMenu(null); };
+            const purgeTask = () => { if(!contextMenu) return; const t=contextMenu.task; setTasks([...tasks.filter(x=>x.id!==t.id), t]); setStats(s=>({...s, gems:s.gems+25})); setToastMessage("MVP最適化！+25💎"); setContextMenu(null); };
+
+            return (
+                <div className="flex h-screen w-full bg-white overflow-hidden relative selection:bg-duo-green/20 font-bold text-duo-text">
+                    <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b-2 border-gray-100 z-[100] flex items-center justify-between px-6">
+                        <div className="flex-shrink-0 z-20"><IconButton icon={Icons.Menu} onClick={() => setIsSidebarOpen(!isSidebarOpen)} /></div>
+                        
+                        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] px-4 hidden md:block">
+                            <div className={`relative h-8 bg-gray-100 rounded-full overflow-hidden border-2 border-gray-200 shadow-inner ${levelGlow ? 'animate-pulse' : ''}`}>
+                                <div className={`h-full bg-gradient-to-r from-duo-green to-duo-greenHighlight transition-all duration-700 ease-out relative ${levelGlow ? 'progress-glow brightness-125' : ''}`} style={{ width: `${completionRate}%` }}>
+                                     <div className="absolute inset-0 bg-white/20 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+                                </div>
+                                <div className={`absolute inset-0 flex items-center justify-center gap-2 z-10 transition-transform ${progressBounce ? 'scale-110' : ''}`}>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-40" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.8)' }}>MVP Progress</span>
+                                    <span className={`text-xs font-black ${progressBounce ? 'text-duo-green' : 'text-slate-600'}`} style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>{completionRate}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 z-20">
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl"><Icons.Gem size={26} fill="currentColor" className="text-cyan-400"/><span className="text-lg font-black text-cyan-400">{stats.gems}</span></button>
+                        </div>
+                    </header>
+
+                    {/* Sidebar */}
+                    <aside className={`fixed inset-y-0 left-0 transform transition-all duration-300 z-[90] w-72 bg-white border-r-2 border-duo-gray pt-20 flex flex-col ${isSidebarOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}>
+                        <div className="p-4 mb-2">
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">今日の記録</h3>
+                            <div className={`flex items-center gap-4 p-3 rounded-2xl border-2 transition-colors duration-500 bg-gray-50 border-gray-200`}>
+                                <Icons.Flame size={32} className={`transition-colors duration-1000 ${stats.streak > 0 ? "text-duo-orange" : "text-gray-300"}`} fill="currentColor" />
+                                <div>
+                                    <div className={`text-xl font-black transition-colors duration-1000 ${stats.streak > 0 ? "text-duo-orange" : "text-gray-400"}`}>{stats.streakBroken ? 0 : stats.streak}日連続</div>
+                                    <div className="text-xs text-gray-400 font-bold">Keep it burning!</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6 border-t-2 border-duo-gray">
+                            <div className="space-y-3">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Lists</h3>
+                                <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'default' ? 'bg-duo-blue/10 text-duo-blue border-duo-blue/20' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('default'); if(isMobile) setIsSidebarOpen(false); }}><Icons.Check size={24} />マイタスク</button>
+                                <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'deadline' ? 'bg-duo-pink/10 text-duo-pink border-duo-pink/20' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('deadline'); if(isMobile) setIsSidebarOpen(false); }}><Icons.Calendar size={24} />締切リスト</button>
+                            </div>
+                            <div className="pt-6 border-t-2 border-duo-gray/50 pb-20">
+                                <button onClick={() => setIsShopOpen(!isShopOpen)} className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all font-black text-gray-500 bg-white border-2 border-transparent hover:bg-gray-50 ${isShopOpen ? 'text-duo-text' : ''} ${juicyBtnClass}`}>
+                                    <div className="flex items-center gap-2 text-xs uppercase tracking-widest"><Icons.ShoppingBag size={18}/> Gem Shop</div>
+                                    {isShopOpen ? <Icons.ChevronDown size={18} /> : <Icons.ChevronRight size={18} />}
+                                </button>
+                                {isShopOpen && (
+                                    <div className="mt-4 space-y-3 animate-in fade-in slide-in-
