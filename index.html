@@ -1071,92 +1071,83 @@
 
         // --- 宝箱モーダル（ギャンブル依存性MAX：予告＆ニアミス演出） ---
         const ChestModal = ({ onClose, onReward, isWakeupChest = false }) => {
-            const [state, setState] = useState('idle');
+            const [state, setState] = useState('idle'); // idle, locked-on, mashing, near-miss, silence, opened
             const [reward, setReward] = useState(null);
-            const [showNearMiss, setShowNearMiss] = useState(false);
-            const [chargeLevel, setChargeLevel] = useState(0);
-            const [showJackpotPeek, setShowJackpotPeek] = useState(false);
-            const [rouletteSymbols, setRouletteSymbols] = useState([]);
-            const [rouletteIndex, setRouletteIndex] = useState(0);
-            const chargeIntervalRef = useRef(null);
-            const chargeStartTimeRef = useRef(null);
+            const [tapsRequired, setTapsRequired] = useState(0);
+            const [tapCount, setTapCount] = useState(0);
+            const [showJackpotTease, setShowJackpotTease] = useState(false);
+            const [mashIntensity, setMashIntensity] = useState(0);
+            const [nearMissTriggered, setNearMissTriggered] = useState(false);
 
-            // ルーレット用のシンボル配列
-            const allSymbols = [
-                { rarity: 'common', text: '💎 15 Gems', color: 'text-gray-300' },
-                { rarity: 'rare', text: '💎 50 Gems!', color: 'text-blue-400' },
-                { rarity: 'epic', text: '💎 120 Gems!!', color: 'text-purple-500' },
-                { rarity: 'legendary', text: '💎 300 Gems!!!', color: 'text-yellow-400' },
-                { rarity: 'mythic', text: '💎 777 JACKPOT!!!', color: 'text-red-500' },
-            ];
+            const handleInteraction = async () => {
+                if (state === 'opened' || state === 'silence' || state === 'near-miss') return;
 
-            const handleOpen = async () => {
-                if (state !== 'idle' && state !== 'charging') return;
-
-                // 🎰 フェーズ1：50%抵抗ロジック（拒絶演出）
+                // フェーズ1：idleからの最初のタップ（50%でlock-on）
                 if (state === 'idle') {
-                    const resistanceRoll = Math.random();
-                    if (resistanceRoll < 0.5) {
-                        // 50%の確率で拒絶
-                        setState('resisting');
+                    if (Math.random() < 0.5) {
+                        // 50%の確率でLock-on状態
+                        setState('locked-on');
+                        AudioEngine.play([200, 150, 120, 90, 70], 'sawtooth', 0.35, 0.08);
 
-                        // 重厚な拒絶SE（低音＋ガリガリ音）
-                        AudioEngine.play([150, 140, 130, 120], 'sawtooth', 0.25, 0.15);
-                        AudioEngine.play([80, 75, 70], 'square', 0.2, 0.1);
+                        setTimeout(() => {
+                            setTapsRequired(Math.floor(Math.random() * 6) + 10); // 10-15回
+                            setTapCount(0);
+                            setMashIntensity(0);
+                            setNearMissTriggered(false);
+                            setState('mashing');
+                        }, 400);
+                    } else {
+                        // 50%の確率で直接開封
+                        proceedToOpen();
+                    }
+                    return;
+                }
 
-                        // Jackpotをチラ見せ（ニアミス効果）
-                        setShowJackpotPeek(true);
-                        await new Promise(resolve => setTimeout(resolve, 600));
-                        setShowJackpotPeek(false);
+                // フェーズ2：連打中のタップ処理
+                if (state === 'mashing') {
+                    const nextTaps = tapCount + 1;
+                    setTapCount(nextTaps);
+                    const progress = nextTaps / tapsRequired;
+                    setMashIntensity(progress);
 
-                        // 状態をidleに戻して再タップを促す
-                        setState('idle');
+                    // 指数関数的なピッチ増加（20%刻みの強度増加）
+                    const pitchBase = 200 * Math.pow(2, progress * 2.5);
+                    AudioEngine.play([pitchBase, pitchBase * 1.2], 'square', 0.12 + (progress * 0.25), 0.04);
+
+                    // フェーズ3：90%でニアミストラップ（1回だけ）
+                    if (progress >= 0.9 && !nearMissTriggered && nextTaps < tapsRequired) {
+                        setNearMissTriggered(true);
+                        setState('near-miss');
+                        setShowJackpotTease(true);
+                        AudioEngine.play([1500, 1800, 2000], 'sine', 0.08, 0.08);
+
+                        setTimeout(() => {
+                            setShowJackpotTease(false);
+                            setState('mashing');
+                        }, 300);
                         return;
                     }
 
-                    // 成功：長押しチャージフェーズへ
-                    setState('charging');
-                    chargeStartTimeRef.current = Date.now();
-                    setChargeLevel(0);
+                    // 必要回数到達でフェーズ4へ
+                    if (nextTaps >= tapsRequired) {
+                        // フェーズ4：0.2sホワイトアウト＋サイレンス
+                        setState('silence');
+                        AudioEngine.play([60, 80, 100, 150, 200, 300, 400], 'sine', 0.5, 0.2); // 重低音
 
-                    // チャージ音（上昇するピッチ）
-                    chargeIntervalRef.current = setInterval(() => {
-                        const elapsed = Date.now() - chargeStartTimeRef.current;
-                        const progress = Math.min(elapsed / 2000, 1); // 2秒でフル
-                        setChargeLevel(progress * 100);
-
-                        // ピッチ上昇SE
-                        const pitch = 300 + progress * 700;
-                        AudioEngine.play([pitch], 'sine', 0.08, 0.02);
-
-                        if (progress >= 1) {
-                            clearInterval(chargeIntervalRef.current);
+                        setTimeout(() => {
                             proceedToOpen();
-                        }
-                    }, 100);
-
-                    return;
+                        }, 200);
+                    }
                 }
             };
 
             const proceedToOpen = async () => {
-                // 🎰 フェーズ2：開封の儀式完了→空間歪み演出
-                setState('bursting');
-
-                // 空間歪みSE（ウォンウォン音）
-                AudioEngine.play([200, 180, 160, 140, 120], 'sine', 0.3, 0.2);
-
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                // 🎰 フェーズ3：ルーレット開始
-                setState('roulette');
-
-                // 報酬決定（先に決めておく）
+                // フェーズ5：報酬決定＋開封
                 const roll = Math.random() * 100;
                 console.log("Chest Roll:", roll);
                 let result = {};
 
-                // レアリティベースの報酬テーブル（中毒性重視）
+                // レアリティベースの報酬テーブル
                 if (roll < 40) {
                     // Common (40%)
                     result = {
@@ -1233,51 +1224,10 @@
                     };
                 }
 
-                // 🎰 ルーレットシンボル生成（ランダムに埋め込む）
-                const symbols = [];
-                for (let i = 0; i < 10; i++) {
-                    const randomSymbol = allSymbols[Math.floor(Math.random() * allSymbols.length)];
-                    symbols.push(randomSymbol);
-                }
-                // 最終的に止まる位置に実際の報酬を配置
-                symbols[5] = { rarity: result.rarity, text: result.text, color: getRarityColor(result.rarity) };
-                setRouletteSymbols(symbols);
-
-                // 高速スピン（1.5秒）
-                let spinIndex = 0;
-                const fastSpin = setInterval(() => {
-                    spinIndex = (spinIndex + 1) % symbols.length;
-                    setRouletteIndex(spinIndex);
-                    AudioEngine.play([400 + spinIndex * 50], 'square', 0.05, 0.01);
-                }, 100);
-
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                clearInterval(fastSpin);
-
-                // スローダウン＆ニアミス演出（30%確率）
-                const nearMissRoll = Math.random();
-                if (nearMissRoll < 0.3 && result.rarity !== 'mythic') {
-                    // ジャックポットをチラ見せしてからズレる
-                    setRouletteIndex(4); // Jackpotの1つ前
-                    AudioEngine.play([900, 920, 950], 'sine', 0.15, 0.1);
-                    await new Promise(resolve => setTimeout(resolve, 400));
-
-                    // スローモーションでズレる
-                    setRouletteIndex(5); // 実際の報酬
-                    AudioEngine.play([600, 550], 'sine', 0.2, 0.15);
-                    await new Promise(resolve => setTimeout(resolve, 600));
-                } else {
-                    // 通常停止
-                    setRouletteIndex(5);
-                    AudioEngine.play([800, 700, 600], 'sine', 0.2, 0.12);
-                    await new Promise(resolve => setTimeout(resolve, 400));
-                }
-
-                // 🎰 フェーズ4：報酬確定→空間歪み＋ホワイトアウト
                 setReward(result);
                 setState('opened');
 
-                // レアリティに応じた効果音＋空間歪み
+                // レアリティに応じた効果音
                 if (result.rarity === 'mythic') {
                     AudioEngine.play([600, 800, 1000, 1200, 1500], 'sine', 0.3, 0.15);
                 } else if (result.rarity === 'legendary') {
@@ -1289,14 +1239,6 @@
                 onReward(result);
             };
 
-            // クリーンアップ
-            useEffect(() => {
-                return () => {
-                    if (chargeIntervalRef.current) {
-                        clearInterval(chargeIntervalRef.current);
-                    }
-                };
-            }, []);
 
             const getRarityColor = (rarity) => {
                 if (rarity === 'common') return 'text-gray-300';
@@ -1308,8 +1250,19 @@
             };
 
             // 宝箱SVGコンポーネント（Duolingo/クラロワ風）
-            const ChestVisual = ({ state: chestState }) => (
-                <div className="relative w-48 h-48 flex items-center justify-center" style={{ perspective: '1000px' }}>
+            const ChestVisual = ({ state: chestState, mashIntensity: intensity = 0 }) => {
+                // 連打強度に応じた視覚エフェクト（20%刻み）
+                const shakeAmount = Math.floor(intensity * 5) * 8; // 0, 8, 16, 24, 32, 40px
+                const blurAmount = Math.floor(intensity * 5) * 0.4; // 0, 0.4, 0.8, 1.2, 1.6, 2px
+                const skewAmount = Math.floor(intensity * 5) * 1.6; // 0, 1.6, 3.2, 4.8, 6.4, 8deg
+
+                return (
+                <div className="relative w-48 h-48 flex items-center justify-center" style={{
+                    perspective: '1000px',
+                    transform: chestState === 'mashing' ? `translate(${Math.random() * shakeAmount - shakeAmount/2}px, ${Math.random() * shakeAmount - shakeAmount/2}px) skew(${skewAmount}deg)` : 'none',
+                    filter: chestState === 'mashing' ? `blur(${blurAmount}px)` : 'none',
+                    transition: 'none'
+                }}>
                     {/* 光の後光（プラチナ・ブルー） */}
                     {chestState === 'idle' && (
                         <div className="absolute inset-0 rounded-full" style={{
@@ -1347,35 +1300,15 @@
                         </div>
                     )}
 
-                    {/* チャージゲージ（長押し中） */}
-                    {chestState === 'charging' && chargeLevel > 0 && (
-                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-40 h-4 bg-black/50 rounded-full overflow-hidden border-2 border-blue-400">
-                            <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-300 transition-all duration-100" style={{
-                                width: `${chargeLevel}%`,
-                                boxShadow: '0 0 20px rgba(100,200,255,0.8)'
-                            }}></div>
-                        </div>
-                    )}
-
-                    {/* Jackpotチラ見せ（拒絶時） */}
-                    {showJackpotPeek && (
-                        <div className="absolute -top-24 left-1/2 -translate-x-1/2 font-black text-3xl" style={{
-                            animation: 'jackpot-peek 0.6s ease-out',
-                            color: '#ff0000',
-                            textShadow: '0 0 20px rgba(255,0,0,1), 0 0 40px rgba(255,215,0,0.8)'
-                        }}>
-                            💎 JACKPOT!!! 💎
-                        </div>
-                    )}
 
                     {/* 宝箱本体 */}
-                    <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' || chestState === 'resisting' ? 'cursor-pointer' : ''}`} style={{
+                    <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' || chestState === 'locked-on' || chestState === 'mashing' ? 'cursor-pointer' : ''}`} style={{
                         animation:
                             chestState === 'idle' ? 'chest-float 3s ease-in-out infinite' :
-                            chestState === 'resisting' ? 'resistance-denial 0.6s ease-out' :
-                            chestState === 'charging' ? `charge-buildup ${2 - chargeLevel / 100}s linear infinite` :
-                            chestState === 'bursting' ? 'spatial-distortion 0.5s ease-out, screen-shake-brutal 0.5s ease-out' :
-                            chestState === 'roulette' ? 'heartbeat-pulse 0.3s ease-in-out infinite' :
+                            chestState === 'locked-on' ? 'resistance-denial 0.6s ease-out' :
+                            chestState === 'mashing' ? 'heartbeat-pulse 0.3s ease-in-out infinite' :
+                            chestState === 'near-miss' ? 'near-miss-flash 0.3s ease-out' :
+                            chestState === 'silence' ? 'spatial-distortion 0.2s ease-out' :
                             'none',
                         transformStyle: 'preserve-3d'
                     }}>
@@ -1427,36 +1360,26 @@
                         )}
                     </div>
                 </div>
-            );
+                );
+            };
 
             return (
                 <div className="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in" style={{
-                    animation: state === 'bursting' ? 'screen-shake-brutal 0.5s ease-out' : 'none'
+                    animation: state === 'mashing' && mashIntensity > 0.5 ? 'screen-shake-brutal 0.3s ease-out infinite' : 'none'
                 }}>
-                    {/* ホワイトアウト＋光収束エフェクト（開封時） */}
-                    {state === 'bursting' && (
-                        <>
-                            <div className="fixed inset-0 bg-white pointer-events-none" style={{
-                                animation: 'whiteout-burst 0.5s ease-out',
-                                mixBlendMode: 'screen'
-                            }}></div>
-                            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-screen pointer-events-none">
-                                {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
-                                    <div key={i} className="absolute top-1/2 left-1/2 w-2 h-screen bg-gradient-to-t from-white via-cyan-300 to-transparent" style={{
-                                        transform: `rotate(${i * 45}deg)`,
-                                        animation: 'light-convergence 0.5s ease-out',
-                                        mixBlendMode: 'screen'
-                                    }}></div>
-                                ))}
-                            </div>
-                        </>
+                    {/* ホワイトアウト（silence状態） */}
+                    {state === 'silence' && (
+                        <div className="fixed inset-0 bg-white pointer-events-none z-50" style={{
+                            animation: 'whiteout-burst 0.2s ease-out',
+                            mixBlendMode: 'screen'
+                        }}></div>
                     )}
 
                     {state === 'opened' && reward && <ConfettiSystem rarity={reward.rarity} />}
 
                     <div className="flex flex-col items-center">
-                        <div className="relative mb-8 group" onClick={handleOpen}>
-                            <ChestVisual state={state} />
+                        <div className="relative mb-8 group" onClick={handleInteraction}>
+                            <ChestVisual state={state} mashIntensity={mashIntensity} />
 
                             {/* 報酬アイコンが出現 */}
                             {state === 'opened' && reward && (
@@ -1485,54 +1408,46 @@
                                     </p>
                                 </div>
                             )}
-                            {state === 'resisting' && (
+                            {state === 'locked-on' && (
                                 <div style={{ animation: 'chromatic-aberration 0.6s ease-out' }}>
                                     <p className="text-4xl font-black text-red-500 drop-shadow-lg mb-2">
-                                        🔒 LOCKED 🔒
+                                        🔒 LOCK-ON 🔒
                                     </p>
                                     <p className="text-xl font-bold text-gray-300">
-                                        もう一度タップ...！
+                                        連打せよ...！
                                     </p>
                                 </div>
                             )}
-                            {state === 'charging' && (
+                            {state === 'mashing' && (
                                 <div style={{ animation: 'heartbeat-pulse 0.4s ease-in-out infinite' }}>
                                     <p className="text-4xl font-black text-cyan-300 drop-shadow-lg mb-2">
-                                        ⚡ CHARGING ⚡
+                                        ⚡ MASH ⚡
                                     </p>
                                     <p className="text-2xl font-bold text-white">
-                                        {Math.floor(chargeLevel)}%
+                                        {tapCount} / {tapsRequired}
                                     </p>
                                     <p className="text-sm text-gray-300 mt-2">
-                                        長押し継続中...
+                                        連打継続中...
                                     </p>
                                 </div>
                             )}
-                            {state === 'bursting' && (
-                                <div style={{ animation: 'spatial-distortion 0.5s ease-out' }}>
-                                    <p className="text-5xl font-black text-white drop-shadow-lg" style={{ animation: 'chromatic-aberration 0.5s ease-out infinite' }}>
-                                        💥 BURST 💥
+                            {state === 'near-miss' && showJackpotTease && (
+                                <div style={{ animation: 'near-miss-flash 0.3s ease-out' }}>
+                                    <p className="text-5xl font-black text-yellow-400 drop-shadow-lg" style={{
+                                        animation: 'chromatic-aberration 0.3s ease-out',
+                                        textShadow: '0 0 20px rgba(255,215,0,1), 0 0 40px rgba(255,100,0,0.8)'
+                                    }}>
+                                        💎 JACKPOT TEASE 💎
                                     </p>
                                 </div>
                             )}
-                            {state === 'roulette' && rouletteSymbols.length > 0 && (
-                                <div className="relative h-32 overflow-hidden">
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        {[-2, -1, 0, 1, 2].map((offset) => {
-                                            const index = (rouletteIndex + offset + rouletteSymbols.length) % rouletteSymbols.length;
-                                            const symbol = rouletteSymbols[index];
-                                            return (
-                                                <div key={offset} className={`text-3xl font-black py-2 ${offset === 0 ? 'scale-125 drop-shadow-2xl' : 'opacity-30'} ${symbol?.color || 'text-white'}`} style={{
-                                                    animation: offset === 0 ? 'slot-stop-slam 0.4s ease-out' : 'none'
-                                                }}>
-                                                    {symbol?.text || ''}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent transform -translate-y-1/2 pointer-events-none" style={{
-                                        boxShadow: '0 0 20px rgba(255,215,0,0.8)'
-                                    }}></div>
+                            {state === 'silence' && (
+                                <div style={{ animation: 'whiteout-burst 0.2s ease-out' }}>
+                                    <p className="text-6xl font-black text-white drop-shadow-lg" style={{
+                                        textShadow: '0 0 40px rgba(255,255,255,1)'
+                                    }}>
+                                        ⚪
+                                    </p>
                                 </div>
                             )}
                             {state === 'opened' && (
