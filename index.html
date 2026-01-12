@@ -370,14 +370,16 @@
             return <>{particles.map(p => <CrackerConfettiParticle key={p.id} {...p} />)}</>;
         };
 
-        // --- ChestModal (Heavy Mashing + 3D CSS) ---
+        // --- ChestModal (Heavy Mashing System with 5 Phases) ---
         const ChestModal = ({ onClose, onReward, onStartFocus, isWakeupChest = false }) => {
-            const [state, setState] = useState('idle'); // idle, resisting, mashing, silence, opened
+            const [state, setState] = useState('idle'); // idle, locked-on, mashing, near-miss, silence, opened
             const [reward, setReward] = useState(null);
             const [tapsRequired, setTapsRequired] = useState(0);
             const [currentTaps, setCurrentTaps] = useState(0);
+            const [tapCount, setTapCount] = useState(0);
             const [showJackpotTease, setShowJackpotTease] = useState(false);
-            const [mashPower, setMashPower] = useState(0); // 0.0 to 1.0
+            const [mashIntensity, setMashIntensity] = useState(0); // 0.0 to 1.0
+            const [nearMissTriggered, setNearMissTriggered] = useState(false);
 
             const getReward = () => {
                 const roll = Math.random() * 100;
@@ -398,16 +400,23 @@
             };
 
             const handleInteraction = async () => {
-                if (state === 'opened' || state === 'silence') return;
+                if (state === 'opened' || state === 'silence' || state === 'near-miss') return;
 
+                // Phase 1: Resistance (50%)
                 if (state === 'idle') {
-                    // 50% 抵抗発生 -> Lock-on
                     if (Math.random() < 0.5) {
-                        setState('mashing');
-                        const req = Math.floor(Math.random() * 6) + 10; // 10-15 taps
-                        setTapsRequired(req);
-                        setCurrentTaps(0);
-                        AudioEngine.play([150, 100, 80], 'sawtooth', 0.3, 0.1);
+                        // Lock-on state
+                        setState('locked-on');
+                        AudioEngine.play([150, 120, 100, 80], 'sawtooth', 0.35, 0.08);
+
+                        // Transition to mashing after lock sound
+                        setTimeout(() => {
+                            const req = Math.floor(Math.random() * 6) + 10; // 10-15 taps
+                            setTapsRequired(req);
+                            setCurrentTaps(0);
+                            setTapCount(0);
+                            setState('mashing');
+                        }, 400);
                         return;
                     } else {
                         proceedToOpen();
@@ -415,21 +424,34 @@
                     }
                 }
 
+                // Phase 2: Accelerating Mashing
                 if (state === 'mashing') {
                     const nextTaps = currentTaps + 1;
                     setCurrentTaps(nextTaps);
+                    setTapCount(nextTaps);
                     const progress = nextTaps / tapsRequired;
-                    setMashPower(progress);
+                    setMashIntensity(progress);
 
-                    const pitchBase = 200 + (progress * 600);
-                    AudioEngine.play([pitchBase, pitchBase * 1.5], 'square', 0.1 + (progress * 0.2), 0.05);
+                    // Exponential pitch increase
+                    const pitchBase = 200 * Math.pow(2, progress * 2.5);
+                    AudioEngine.play([pitchBase, pitchBase * 1.2], 'square', 0.12 + (progress * 0.25), 0.04);
 
-                    if (progress >= 0.9 && !showJackpotTease && nextTaps < tapsRequired) {
+                    // Phase 3: Near-miss trap at 90%
+                    if (progress >= 0.9 && !nearMissTriggered && nextTaps < tapsRequired) {
+                        setNearMissTriggered(true);
+                        setState('near-miss');
                         setShowJackpotTease(true);
-                        setTimeout(() => setShowJackpotTease(false), 300);
-                        AudioEngine.play([1200, 1500], 'sine', 0.05, 0.1); 
+                        AudioEngine.play([1500, 1800, 2000], 'sine', 0.08, 0.08);
+
+                        // Return to mashing after 0.3s
+                        setTimeout(() => {
+                            setShowJackpotTease(false);
+                            setState('mashing');
+                        }, 300);
+                        return;
                     }
 
+                    // Complete mashing
                     if (nextTaps >= tapsRequired) {
                         proceedToOpen();
                     }
@@ -437,29 +459,40 @@
             };
 
             const proceedToOpen = async () => {
+                // Phase 4: Whiteout silence (0.2s)
                 setState('silence');
                 await new Promise(r => setTimeout(r, 200));
+
+                // Heavy bass + reward reveal
                 const result = getReward();
                 setReward(result);
                 setState('opened');
                 onReward(result);
-                AudioEngine.play([50, 100, 200, 400], 'sawtooth', 0.4, 0.1);
+
+                // Deep bass frequencies
+                AudioEngine.play([60, 80, 120, 200, 400], 'sawtooth', 0.45, 0.12);
                 if (result.rarity === 'mythic' || result.rarity === 'legendary') {
-                    setTimeout(() => AudioEngine.play([800, 1200, 1500, 2000], 'sine', 0.3, 0.1), 100);
+                    setTimeout(() => AudioEngine.play([800, 1200, 1600, 2000], 'sine', 0.35, 0.1), 150);
                 }
             };
 
-            // 3D Chest Visual Component
-            const ChestVisual = ({ state, mashPower }) => {
-                const shakeX = state === 'mashing' ? (Math.random() - 0.5) * mashPower * 20 : 0;
-                const shakeY = state === 'mashing' ? (Math.random() - 0.5) * mashPower * 20 : 0;
-                const scale = state === 'mashing' ? 1 + mashPower * 0.1 : 1;
-                
-                // 3D Transform Styles
+            // 3D Chest Visual Component with Heavy Effects
+            const ChestVisual = ({ state, mashIntensity }) => {
+                // Intensified shake (20% increments)
+                const shakeX = state === 'mashing' ? (Math.random() - 0.5) * mashIntensity * 40 : 0;
+                const shakeY = state === 'mashing' ? (Math.random() - 0.5) * mashIntensity * 40 : 0;
+                const scale = state === 'mashing' ? 1 + mashIntensity * 0.15 : 1;
+
+                // Distortion effects
+                const skewX = state === 'mashing' ? mashIntensity * 8 * (Math.random() - 0.5) : 0;
+                const blur = state === 'mashing' ? mashIntensity * 2 : 0;
+
+                // 3D Transform Styles with Distortion
                 const chestStyle = {
                     transformStyle: 'preserve-3d',
-                    transform: `translate3d(${shakeX}px, ${shakeY}px, 0) scale(${scale}) rotateX(-10deg) rotateY(-20deg)`,
-                    transition: state === 'mashing' ? 'none' : 'transform 0.5s ease-out'
+                    transform: `translate3d(${shakeX}px, ${shakeY}px, 0) scale(${scale}) skewX(${skewX}deg) rotateX(-10deg) rotateY(-20deg)`,
+                    filter: `blur(${blur}px)`,
+                    transition: state === 'mashing' || state === 'near-miss' ? 'none' : 'transform 0.5s ease-out, filter 0.3s ease-out'
                 };
 
                 const lidStyle = {
@@ -475,14 +508,30 @@
 
                 return (
                     <div className="relative w-40 h-40" style={{ perspective: '800px' }}>
-                        {/* Background Effects */}
-                        {state === 'mashing' && (
+                        {/* Locked-On Heavy Metal Effect */}
+                        {state === 'locked-on' && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="absolute w-64 h-64 rounded-full border-4 border-red-500 opacity-0" style={{ animation: `neon-pulse-scan ${0.5 - (mashPower * 0.3)}s linear infinite` }}></div>
+                                <div className="absolute w-96 h-96 rounded-full border-8 border-red-600 opacity-80 animate-ping"></div>
+                                <div className="absolute w-64 h-64 rounded-full bg-red-500/20" style={{ animation: 'screen-shake-brutal 0.2s linear infinite' }}></div>
                             </div>
                         )}
+
+                        {/* Accelerating Neon Pulse (mashing) */}
+                        {state === 'mashing' && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="absolute w-64 h-64 rounded-full border-4 border-red-500 opacity-0" style={{ animation: `neon-pulse-scan ${0.5 - (mashIntensity * 0.35)}s linear infinite` }}></div>
+                                <div className="absolute w-80 h-80 rounded-full border-2 border-orange-500 opacity-0" style={{ animation: `neon-pulse-scan ${0.3 - (mashIntensity * 0.2)}s linear infinite`, animationDelay: '0.1s' }}></div>
+                            </div>
+                        )}
+
+                        {/* Near-Miss Jackpot Tease (slow-motion effect) */}
                         {showJackpotTease && (
-                            <div className="absolute -top-32 left-1/2 -translate-x-1/2 font-black text-4xl text-yellow-400 whitespace-nowrap z-50 animate-bounce" style={{ textShadow: '0 0 20px rgba(255,215,0,1)' }}>JACKPOT!?</div>
+                            <div className="absolute -top-32 left-1/2 -translate-x-1/2 font-black text-5xl text-yellow-400 whitespace-nowrap z-50" style={{
+                                textShadow: '0 0 30px rgba(255,215,0,1), 0 0 60px rgba(255,50,50,0.8)',
+                                animation: 'float-up 0.3s ease-out'
+                            }}>
+                                💎 JACKPOT!? 💎
+                            </div>
                         )}
 
                         <div className="w-full h-full relative" style={chestStyle}>
@@ -537,13 +586,23 @@
 
             return (
                 <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center backdrop-blur-md animate-in fade-in select-none" onClick={handleInteraction}>
+                    {/* Phase 4: Whiteout Silence */}
                     {state === 'silence' && <div className="fixed inset-0 bg-white z-[210] animate-none"></div>}
+
+                    {/* Spatial Distortion Overlay (mashing) */}
+                    {state === 'mashing' && mashIntensity > 0.5 && (
+                        <div className="fixed inset-0 z-[205] pointer-events-none" style={{
+                            background: `radial-gradient(circle at 50% 50%, rgba(255,0,0,${mashIntensity * 0.2}), transparent)`,
+                            animation: 'spatial-distortion 0.2s linear infinite'
+                        }}></div>
+                    )}
+
                     {state === 'opened' && reward && <ConfettiSystem rarity={reward.rarity} />}
 
                     <div className="flex flex-col items-center w-full max-w-md pointer-events-none">
                         <div className="relative mb-12 transform transition-transform duration-75">
-                            <ChestVisual state={state} mashPower={mashPower} />
-                            
+                            <ChestVisual state={state} mashIntensity={mashIntensity} />
+
                             {state === 'opened' && reward && (
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50" style={{ animation: 'reward-emerge 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
                                     <div className="text-8xl drop-shadow-2xl filter brightness-110">
@@ -560,12 +619,25 @@
                                     <p className="text-lg font-bold text-gray-300">タップして報酬を獲得</p>
                                 </div>
                             )}
-                            {state === 'mashing' && (
+                            {state === 'locked-on' && (
                                 <div>
-                                    <p className="text-5xl font-black text-red-500 drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] animate-pulse tracking-widest" style={{ transform: `scale(${1 + mashPower * 0.5})`, filter: `blur(${mashPower * 1}px)` }}>LOCKED!</p>
+                                    <p className="text-6xl font-black text-red-600 drop-shadow-[0_0_20px_rgba(255,0,0,1)] animate-pulse tracking-widest">LOCK-ON!</p>
+                                    <p className="text-xl font-bold text-white mt-2" style={{ animation: 'screen-shake-brutal 0.2s linear infinite' }}>HEAVY RESISTANCE</p>
+                                </div>
+                            )}
+                            {(state === 'mashing' || state === 'near-miss') && (
+                                <div>
+                                    <p className="text-5xl font-black text-red-500 drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] animate-pulse tracking-widest" style={{
+                                        transform: `scale(${1 + mashIntensity * 0.6})`,
+                                        filter: `blur(${mashIntensity * 1.5}px)`,
+                                        transition: state === 'near-miss' ? 'all 0.3s ease-out' : 'none'
+                                    }}>LOCKED!</p>
                                     <p className="text-xl font-bold text-white mt-2 animate-bounce">TAP TO BREAK!!</p>
                                     <div className="w-64 h-3 bg-gray-800 rounded-full mt-4 mx-auto overflow-hidden border border-gray-600">
-                                        <div className="h-full bg-red-600 transition-all duration-75" style={{ width: `${mashPower * 100}%` }}></div>
+                                        <div className="h-full transition-all duration-75" style={{
+                                            width: `${mashIntensity * 100}%`,
+                                            background: mashIntensity > 0.9 ? 'linear-gradient(to right, #dc2626, #f59e0b, #eab308)' : '#dc2626'
+                                        }}></div>
                                     </div>
                                 </div>
                             )}
