@@ -1307,17 +1307,10 @@
                 return 'text-white';
             };
 
-            // 宝箱SVGコンポーネント（Duolingo/クラロワ風）
+           // 宝箱SVGコンポーネント（Duolingo/クラロワ風）
             const ChestVisual = ({ state: chestState }) => (
                 <div className="relative w-48 h-48 flex items-center justify-center" style={{ perspective: '1000px' }}>
-                    {/* 光の後光（プラチナ・ブルー） */}
-                    {chestState === 'idle' && (
-                        <div className="absolute inset-0 rounded-full" style={{
-                            background: 'radial-gradient(circle, rgba(150,180,255,0.4) 0%, rgba(100,150,255,0.2) 40%, transparent 70%)',
-                            animation: 'chest-glow-pulse 2s ease-in-out infinite'
-                        }}></div>
-                    )}
-
+                    
                     {/* 光線回転エフェクト（シルバー・ブルー） */}
                     {chestState === 'opened' && (
                         <div className="absolute inset-0 opacity-60" style={{ animation: 'light-ray-rotate 3s linear infinite' }}>
@@ -1371,7 +1364,7 @@
                     {/* 宝箱本体 */}
                     <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' || chestState === 'resisting' ? 'cursor-pointer' : ''}`} style={{
                         animation:
-                            chestState === 'idle' ? 'chest-float 3s ease-in-out infinite' :
+                            chestState === 'idle' ? 'none' : // 修正：浮遊(chest-float)を停止
                             chestState === 'resisting' ? 'resistance-denial 0.6s ease-out' :
                             chestState === 'charging' ? `charge-buildup ${2 - chargeLevel / 100}s linear infinite` :
                             chestState === 'bursting' ? 'spatial-distortion 0.5s ease-out, screen-shake-brutal 0.5s ease-out' :
@@ -2897,3 +2890,4 @@
     </script>
 </body>
 </html>
+
