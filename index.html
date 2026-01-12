@@ -1522,24 +1522,32 @@
                 return () => window.removeEventListener('click', handleClick);
             }, []);
 
-            // スリープ検知：PCスリープから復帰したら宝箱表示
+            // スリープ検知：PCスリープから復帰したら宝箱表示（タブのバックグラウンド化では反応しない）
             useEffect(() => {
-                let lastCheckTime = Date.now();
+                let lastVisibleTime = Date.now();
 
-                const interval = setInterval(() => {
-                    const now = Date.now();
-                    const timeSinceLastCheck = now - lastCheckTime;
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'visible') {
+                        // タブが表示状態に戻った
+                        const now = Date.now();
+                        const timeSinceLastVisible = now - lastVisibleTime;
 
-                    // 3秒以上経過していたらスリープと判定
-                    if (timeSinceLastCheck > 3000) {
-                        console.log('Sleep detected, showing wakeup chest');
-                        setShowChestModal(true);
+                        // 5分以上経過していたらPCスリープからの復帰と判定
+                        if (timeSinceLastVisible > 5 * 60 * 1000) {
+                            console.log('PC sleep detected (5+ minutes elapsed), showing wakeup chest');
+                            setShowChestModal(true);
+                        }
+
+                        lastVisibleTime = now;
+                    } else {
+                        // タブが非表示になった時刻を記録
+                        lastVisibleTime = Date.now();
                     }
+                };
 
-                    lastCheckTime = now;
-                }, 1000);
+                document.addEventListener('visibilitychange', handleVisibilityChange);
 
-                return () => clearInterval(interval);
+                return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
             }, []);
 
             useEffect(() => {
