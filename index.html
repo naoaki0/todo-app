@@ -1209,17 +1209,6 @@
                         }}></div>
                     )}
 
-                    {/* キラキラエフェクト（ダイヤモンド風） */}
-                    {chestState === 'idle' && [0, 1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="absolute text-2xl" style={{
-                            left: `${20 + i * 15}%`,
-                            top: `${10 + (i % 2) * 70}%`,
-                            animation: `sparkle-twinkle 2s ease-in-out infinite ${i * 0.3}s`,
-                            filter: 'drop-shadow(0 0 4px rgba(150,180,255,0.8))',
-                            color: '#e0e0ff'
-                        }}>💎</div>
-                    ))}
-
                     {/* 光線回転エフェクト（シルバー・ブルー） */}
                     {chestState === 'opened' && (
                         <div className="absolute inset-0 opacity-60" style={{ animation: 'light-ray-rotate 3s linear infinite' }}>
