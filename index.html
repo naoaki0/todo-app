@@ -469,9 +469,9 @@
                     transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                 };
 
-                // Face styles
-                const faceCommon = "absolute border border-gray-800 bg-gradient-to-b from-gray-700 to-gray-900";
-                const goldTrim = "absolute bg-yellow-600/40 border border-yellow-500/30";
+                // Face styles - Matte Black Luxury
+                const faceCommon = "absolute border border-gray-700 bg-gradient-to-b from-gray-800 to-black";
+                const goldTrim = "absolute bg-gray-600/30 border border-gray-500/20";
 
                 return (
                     <div className="relative w-40 h-40" style={{ perspective: '800px' }}>
@@ -492,28 +492,28 @@
                                 {/* Front */}
                                 <div className={`${faceCommon} w-32 h-20`} style={{ transform: 'translateZ(16px)' }}>
                                     <div className="absolute top-2 left-2 right-2 h-1 bg-black/30"></div>
-                                    {/* Lock */}
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-8 bg-gray-300 border border-gray-500 rounded-b-lg shadow-md"></div>
+                                    {/* Lock - Matte Finish */}
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-8 bg-gray-400 border border-gray-600 rounded-b-lg"></div>
                                 </div>
                                 {/* Back */}
                                 <div className={`${faceCommon} w-32 h-20`} style={{ transform: 'translateZ(-16px) rotateY(180deg)' }}></div>
                                 {/* Right */}
                                 <div className={`${faceCommon} w-32 h-20`} style={{ width: '32px', transform: 'rotateY(90deg) translateZ(16px)', left: '16px' }}></div>
-                                <div className="absolute w-8 h-20 bg-gray-800 border border-gray-700" style={{ transform: 'rotateY(90deg) translateZ(16px)', right: '-4px', top:0 }}></div>
-                                <div className="absolute w-8 h-20 bg-gray-800 border border-gray-700" style={{ transform: 'rotateY(-90deg) translateZ(16px)', left: '-4px', top:0 }}></div>
+                                <div className="absolute w-8 h-20 bg-black border border-gray-800" style={{ transform: 'rotateY(90deg) translateZ(16px)', right: '-4px', top:0 }}></div>
+                                <div className="absolute w-8 h-20 bg-black border border-gray-800" style={{ transform: 'rotateY(-90deg) translateZ(16px)', left: '-4px', top:0 }}></div>
                                 
                                 {/* Bottom */}
                                 <div className={`${faceCommon} w-32 h-32`} style={{ height: '32px', transform: 'rotateX(-90deg) translateZ(20px)', top: '0' }}></div>
 
-                                {/* Inner Content (Glow) */}
-                                <div className="absolute inset-0 bg-yellow-400/20" style={{ transform: 'translateZ(0)', boxShadow: '0 0 20px yellow' }}></div>
+                                {/* Inner Content - Matte (reduced glow) */}
+                                <div className="absolute inset-0 bg-gray-600/10" style={{ transform: 'translateZ(0)', boxShadow: '0 0 5px rgba(100,100,100,0.3)' }}></div>
                             </div>
 
                             {/* LID (Top) */}
                             <div className="absolute w-32 h-12 left-4 top-16" style={lidStyle}>
                                 {/* Lid Front */}
                                 <div className={`${faceCommon} w-32 h-12`} style={{ transform: 'translateZ(16px)' }}>
-                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-4 bg-gray-300 border border-gray-500 rounded-t-lg"></div>
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-4 bg-gray-400 border border-gray-600 rounded-t-lg"></div>
                                 </div>
                                 {/* Lid Top */}
                                 <div className={`${faceCommon} w-32 h-32`} style={{ height: '32px', transform: 'rotateX(90deg) translateZ(16px)', top: '-16px' }}>
@@ -521,14 +521,14 @@
                                 </div>
                                 {/* Lid Back */}
                                 <div className={`${faceCommon} w-32 h-12`} style={{ transform: 'translateZ(-16px) rotateY(180deg)' }}></div>
-                                {/* Lid Sides */}
-                                <div className="absolute w-8 h-12 bg-gray-700 border border-gray-600" style={{ transform: 'rotateY(90deg) translateZ(16px)', right: '-4px' }}></div>
-                                <div className="absolute w-8 h-12 bg-gray-700 border border-gray-600" style={{ transform: 'rotateY(-90deg) translateZ(16px)', left: '-4px' }}></div>
+                                {/* Lid Sides - Matte */}
+                                <div className="absolute w-8 h-12 bg-gray-900 border border-gray-700" style={{ transform: 'rotateY(90deg) translateZ(16px)', right: '-4px' }}></div>
+                                <div className="absolute w-8 h-12 bg-gray-900 border border-gray-700" style={{ transform: 'rotateY(-90deg) translateZ(16px)', left: '-4px' }}></div>
                             </div>
 
-                            {/* Open Effects */}
+                            {/* Open Effects - Matte (subtle) */}
                             {state === 'opened' && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-40 bg-white/50 blur-md" style={{ transform: 'translateY(-100px) rotate(0deg)' }}></div>
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-40 bg-white/30 blur-sm" style={{ transform: 'translateY(-100px) rotate(0deg)' }}></div>
                             )}
                         </div>
                     </div>
