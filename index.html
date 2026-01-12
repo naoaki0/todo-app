@@ -134,6 +134,19 @@
         @keyframes near-miss-flash { 0% { opacity: 0; transform: scale(1); } 30% { opacity: 1; transform: scale(1.2); } 60% { opacity: 0.8; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.3); } }
         @keyframes heartbeat-pulse { 0%, 100% { transform: scale(1); } 10% { transform: scale(1.1); } 20% { transform: scale(1); } 30% { transform: scale(1.15); } 40% { transform: scale(1); } }
 
+        /* カジノグレード演出：物理なし・高級ジュース */
+        @keyframes spatial-distortion { 0% { transform: scale(1) skewX(0deg); } 25% { transform: scale(1.05) skewX(5deg); } 50% { transform: scale(0.95) skewX(-5deg); } 75% { transform: scale(1.02) skewX(2deg); } 100% { transform: scale(1) skewX(0deg); } }
+        @keyframes chromatic-aberration { 0% { text-shadow: 0 0 0 rgba(255,0,0,0), 0 0 0 rgba(0,255,255,0); } 50% { text-shadow: -5px 0 0 rgba(255,0,0,0.8), 5px 0 0 rgba(0,255,255,0.8); } 100% { text-shadow: 0 0 0 rgba(255,0,0,0), 0 0 0 rgba(0,255,255,0); } }
+        @keyframes light-convergence { 0% { transform: scale(3); opacity: 0; } 50% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(0); opacity: 0; } }
+        @keyframes whiteout-burst { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
+        @keyframes screen-shake-brutal { 0%, 100% { transform: translate(0, 0); } 10% { transform: translate(-15px, 10px); } 20% { transform: translate(15px, -10px); } 30% { transform: translate(-10px, -15px); } 40% { transform: translate(10px, 15px); } 50% { transform: translate(-12px, 8px); } 60% { transform: translate(12px, -8px); } 70% { transform: translate(-8px, -12px); } 80% { transform: translate(8px, 12px); } 90% { transform: translate(-5px, 5px); } }
+        @keyframes resistance-denial { 0% { transform: translateX(0) rotate(0deg); } 10% { transform: translateX(-20px) rotate(-15deg); } 20% { transform: translateX(15px) rotate(10deg); } 30% { transform: translateX(-10px) rotate(-8deg); } 40% { transform: translateX(5px) rotate(5deg); } 50% { transform: translateX(-3px) rotate(-3deg); } 100% { transform: translateX(0) rotate(0deg); } }
+        @keyframes jackpot-peek { 0% { opacity: 0; transform: translateY(30px) scale(0.5); } 40% { opacity: 1; transform: translateY(0) scale(1); } 60% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-30px) scale(0.8); } }
+        @keyframes charge-buildup { 0% { box-shadow: 0 0 0 rgba(100,150,255,0); transform: scale(1); } 100% { box-shadow: 0 0 50px rgba(100,150,255,1), 0 0 100px rgba(100,150,255,0.8), 0 0 150px rgba(100,150,255,0.6); transform: scale(1.15); } }
+        @keyframes roulette-spin { 0% { transform: translateY(0); } 100% { transform: translateY(-500%); } }
+        @keyframes roulette-slowdown { 0% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
+        @keyframes slot-stop-slam { 0% { transform: translateY(0) scale(1); } 20% { transform: translateY(-30px) scale(1.15); } 50% { transform: translateY(10px) scale(0.9); } 80% { transform: translateY(-5px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
+
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
@@ -1061,38 +1074,84 @@
             const [state, setState] = useState('idle');
             const [reward, setReward] = useState(null);
             const [showNearMiss, setShowNearMiss] = useState(false);
+            const [chargeLevel, setChargeLevel] = useState(0);
+            const [showJackpotPeek, setShowJackpotPeek] = useState(false);
+            const [rouletteSymbols, setRouletteSymbols] = useState([]);
+            const [rouletteIndex, setRouletteIndex] = useState(0);
+            const chargeIntervalRef = useRef(null);
+            const chargeStartTimeRef = useRef(null);
+
+            // ルーレット用のシンボル配列
+            const allSymbols = [
+                { rarity: 'common', text: '💎 15 Gems', color: 'text-gray-300' },
+                { rarity: 'rare', text: '💎 50 Gems!', color: 'text-blue-400' },
+                { rarity: 'epic', text: '💎 120 Gems!!', color: 'text-purple-500' },
+                { rarity: 'legendary', text: '💎 300 Gems!!!', color: 'text-yellow-400' },
+                { rarity: 'mythic', text: '💎 777 JACKPOT!!!', color: 'text-red-500' },
+            ];
 
             const handleOpen = async () => {
-                if (state !== 'idle') return;
+                if (state !== 'idle' && state !== 'charging') return;
 
-                // フェーズ1：期待感の演出（激しい揺れ＋色変化）1.5秒
-                setState('anticipation');
-                AudioEngine.play([200, 250, 300, 350, 400], 'sawtooth', 0.12, 0.05);
+                // 🎰 フェーズ1：50%抵抗ロジック（拒絶演出）
+                if (state === 'idle') {
+                    const resistanceRoll = Math.random();
+                    if (resistanceRoll < 0.5) {
+                        // 50%の確率で拒絶
+                        setState('resisting');
 
-                // ドラムロール音（期待感を煽る）
-                for (let i = 0; i < 15; i++) {
-                    setTimeout(() => AudioEngine.play([300 + i * 30], 'square', 0.06, 0.02), i * 100);
+                        // 重厚な拒絶SE（低音＋ガリガリ音）
+                        AudioEngine.play([150, 140, 130, 120], 'sawtooth', 0.25, 0.15);
+                        AudioEngine.play([80, 75, 70], 'square', 0.2, 0.1);
+
+                        // Jackpotをチラ見せ（ニアミス効果）
+                        setShowJackpotPeek(true);
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                        setShowJackpotPeek(false);
+
+                        // 状態をidleに戻して再タップを促す
+                        setState('idle');
+                        return;
+                    }
+
+                    // 成功：長押しチャージフェーズへ
+                    setState('charging');
+                    chargeStartTimeRef.current = Date.now();
+                    setChargeLevel(0);
+
+                    // チャージ音（上昇するピッチ）
+                    chargeIntervalRef.current = setInterval(() => {
+                        const elapsed = Date.now() - chargeStartTimeRef.current;
+                        const progress = Math.min(elapsed / 2000, 1); // 2秒でフル
+                        setChargeLevel(progress * 100);
+
+                        // ピッチ上昇SE
+                        const pitch = 300 + progress * 700;
+                        AudioEngine.play([pitch], 'sine', 0.08, 0.02);
+
+                        if (progress >= 1) {
+                            clearInterval(chargeIntervalRef.current);
+                            proceedToOpen();
+                        }
+                    }, 100);
+
+                    return;
                 }
+            };
 
-                await new Promise(resolve => setTimeout(resolve, 1500));
+            const proceedToOpen = async () => {
+                // 🎰 フェーズ2：開封の儀式完了→空間歪み演出
+                setState('bursting');
 
-                // フェーズ2：ニアミス演出（30%の確率）1秒
-                const shouldShowNearMiss = Math.random() < 0.3;
-                if (shouldShowNearMiss) {
-                    setState('nearMiss');
-                    setShowNearMiss(true);
-                    AudioEngine.play([800, 850, 900, 950, 1000], 'sine', 0.15, 0.08);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    setShowNearMiss(false);
-                }
+                // 空間歪みSE（ウォンウォン音）
+                AudioEngine.play([200, 180, 160, 140, 120], 'sine', 0.3, 0.2);
 
-                // フェーズ3：開封音
-                setState('opening');
-                AudioEngine.play([500, 450, 400], 'sawtooth', 0.15, 0.08);
+                await new Promise(resolve => setTimeout(resolve, 500));
 
-                await new Promise(resolve => setTimeout(resolve, 800));
+                // 🎰 フェーズ3：ルーレット開始
+                setState('roulette');
 
-                // フェーズ4：報酬決定＆表示
+                // 報酬決定（先に決めておく）
                 const roll = Math.random() * 100;
                 console.log("Chest Roll:", roll);
                 let result = {};
@@ -1174,10 +1233,51 @@
                     };
                 }
 
+                // 🎰 ルーレットシンボル生成（ランダムに埋め込む）
+                const symbols = [];
+                for (let i = 0; i < 10; i++) {
+                    const randomSymbol = allSymbols[Math.floor(Math.random() * allSymbols.length)];
+                    symbols.push(randomSymbol);
+                }
+                // 最終的に止まる位置に実際の報酬を配置
+                symbols[5] = { rarity: result.rarity, text: result.text, color: getRarityColor(result.rarity) };
+                setRouletteSymbols(symbols);
+
+                // 高速スピン（1.5秒）
+                let spinIndex = 0;
+                const fastSpin = setInterval(() => {
+                    spinIndex = (spinIndex + 1) % symbols.length;
+                    setRouletteIndex(spinIndex);
+                    AudioEngine.play([400 + spinIndex * 50], 'square', 0.05, 0.01);
+                }, 100);
+
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                clearInterval(fastSpin);
+
+                // スローダウン＆ニアミス演出（30%確率）
+                const nearMissRoll = Math.random();
+                if (nearMissRoll < 0.3 && result.rarity !== 'mythic') {
+                    // ジャックポットをチラ見せしてからズレる
+                    setRouletteIndex(4); // Jackpotの1つ前
+                    AudioEngine.play([900, 920, 950], 'sine', 0.15, 0.1);
+                    await new Promise(resolve => setTimeout(resolve, 400));
+
+                    // スローモーションでズレる
+                    setRouletteIndex(5); // 実際の報酬
+                    AudioEngine.play([600, 550], 'sine', 0.2, 0.15);
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                } else {
+                    // 通常停止
+                    setRouletteIndex(5);
+                    AudioEngine.play([800, 700, 600], 'sine', 0.2, 0.12);
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                }
+
+                // 🎰 フェーズ4：報酬確定→空間歪み＋ホワイトアウト
                 setReward(result);
                 setState('opened');
 
-                // レアリティに応じた効果音
+                // レアリティに応じた効果音＋空間歪み
                 if (result.rarity === 'mythic') {
                     AudioEngine.play([600, 800, 1000, 1200, 1500], 'sine', 0.3, 0.15);
                 } else if (result.rarity === 'legendary') {
@@ -1188,6 +1288,15 @@
 
                 onReward(result);
             };
+
+            // クリーンアップ
+            useEffect(() => {
+                return () => {
+                    if (chargeIntervalRef.current) {
+                        clearInterval(chargeIntervalRef.current);
+                    }
+                };
+            }, []);
 
             const getRarityColor = (rarity) => {
                 if (rarity === 'common') return 'text-gray-300';
@@ -1238,12 +1347,35 @@
                         </div>
                     )}
 
+                    {/* チャージゲージ（長押し中） */}
+                    {chestState === 'charging' && chargeLevel > 0 && (
+                        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-40 h-4 bg-black/50 rounded-full overflow-hidden border-2 border-blue-400">
+                            <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-300 transition-all duration-100" style={{
+                                width: `${chargeLevel}%`,
+                                boxShadow: '0 0 20px rgba(100,200,255,0.8)'
+                            }}></div>
+                        </div>
+                    )}
+
+                    {/* Jackpotチラ見せ（拒絶時） */}
+                    {showJackpotPeek && (
+                        <div className="absolute -top-24 left-1/2 -translate-x-1/2 font-black text-3xl" style={{
+                            animation: 'jackpot-peek 0.6s ease-out',
+                            color: '#ff0000',
+                            textShadow: '0 0 20px rgba(255,0,0,1), 0 0 40px rgba(255,215,0,0.8)'
+                        }}>
+                            💎 JACKPOT!!! 💎
+                        </div>
+                    )}
+
                     {/* 宝箱本体 */}
-                    <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' ? 'cursor-pointer' : ''}`} style={{
+                    <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' || chestState === 'resisting' ? 'cursor-pointer' : ''}`} style={{
                         animation:
                             chestState === 'idle' ? 'chest-float 3s ease-in-out infinite' :
-                            chestState === 'anticipation' ? 'chest-anticipation-shake 1s ease-in-out infinite, chest-color-tease 1.5s linear infinite, heartbeat-pulse 0.5s ease-in-out infinite' :
-                            chestState === 'nearMiss' ? 'chest-anticipation-shake 0.3s ease-in-out infinite, heartbeat-pulse 0.3s ease-in-out infinite' :
+                            chestState === 'resisting' ? 'resistance-denial 0.6s ease-out' :
+                            chestState === 'charging' ? `charge-buildup ${2 - chargeLevel / 100}s linear infinite` :
+                            chestState === 'bursting' ? 'spatial-distortion 0.5s ease-out, screen-shake-brutal 0.5s ease-out' :
+                            chestState === 'roulette' ? 'heartbeat-pulse 0.3s ease-in-out infinite' :
                             'none',
                         transformStyle: 'preserve-3d'
                     }}>
@@ -1298,7 +1430,28 @@
             );
 
             return (
-                <div className="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in">
+                <div className="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in" style={{
+                    animation: state === 'bursting' ? 'screen-shake-brutal 0.5s ease-out' : 'none'
+                }}>
+                    {/* ホワイトアウト＋光収束エフェクト（開封時） */}
+                    {state === 'bursting' && (
+                        <>
+                            <div className="fixed inset-0 bg-white pointer-events-none" style={{
+                                animation: 'whiteout-burst 0.5s ease-out',
+                                mixBlendMode: 'screen'
+                            }}></div>
+                            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-screen h-screen pointer-events-none">
+                                {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+                                    <div key={i} className="absolute top-1/2 left-1/2 w-2 h-screen bg-gradient-to-t from-white via-cyan-300 to-transparent" style={{
+                                        transform: `rotate(${i * 45}deg)`,
+                                        animation: 'light-convergence 0.5s ease-out',
+                                        mixBlendMode: 'screen'
+                                    }}></div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
                     {state === 'opened' && reward && <ConfettiSystem rarity={reward.rarity} />}
 
                     <div className="flex flex-col items-center">
@@ -1332,30 +1485,55 @@
                                     </p>
                                 </div>
                             )}
-                            {state === 'anticipation' && (
-                                <div style={{ animation: 'heartbeat-pulse 0.5s ease-in-out infinite' }}>
-                                    <p className="text-4xl font-black text-yellow-300 drop-shadow-lg mb-2">
-                                        来るぞ...！
+                            {state === 'resisting' && (
+                                <div style={{ animation: 'chromatic-aberration 0.6s ease-out' }}>
+                                    <p className="text-4xl font-black text-red-500 drop-shadow-lg mb-2">
+                                        🔒 LOCKED 🔒
                                     </p>
-                                    <p className="text-2xl font-bold text-white" style={{ animation: 'rainbow-cycle 1.5s linear infinite' }}>
-                                        ✨🎰✨
-                                    </p>
-                                </div>
-                            )}
-                            {state === 'nearMiss' && (
-                                <div style={{ animation: 'heartbeat-pulse 0.3s ease-in-out infinite' }}>
-                                    <p className="text-4xl font-black text-red-400 drop-shadow-lg">
-                                        🔥 惜しい！ 🔥
-                                    </p>
-                                    <p className="text-xl font-bold text-yellow-300 mt-2">
-                                        次こそは...！
+                                    <p className="text-xl font-bold text-gray-300">
+                                        もう一度タップ...！
                                     </p>
                                 </div>
                             )}
-                            {state === 'opening' && (
-                                <p className="text-3xl font-black text-yellow-300 animate-pulse drop-shadow-lg">
-                                    開封中...
-                                </p>
+                            {state === 'charging' && (
+                                <div style={{ animation: 'heartbeat-pulse 0.4s ease-in-out infinite' }}>
+                                    <p className="text-4xl font-black text-cyan-300 drop-shadow-lg mb-2">
+                                        ⚡ CHARGING ⚡
+                                    </p>
+                                    <p className="text-2xl font-bold text-white">
+                                        {Math.floor(chargeLevel)}%
+                                    </p>
+                                    <p className="text-sm text-gray-300 mt-2">
+                                        長押し継続中...
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'bursting' && (
+                                <div style={{ animation: 'spatial-distortion 0.5s ease-out' }}>
+                                    <p className="text-5xl font-black text-white drop-shadow-lg" style={{ animation: 'chromatic-aberration 0.5s ease-out infinite' }}>
+                                        💥 BURST 💥
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'roulette' && rouletteSymbols.length > 0 && (
+                                <div className="relative h-32 overflow-hidden">
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        {[-2, -1, 0, 1, 2].map((offset) => {
+                                            const index = (rouletteIndex + offset + rouletteSymbols.length) % rouletteSymbols.length;
+                                            const symbol = rouletteSymbols[index];
+                                            return (
+                                                <div key={offset} className={`text-3xl font-black py-2 ${offset === 0 ? 'scale-125 drop-shadow-2xl' : 'opacity-30'} ${symbol?.color || 'text-white'}`} style={{
+                                                    animation: offset === 0 ? 'slot-stop-slam 0.4s ease-out' : 'none'
+                                                }}>
+                                                    {symbol?.text || ''}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-400 to-transparent transform -translate-y-1/2 pointer-events-none" style={{
+                                        boxShadow: '0 0 20px rgba(255,215,0,0.8)'
+                                    }}></div>
+                                </div>
                             )}
                             {state === 'opened' && (
                                 <div className="animate-in zoom-in slide-in-from-bottom duration-500">
