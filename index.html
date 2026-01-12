@@ -127,6 +127,13 @@
         @keyframes chest-burst-open { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 0; } }
         @keyframes reward-emerge { 0% { transform: translateY(50px) scale(0); opacity: 0; } 60% { transform: translateY(-20px) scale(1.2); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
 
+        /* ギャンブル依存性：宝箱の予告＆ニアミス演出 */
+        @keyframes chest-anticipation-shake { 0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); } 10% { transform: translate(-8px, -8px) rotate(-10deg) scale(1.05); } 20% { transform: translate(8px, 8px) rotate(10deg) scale(1.05); } 30% { transform: translate(-8px, 8px) rotate(-10deg) scale(1.05); } 40% { transform: translate(8px, -8px) rotate(10deg) scale(1.05); } 50% { transform: translate(-6px, -6px) rotate(-8deg) scale(1.03); } 60% { transform: translate(6px, 6px) rotate(8deg) scale(1.03); } 70% { transform: translate(-4px, 4px) rotate(-5deg) scale(1.02); } 80% { transform: translate(4px, -4px) rotate(5deg) scale(1.02); } 90% { transform: translate(-2px, 2px) rotate(-2deg) scale(1.01); } }
+        @keyframes chest-color-tease { 0% { filter: hue-rotate(0deg) brightness(1) saturate(1); } 20% { filter: hue-rotate(60deg) brightness(1.3) saturate(1.8); } 40% { filter: hue-rotate(120deg) brightness(1.5) saturate(2); } 60% { filter: hue-rotate(180deg) brightness(1.7) saturate(2.2); } 80% { filter: hue-rotate(240deg) brightness(1.5) saturate(2); } 100% { filter: hue-rotate(300deg) brightness(1.3) saturate(1.8); } }
+        @keyframes chest-glow-intensify { 0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); } 25% { box-shadow: 0 0 60px rgba(255, 100, 255, 1), 0 0 100px rgba(255, 100, 255, 0.8); } 50% { box-shadow: 0 0 80px rgba(255, 50, 50, 1), 0 0 120px rgba(255, 50, 50, 0.9), 0 0 160px rgba(255, 50, 50, 0.7); } 75% { box-shadow: 0 0 60px rgba(100, 255, 255, 1), 0 0 100px rgba(100, 255, 255, 0.8); } 100% { box-shadow: 0 0 80px rgba(255, 215, 0, 1), 0 0 120px rgba(255, 215, 0, 0.9); } }
+        @keyframes near-miss-flash { 0% { opacity: 0; transform: scale(1); } 30% { opacity: 1; transform: scale(1.2); } 60% { opacity: 0.8; transform: scale(1.1); } 100% { opacity: 0; transform: scale(1.3); } }
+        @keyframes heartbeat-pulse { 0%, 100% { transform: scale(1); } 10% { transform: scale(1.1); } 20% { transform: scale(1); } 30% { transform: scale(1.15); } 40% { transform: scale(1); } }
+
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
@@ -1049,112 +1056,137 @@
             );
         };
 
-        // --- 宝箱モーダル ---
+        // --- 宝箱モーダル（ギャンブル依存性MAX：予告＆ニアミス演出） ---
         const ChestModal = ({ onClose, onReward, isWakeupChest = false }) => {
             const [state, setState] = useState('idle');
             const [reward, setReward] = useState(null);
+            const [showNearMiss, setShowNearMiss] = useState(false);
 
-            const handleOpen = () => {
+            const handleOpen = async () => {
                 if (state !== 'idle') return;
-                setState('shaking');
-                AudioEngine.play([200, 250, 300], 'sawtooth', 0.1, 0.05);
 
-                setTimeout(() => {
-                    const roll = Math.random() * 100;
-                    console.log("Chest Roll:", roll);
-                    let result = {};
+                // フェーズ1：期待感の演出（激しい揺れ＋色変化）1.5秒
+                setState('anticipation');
+                AudioEngine.play([200, 250, 300, 350, 400], 'sawtooth', 0.12, 0.05);
 
-                    // レアリティベースの報酬テーブル（中毒性重視）
-                    if (roll < 40) {
-                        // Common (40%)
+                // ドラムロール音（期待感を煽る）
+                for (let i = 0; i < 15; i++) {
+                    setTimeout(() => AudioEngine.play([300 + i * 30], 'square', 0.06, 0.02), i * 100);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // フェーズ2：ニアミス演出（30%の確率）1秒
+                const shouldShowNearMiss = Math.random() < 0.3;
+                if (shouldShowNearMiss) {
+                    setState('nearMiss');
+                    setShowNearMiss(true);
+                    AudioEngine.play([800, 850, 900, 950, 1000], 'sine', 0.15, 0.08);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    setShowNearMiss(false);
+                }
+
+                // フェーズ3：開封音
+                setState('opening');
+                AudioEngine.play([500, 450, 400], 'sawtooth', 0.15, 0.08);
+
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                // フェーズ4：報酬決定＆表示
+                const roll = Math.random() * 100;
+                console.log("Chest Roll:", roll);
+                let result = {};
+
+                // レアリティベースの報酬テーブル（中毒性重視）
+                if (roll < 40) {
+                    // Common (40%)
+                    result = {
+                        type: 'gems',
+                        amount: 15,
+                        text: '💎 15 Gems',
+                        icon: Icons.Gem,
+                        rarity: 'common',
+                        rarityText: 'COMMON'
+                    };
+                } else if (roll < 70) {
+                    // Rare (30%)
+                    result = {
+                        type: 'gems',
+                        amount: 50,
+                        text: '💎 50 Gems!',
+                        icon: Icons.Gem,
+                        rarity: 'rare',
+                        rarityText: 'RARE'
+                    };
+                } else if (roll < 88) {
+                    // Epic (18%)
+                    const isGems = Math.random() < 0.6;
+                    if (isGems) {
                         result = {
                             type: 'gems',
-                            amount: 15,
-                            text: '💎 15 Gems',
+                            amount: 120,
+                            text: '💎 120 Gems!!',
                             icon: Icons.Gem,
-                            rarity: 'common',
-                            rarityText: 'COMMON'
+                            rarity: 'epic',
+                            rarityText: 'EPIC'
                         };
-                    } else if (roll < 70) {
-                        // Rare (30%)
-                        result = {
-                            type: 'gems',
-                            amount: 50,
-                            text: '💎 50 Gems!',
-                            icon: Icons.Gem,
-                            rarity: 'rare',
-                            rarityText: 'RARE'
-                        };
-                    } else if (roll < 88) {
-                        // Epic (18%)
-                        const isGems = Math.random() < 0.6;
-                        if (isGems) {
-                            result = {
-                                type: 'gems',
-                                amount: 120,
-                                text: '💎 120 Gems!!',
-                                icon: Icons.Gem,
-                                rarity: 'epic',
-                                rarityText: 'EPIC'
-                            };
-                        } else {
-                            result = {
-                                type: 'item',
-                                itemId: 'freeze',
-                                text: '❄️ 連続フリーズ',
-                                icon: Icons.Snowflake,
-                                rarity: 'epic',
-                                rarityText: 'EPIC'
-                            };
-                        }
-                    } else if (roll < 97) {
-                        // Legendary (9%)
-                        const choice = Math.random();
-                        if (choice < 0.5) {
-                            result = {
-                                type: 'gems',
-                                amount: 300,
-                                text: '💎 300 Gems!!!',
-                                icon: Icons.Gem,
-                                rarity: 'legendary',
-                                rarityText: 'LEGENDARY'
-                            };
-                        } else {
-                            result = {
-                                type: 'item',
-                                itemId: 'ticket',
-                                text: '🎫 蘇生チケット',
-                                icon: Icons.Ticket,
-                                rarity: 'legendary',
-                                rarityText: 'LEGENDARY'
-                            };
-                        }
                     } else {
-                        // Mythic (3%)
                         result = {
-                            type: 'gems',
-                            amount: 777,
-                            text: '💎 777 JACKPOT!!!',
-                            icon: Icons.Gem,
-                            rarity: 'mythic',
-                            rarityText: 'MYTHIC'
+                            type: 'item',
+                            itemId: 'freeze',
+                            text: '❄️ 連続フリーズ',
+                            icon: Icons.Snowflake,
+                            rarity: 'epic',
+                            rarityText: 'EPIC'
                         };
                     }
-
-                    setReward(result);
-                    setState('opened');
-
-                    // レアリティに応じた効果音
-                    if (result.rarity === 'mythic') {
-                        AudioEngine.play([600, 800, 1000, 1200, 1500], 'sine', 0.3, 0.15);
-                    } else if (result.rarity === 'legendary') {
-                        AudioEngine.play([500, 700, 900, 1100], 'sine', 0.25, 0.12);
+                } else if (roll < 97) {
+                    // Legendary (9%)
+                    const choice = Math.random();
+                    if (choice < 0.5) {
+                        result = {
+                            type: 'gems',
+                            amount: 300,
+                            text: '💎 300 Gems!!!',
+                            icon: Icons.Gem,
+                            rarity: 'legendary',
+                            rarityText: 'LEGENDARY'
+                        };
                     } else {
-                        AudioEngine.play([400, 600, 800, 1000], 'sine', 0.2, 0.1);
+                        result = {
+                            type: 'item',
+                            itemId: 'ticket',
+                            text: '🎫 蘇生チケット',
+                            icon: Icons.Ticket,
+                            rarity: 'legendary',
+                            rarityText: 'LEGENDARY'
+                        };
                     }
+                } else {
+                    // Mythic (3%)
+                    result = {
+                        type: 'gems',
+                        amount: 777,
+                        text: '💎 777 JACKPOT!!!',
+                        icon: Icons.Gem,
+                        rarity: 'mythic',
+                        rarityText: 'MYTHIC'
+                    };
+                }
 
-                    onReward(result);
-                }, 800);
+                setReward(result);
+                setState('opened');
+
+                // レアリティに応じた効果音
+                if (result.rarity === 'mythic') {
+                    AudioEngine.play([600, 800, 1000, 1200, 1500], 'sine', 0.3, 0.15);
+                } else if (result.rarity === 'legendary') {
+                    AudioEngine.play([500, 700, 900, 1100], 'sine', 0.25, 0.12);
+                } else {
+                    AudioEngine.play([400, 600, 800, 1000], 'sine', 0.2, 0.1);
+                }
+
+                onReward(result);
             };
 
             const getRarityColor = (rarity) => {
@@ -1195,9 +1227,30 @@
                         </div>
                     )}
 
+                    {/* 期待感の光エフェクト */}
+                    {(chestState === 'anticipation' || chestState === 'nearMiss') && (
+                        <div className="absolute inset-0 rounded-full" style={{
+                            animation: 'chest-glow-intensify 1.5s ease-in-out infinite'
+                        }}></div>
+                    )}
+
+                    {/* ニアミス演出 */}
+                    {chestState === 'nearMiss' && (
+                        <div className="absolute -top-20 left-1/2 -translate-x-1/2 text-white font-black text-2xl whitespace-nowrap" style={{
+                            animation: 'near-miss-flash 1s ease-out',
+                            textShadow: '0 0 10px rgba(255,255,255,1), 0 0 20px rgba(255,50,50,1)'
+                        }}>
+                            🔥 もうちょっと！ 🔥
+                        </div>
+                    )}
+
                     {/* 宝箱本体 */}
                     <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' ? 'cursor-pointer' : ''}`} style={{
-                        animation: chestState === 'idle' ? 'chest-float 3s ease-in-out infinite' : chestState === 'shaking' ? 'chest-shake-anticipation 0.5s ease-in-out infinite' : 'none',
+                        animation:
+                            chestState === 'idle' ? 'chest-float 3s ease-in-out infinite' :
+                            chestState === 'anticipation' ? 'chest-anticipation-shake 1s ease-in-out infinite, chest-color-tease 1.5s linear infinite, heartbeat-pulse 0.5s ease-in-out infinite' :
+                            chestState === 'nearMiss' ? 'chest-anticipation-shake 0.3s ease-in-out infinite, heartbeat-pulse 0.3s ease-in-out infinite' :
+                            'none',
                         transformStyle: 'preserve-3d'
                     }}>
                         {/* 宝箱の蓋 */}
@@ -1206,7 +1259,7 @@
                             boxShadow: '0 4px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -2px 4px rgba(0,0,0,0.3)',
                             border: '3px solid #8b7355',
                             transformOrigin: 'bottom',
-                            transform: chestState === 'opened' ? 'rotateX(-120deg)' : 'rotateX(0deg)',
+                            transform: (chestState === 'opening' || chestState === 'opened') ? 'rotateX(-120deg)' : 'rotateX(0deg)',
                             transition: 'transform 0.6s ease-out'
                         }}>
                             {/* 蓋の装飾 */}
@@ -1277,9 +1330,29 @@
                                     </p>
                                 </div>
                             )}
-                            {state === 'shaking' && (
+                            {state === 'anticipation' && (
+                                <div style={{ animation: 'heartbeat-pulse 0.5s ease-in-out infinite' }}>
+                                    <p className="text-4xl font-black text-yellow-300 drop-shadow-lg mb-2">
+                                        来るぞ...！
+                                    </p>
+                                    <p className="text-2xl font-bold text-white" style={{ animation: 'rainbow-cycle 1.5s linear infinite' }}>
+                                        ✨🎰✨
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'nearMiss' && (
+                                <div style={{ animation: 'heartbeat-pulse 0.3s ease-in-out infinite' }}>
+                                    <p className="text-4xl font-black text-red-400 drop-shadow-lg">
+                                        🔥 惜しい！ 🔥
+                                    </p>
+                                    <p className="text-xl font-bold text-yellow-300 mt-2">
+                                        次こそは...！
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'opening' && (
                                 <p className="text-3xl font-black text-yellow-300 animate-pulse drop-shadow-lg">
-                                    ゴゴゴゴゴ...
+                                    開封中...
                                 </p>
                             )}
                             {state === 'opened' && (
