@@ -1635,14 +1635,14 @@
                                 console.log('[Sleep Detection] Still monitoring... Last check was', timeSinceLastCheck, 'ms ago');
                             }
 
-                            // 3秒以上の遅延 = PCスリープと判定
+                            // 1秒以上の遅延 = PCスリープと判定（デバッグ用に短縮）
                             // （タブがアクティブなので、タブ切り替えではない）
-                            if (timeSinceLastCheck > 3000) {
+                            if (timeSinceLastCheck > 1000) {
                                 const timeSinceLastWakeup = now - lastWakeupShownTime;
                                 console.log('[Sleep Detection] Sleep detected!', timeSinceLastCheck, 'ms gap. Last wakeup chest:', timeSinceLastWakeup, 'ms ago');
 
-                                // クールダウン：前回から30秒以上経過している場合のみ表示
-                                if (timeSinceLastWakeup > 30000) {
+                                // クールダウン：前回から5秒以上経過している場合のみ表示（デバッグ用に短縮）
+                                if (timeSinceLastWakeup > 5000) {
                                     console.log('[Sleep Detection] Showing wakeup chest!');
                                     setShowChestModal(true);
                                     lastWakeupShownTime = now;
