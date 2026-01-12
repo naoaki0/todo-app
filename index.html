@@ -1618,21 +1618,37 @@
             useEffect(() => {
                 let lastCheckTime = Date.now();
                 let intervalId = null;
+                let lastWakeupShownTime = 0; // クールダウン用
 
                 const startMonitoring = () => {
                     // タブがアクティブな時のみ監視
                     if (document.visibilityState === 'visible') {
                         lastCheckTime = Date.now();
+                        console.log('[Sleep Detection] Monitoring started at', new Date().toLocaleTimeString());
 
                         intervalId = setInterval(() => {
                             const now = Date.now();
                             const timeSinceLastCheck = now - lastCheckTime;
 
+                            // デバッグログ（10秒ごと）
+                            if (Math.floor(now / 10000) !== Math.floor(lastCheckTime / 10000)) {
+                                console.log('[Sleep Detection] Still monitoring... Last check was', timeSinceLastCheck, 'ms ago');
+                            }
+
                             // 3秒以上の遅延 = PCスリープと判定
                             // （タブがアクティブなので、タブ切り替えではない）
                             if (timeSinceLastCheck > 3000) {
-                                console.log('PC sleep detected while tab was active, showing wakeup chest');
-                                setShowChestModal(true);
+                                const timeSinceLastWakeup = now - lastWakeupShownTime;
+                                console.log('[Sleep Detection] Sleep detected!', timeSinceLastCheck, 'ms gap. Last wakeup chest:', timeSinceLastWakeup, 'ms ago');
+
+                                // クールダウン：前回から30秒以上経過している場合のみ表示
+                                if (timeSinceLastWakeup > 30000) {
+                                    console.log('[Sleep Detection] Showing wakeup chest!');
+                                    setShowChestModal(true);
+                                    lastWakeupShownTime = now;
+                                } else {
+                                    console.log('[Sleep Detection] Cooldown active, not showing chest');
+                                }
                             }
 
                             lastCheckTime = now;
@@ -1642,12 +1658,14 @@
 
                 const stopMonitoring = () => {
                     if (intervalId) {
+                        console.log('[Sleep Detection] Monitoring stopped');
                         clearInterval(intervalId);
                         intervalId = null;
                     }
                 };
 
                 const handleVisibilityChange = () => {
+                    console.log('[Sleep Detection] Visibility changed to:', document.visibilityState);
                     if (document.visibilityState === 'visible') {
                         startMonitoring();
                     } else {
