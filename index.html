@@ -116,7 +116,17 @@
         @keyframes reward-fall-mega-glow { 0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translateY(100vh) rotate(1440deg) scale(0.5); opacity: 0; } }
         @keyframes jackpot-mega-text { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 20% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; } 40% { transform: translate(-50%, -50%) scale(0.9); } 50% { transform: translate(-50%, -50%) scale(1.1); } 60% { transform: translate(-50%, -50%) scale(1); } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
         @keyframes jackpot-subtext { 0% { opacity: 0; transform: translateY(50px); } 50% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
-        
+
+        /* 中毒性MAX宝箱アニメーション */
+        @keyframes chest-float { 0%, 100% { transform: translateY(0px) rotate(-2deg); } 50% { transform: translateY(-15px) rotate(2deg); } }
+        @keyframes chest-shake-anticipation { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+        @keyframes chest-lid-open { 0% { transform: rotateX(0deg); transform-origin: bottom; } 100% { transform: rotateX(-120deg); transform-origin: bottom; } }
+        @keyframes chest-glow-pulse { 0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 40px rgba(255, 215, 0, 0.3); } 50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 80px rgba(255, 215, 0, 0.5), 0 0 120px rgba(255, 215, 0, 0.3); } }
+        @keyframes sparkle-twinkle { 0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(180deg); } }
+        @keyframes light-ray-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes chest-burst-open { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 0; } }
+        @keyframes reward-emerge { 0% { transform: translateY(50px) scale(0); opacity: 0; } 60% { transform: translateY(-20px) scale(1.2); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: #dadce0; border-radius: 4px; }
@@ -1156,48 +1166,130 @@
                 return 'text-white';
             };
 
+            // 宝箱SVGコンポーネント（Duolingo/クラロワ風）
+            const ChestVisual = ({ state: chestState }) => (
+                <div className="relative w-48 h-48 flex items-center justify-center" style={{ perspective: '1000px' }}>
+                    {/* 光の後光 */}
+                    {chestState === 'idle' && (
+                        <div className="absolute inset-0 rounded-full" style={{
+                            background: 'radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%)',
+                            animation: 'chest-glow-pulse 2s ease-in-out infinite'
+                        }}></div>
+                    )}
+
+                    {/* キラキラエフェクト */}
+                    {chestState === 'idle' && [0, 1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="absolute text-yellow-300 text-2xl" style={{
+                            left: `${20 + i * 15}%`,
+                            top: `${10 + (i % 2) * 70}%`,
+                            animation: `sparkle-twinkle 2s ease-in-out infinite ${i * 0.3}s`
+                        }}>✨</div>
+                    ))}
+
+                    {/* 光線回転エフェクト */}
+                    {chestState === 'opened' && (
+                        <div className="absolute inset-0 opacity-60" style={{ animation: 'light-ray-rotate 3s linear infinite' }}>
+                            {[0, 1, 2, 3].map(i => (
+                                <div key={i} className="absolute top-1/2 left-1/2 w-1 h-32 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-t from-transparent via-yellow-300 to-transparent" style={{ transform: `rotate(${i * 45}deg)` }}></div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* 宝箱本体 */}
+                    <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' ? 'cursor-pointer' : ''}`} style={{
+                        animation: chestState === 'idle' ? 'chest-float 3s ease-in-out infinite' : chestState === 'shaking' ? 'chest-shake-anticipation 0.5s ease-in-out infinite' : 'none',
+                        transformStyle: 'preserve-3d'
+                    }}>
+                        {/* 宝箱の蓋 */}
+                        <div className="absolute top-0 left-0 w-full h-16 rounded-t-2xl overflow-hidden" style={{
+                            background: 'linear-gradient(135deg, #d4af37 0%, #f9d371 25%, #d4af37 50%, #aa8921 75%, #d4af37 100%)',
+                            boxShadow: '0 4px 8px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -2px 4px rgba(0,0,0,0.3)',
+                            border: '3px solid #8b7355',
+                            transformOrigin: 'bottom',
+                            transform: chestState === 'opened' ? 'rotateX(-120deg)' : 'rotateX(0deg)',
+                            transition: 'transform 0.6s ease-out'
+                        }}>
+                            {/* 蓋の装飾 */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-yellow-200 via-yellow-400 to-yellow-600" style={{
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.6)'
+                            }}>
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs">🔑</div>
+                            </div>
+                        </div>
+
+                        {/* 宝箱の本体 */}
+                        <div className="absolute bottom-0 left-0 w-full h-20 rounded-b-2xl" style={{
+                            background: 'linear-gradient(135deg, #c19a6b 0%, #d4af37 25%, #c19a6b 50%, #9c7a3c 75%, #c19a6b 100%)',
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3)',
+                            border: '3px solid #8b7355'
+                        }}>
+                            {/* 本体の装飾ライン */}
+                            <div className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-600 to-transparent opacity-50"></div>
+                            <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-red-500 shadow-md"></div>
+                            <div className="absolute top-1/4 right-1/4 w-2 h-2 rounded-full bg-blue-500 shadow-md"></div>
+                        </div>
+
+                        {/* 開封時の光エフェクト */}
+                        {chestState === 'opened' && (
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-64 -translate-y-32 pointer-events-none">
+                                <div className="absolute inset-0 bg-gradient-to-t from-yellow-300 via-white to-transparent opacity-90" style={{
+                                    animation: 'chest-burst-open 0.6s ease-out forwards',
+                                    filter: 'blur(8px)'
+                                }}></div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+
             return (
-                <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in">
+                <div className="fixed inset-0 bg-black/70 z-[200] flex items-center justify-center backdrop-blur-sm animate-in fade-in">
                     {state === 'opened' && reward && <ConfettiSystem rarity={reward.rarity} />}
 
                     <div className="flex flex-col items-center">
-                        <div className="relative mb-8 cursor-pointer group" onClick={handleOpen}>
-                            {state === 'idle' && (
-                                <div className="text-[120px] animate-bounce-soft transition-transform group-hover:scale-110 drop-shadow-2xl">🎁</div>
-                            )}
-                            {state === 'shaking' && (
-                                <div className="text-[120px] animate-shake drop-shadow-2xl">🎁</div>
-                            )}
-                            {state === 'opened' && (
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-yellow-400 blur-3xl opacity-50 animate-light-burst"></div>
-                                    <div className="text-[120px] animate-chest-open">📦</div>
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transform scale-150 animate-float-up flex flex-col items-center gap-2">
-                                        <div className="text-6xl drop-shadow-md">
-                                            {reward?.icon && <reward.icon size={64} className="text-white" fill={reward.type==='gems'?"currentColor":"none"} />}
-                                        </div>
+                        <div className="relative mb-8 group" onClick={handleOpen}>
+                            <ChestVisual state={state} />
+
+                            {/* 報酬アイコンが出現 */}
+                            {state === 'opened' && reward && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{
+                                    animation: 'reward-emerge 0.8s ease-out forwards 0.3s',
+                                    opacity: 0
+                                }}>
+                                    <div className="text-7xl drop-shadow-2xl">
+                                        {reward?.icon && <reward.icon size={80} className="text-white drop-shadow-[0_0_20px_rgba(255,215,0,1)]" fill={reward.type==='gems'?"currentColor":"none"} />}
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        <div className="text-white text-center min-h-[100px]">
+                        <div className="text-white text-center min-h-[120px]">
                             {state === 'idle' && (
-                                <p className="text-2xl font-black animate-pulse">
-                                    {isWakeupChest ? 'おかえり！' : 'セクション完了！'}
-                                    <br/>
-                                    宝箱を開ける
+                                <div className="animate-pulse">
+                                    <p className="text-3xl font-black mb-2 text-yellow-300 drop-shadow-lg">
+                                        {isWakeupChest ? '✨ おかえり！ ✨' : '🎉 セクション完了！ 🎉'}
+                                    </p>
+                                    <p className="text-xl font-bold text-yellow-100">
+                                        宝箱をタップして開ける
+                                    </p>
+                                    <p className="text-sm text-gray-300 mt-2">
+                                        何が出るかな...？
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'shaking' && (
+                                <p className="text-3xl font-black text-yellow-300 animate-pulse drop-shadow-lg">
+                                    ゴゴゴゴゴ...
                                 </p>
                             )}
-                            {state === 'shaking' && <p className="text-2xl font-black text-yellow-300">ゴゴゴゴ...</p>}
                             {state === 'opened' && (
                                 <div className="animate-in zoom-in slide-in-from-bottom duration-500">
-                                    <p className={`text-sm font-black uppercase tracking-widest mb-1 ${getRarityColor(reward.rarity)}`}>
-                                        {reward.rarityText}
+                                    <p className={`text-base font-black uppercase tracking-widest mb-2 ${getRarityColor(reward.rarity)} drop-shadow-md`}>
+                                        ✦ {reward.rarityText} ✦
                                     </p>
-                                    <p className="text-4xl font-black mb-6">{reward?.text}</p>
-                                    <button onClick={onClose} className="bg-white text-duo-green px-8 py-3 rounded-2xl font-black text-xl border-b-4 border-gray-200 active:border-b-0 active:translate-y-[4px] transition-all hover:scale-105">
-                                        受け取る
+                                    <p className="text-5xl font-black mb-8 drop-shadow-lg">{reward?.text}</p>
+                                    <button onClick={onClose} className="bg-gradient-to-b from-white to-gray-100 text-gray-800 px-10 py-4 rounded-2xl font-black text-xl border-4 border-white shadow-2xl active:scale-95 transition-all hover:scale-110 hover:shadow-yellow-300/50">
+                                        🎁 受け取る
                                     </button>
                                 </div>
                             )}
