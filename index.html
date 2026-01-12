@@ -1522,32 +1522,55 @@
                 return () => window.removeEventListener('click', handleClick);
             }, []);
 
-            // スリープ検知：PCスリープから復帰したら宝箱表示（タブのバックグラウンド化では反応しない）
+            // スリープ検知：タブがアクティブな状態でPCスリープを検知
             useEffect(() => {
-                let lastVisibleTime = Date.now();
+                let lastCheckTime = Date.now();
+                let intervalId = null;
 
-                const handleVisibilityChange = () => {
+                const startMonitoring = () => {
+                    // タブがアクティブな時のみ監視
                     if (document.visibilityState === 'visible') {
-                        // タブが表示状態に戻った
-                        const now = Date.now();
-                        const timeSinceLastVisible = now - lastVisibleTime;
+                        lastCheckTime = Date.now();
 
-                        // 5分以上経過していたらPCスリープからの復帰と判定
-                        if (timeSinceLastVisible > 5 * 60 * 1000) {
-                            console.log('PC sleep detected (5+ minutes elapsed), showing wakeup chest');
-                            setShowChestModal(true);
-                        }
+                        intervalId = setInterval(() => {
+                            const now = Date.now();
+                            const timeSinceLastCheck = now - lastCheckTime;
 
-                        lastVisibleTime = now;
-                    } else {
-                        // タブが非表示になった時刻を記録
-                        lastVisibleTime = Date.now();
+                            // 3秒以上の遅延 = PCスリープと判定
+                            // （タブがアクティブなので、タブ切り替えではない）
+                            if (timeSinceLastCheck > 3000) {
+                                console.log('PC sleep detected while tab was active, showing wakeup chest');
+                                setShowChestModal(true);
+                            }
+
+                            lastCheckTime = now;
+                        }, 1000);
                     }
                 };
 
+                const stopMonitoring = () => {
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
+                };
+
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'visible') {
+                        startMonitoring();
+                    } else {
+                        stopMonitoring();
+                    }
+                };
+
+                // 初期化：タブがアクティブなら監視開始
+                startMonitoring();
                 document.addEventListener('visibilitychange', handleVisibilityChange);
 
-                return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+                return () => {
+                    stopMonitoring();
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                };
             }, []);
 
             useEffect(() => {
