@@ -1263,13 +1263,7 @@
                     filter: chestState === 'mashing' ? `blur(${blurAmount}px)` : 'none',
                     transition: 'none'
                 }}>
-                    {/* 光の後光（プラチナ・ブルー） */}
-                    {chestState === 'idle' && (
-                        <div className="absolute inset-0 rounded-full" style={{
-                            background: 'radial-gradient(circle, rgba(150,180,255,0.4) 0%, rgba(100,150,255,0.2) 40%, transparent 70%)',
-                            animation: 'chest-glow-pulse 2s ease-in-out infinite'
-                        }}></div>
-                    )}
+                    {/* 光の後光（プラチナ・ブルー） - REMOVED */}
 
                     {/* 光線回転エフェクト（シルバー・ブルー） */}
                     {chestState === 'opened' && (
@@ -1304,7 +1298,7 @@
                     {/* 宝箱本体 */}
                     <div className={`relative w-32 h-32 transition-all duration-300 ${chestState === 'idle' || chestState === 'locked-on' || chestState === 'mashing' ? 'cursor-pointer' : ''}`} style={{
                         animation:
-                            chestState === 'idle' ? 'chest-float 3s ease-in-out infinite' :
+                            chestState === 'idle' ? 'none' :
                             chestState === 'locked-on' ? 'resistance-denial 0.6s ease-out' :
                             chestState === 'mashing' ? 'heartbeat-pulse 0.3s ease-in-out infinite' :
                             chestState === 'near-miss' ? 'near-miss-flash 0.3s ease-out' :
@@ -1422,9 +1416,6 @@
                                 <div style={{ animation: 'heartbeat-pulse 0.4s ease-in-out infinite' }}>
                                     <p className="text-4xl font-black text-cyan-300 drop-shadow-lg mb-2">
                                         ⚡ MASH ⚡
-                                    </p>
-                                    <p className="text-2xl font-bold text-white">
-                                        {tapCount} / {tapsRequired}
                                     </p>
                                     <p className="text-sm text-gray-300 mt-2">
                                         連打継続中...
