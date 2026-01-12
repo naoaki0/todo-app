@@ -1095,27 +1095,6 @@
             );
         };
 
-        // --- 宝箱モーダル（ギャンブル依存性MAX：予告＆ニアミス演出） ---
-        const ChestModal = ({ onClose, onReward, isWakeupChest = false }) => {
-            const [state, setState] = useState('idle');
-            const [reward, setReward] = useState(null);
-            const [showNearMiss, setShowNearMiss] = useState(false);
-            const [chargeLevel, setChargeLevel] = useState(0);
-            const [showJackpotPeek, setShowJackpotPeek] = useState(false);
-            const [rouletteSymbols, setRouletteSymbols] = useState([]);
-            const [rouletteIndex, setRouletteIndex] = useState(0);
-            const chargeIntervalRef = useRef(null);
-            const chargeStartTimeRef = useRef(null);
-
-            // ルーレット用のシンボル配列
-            const allSymbols = [
-                { rarity: 'common', text: '💎 15 Gems', color: 'text-gray-300' },
-                { rarity: 'rare', text: '💎 50 Gems!', color: 'text-blue-400' },
-                { rarity: 'epic', text: '💎 120 Gems!!', color: 'text-purple-500' },
-                { rarity: 'legendary', text: '💎 300 Gems!!!', color: 'text-yellow-400' },
-                { rarity: 'mythic', text: '💎 777 JACKPOT!!!', color: 'text-red-500' },
-            ];
-
 // --- 宝箱モーダル（3Dマットブラック・ハイエンド版） ---
         const ChestModal = ({ onClose, onReward, isWakeupChest = false }) => {
             const [state, setState] = useState('idle');
@@ -2733,5 +2712,6 @@
     </script>
 </body>
 </html>
+
 
 
