@@ -1451,7 +1451,7 @@
                 const updateTimer = () => {
                     const now = new Date();
                     const endTime = new Date();
-                    endTime.setHours(9, 0, 0, 0);
+                    endTime.setHours(16, 0, 0, 0);
 
                     if (now >= endTime) {
                         setTimeRemaining('00:00:00');
@@ -1550,7 +1550,7 @@
 
                         {/* 見逃し警告 */}
                         <p className="mt-6 text-orange-400/70 text-xs font-bold">
-                            ⚠️ 9時を過ぎると消えます。24時間後まで待機。
+                            ⚠️ 16時を過ぎると消えます。24時間後まで待機。
                         </p>
                     </div>
                 </div>
@@ -3638,8 +3638,8 @@
                 const currentHour = now.getHours();
                 const today = getAdjustedToday();
 
-                // 朝5:00〜9:00の時間帯かつ、今日まだ開けていない
-                const isMorningWindow = currentHour >= 5 && currentHour < 9;
+                // 12:00〜16:00の時間帯かつ、今日まだ開けていない
+                const isMorningWindow = currentHour >= 12 && currentHour < 16;
                 const notClaimedToday = stats.morningChestClaimedDate !== today;
 
                 if (isMorningWindow && notClaimedToday) {
@@ -3658,6 +3658,7 @@
                 const today = getAdjustedToday();
                 const lastClose = stats.lastCloseTime || Date.now();
                 const now = Date.now();
+                const currentHour = new Date().getHours();
                 const hoursAsleep = Math.min(8, (now - lastClose) / (1000 * 60 * 60)); // 最大8時間
 
                 // 1時間以上離れていて、今日まだ回収していない
@@ -3665,10 +3666,19 @@
 
                 if (hoursAsleep >= 1 && notCollectedToday) {
                     // 1時間あたり5ジェム、最大40ジェム
-                    const charge = Math.floor(hoursAsleep * 5);
+                    let charge = Math.floor(hoursAsleep * 5);
+
+                    // 🕐 14時以降は減衰開始（1時間につき5ジェム減少）
+                    if (currentHour >= 14) {
+                        const hoursLate = currentHour - 14;
+                        const decay = hoursLate * 5;
+                        charge = Math.max(5, charge - decay); // 最低5ジェムは保証
+                        console.log('[Sleep Charge] Late penalty:', decay, 'gems deducted');
+                    }
+
                     setSleepChargeAmount(charge);
 
-                    console.log('[Sleep Charge] You slept for', hoursAsleep.toFixed(1), 'hours. Charge:', charge, 'gems');
+                    console.log('[Sleep Charge] You slept for', hoursAsleep.toFixed(1), 'hours. Final charge:', charge, 'gems');
 
                     // 3秒後に表示（モーニング宝箱より後）
                     const timer = setTimeout(() => {
