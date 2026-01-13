@@ -1719,7 +1719,6 @@ const ConfettiSystem = ({ rarity }) => {
                                             // 決定時の重厚なSE
                                             AudioEngine.play([100, 200, 400], 'square', 0.3, 0.1);
                                             setSelectionState('selected');
-                                            handleInteraction(); 
                                         }}
                                         className="group relative w-32 h-32 flex flex-col items-center justify-end cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95"
                                         style={{ animation: `float-chest ${3 + i * 0.5}s ease-in-out infinite` }}
