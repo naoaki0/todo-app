@@ -1236,7 +1236,7 @@
                     AudioEngine.play([400, 600, 800, 1000], 'sine', 0.2, 0.1);
                 }
 
-                onReward(result);
+                onReward(result, isWakeupChest);
             };
 
 
@@ -1728,6 +1728,9 @@
                 lastWakeupChestTime: 0, // 最後にスリープ復帰宝箱を開けた時刻
                 pityCounter: 0, // 天井カウンター（スカが続くと上昇）
                 feverEndTime: 0, // フィーバーモード終了時刻
+                tempGems: 0,
+                isBurning: false,
+                burnStartTime: 0,
             }));
             
             const SECTION_SIZE = 4;
@@ -2252,15 +2255,28 @@
                 AudioEngine.play([783, 1046], 'sine', 0.1, 0.1);
             };
 
-            const handleReward = (reward) => {
+            const handleReward = (reward, isWakeupChest = false) => {
                 if (reward.type === 'gems') {
-                    setStats(prev => ({ ...prev, gems: prev.gems + reward.amount }));
+                    if (isWakeupChest) {
+                        setStats(prev => ({
+                            ...prev,
+                            tempGems: prev.tempGems + reward.amount,
+                            isBurning: true,
+                            burnStartTime: Date.now(),
+                            devLogs: [...(prev.devLogs || []), `⚠️ ${reward.amount}💎を仮獲得。朝の勝負が始まりました...`]
+                        }));
+                        setToastMessage(`🔥 ${reward.text} を仮獲得！すぐに着手しないと燃え尽きます！`);
+                    } else {
+                        setStats(prev => ({ ...prev, gems: prev.gems + reward.amount }));
+                        setToastMessage(`${reward.text} を獲得しました！`);
+                    }
                 } else if (reward.itemId === 'freeze') {
                     setStats(prev => ({ ...prev, streakFreeze: prev.streakFreeze + 1 }));
+                    setToastMessage(`${reward.text} を獲得しました！`);
                 } else if (reward.itemId === 'ticket') {
                     setStats(prev => ({ ...prev, resurrectionTickets: prev.resurrectionTickets + 1 }));
+                    setToastMessage(`${reward.text} を獲得しました！`);
                 }
-                setToastMessage(`${reward.text} を獲得しました！`);
             };
 
             const unlockTheme = (themeName, cost) => {
