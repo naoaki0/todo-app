@@ -1743,7 +1743,7 @@
             const [timerState, setTimerState] = useState({ active: false, time: 52 * 60, mode: 'work' });
             const [isCompletedOpen, setIsCompletedOpen] = useState(false);
             const [toastMessage, setToastMessage] = useState(null);
-            const [showChestModal, setShowChestModal] = useState(false);
+            const [showChestModal, setShowChestModal] = useState({ show: false, isWakeup: false });
             const [levelGlow, setLevelGlow] = useState(false);
             const [progressGlow, setProgressGlow] = useState(false);
             const [showIgnition, setShowIgnition] = useState(false);
@@ -1806,7 +1806,7 @@
                                 // クールダウン：前回から5秒以上経過している場合のみ表示（デバッグ用に短縮）
                                 if (timeSinceLastWakeup > 5000) {
                                     console.log('[Sleep Detection] Showing wakeup chest!');
-                                    setShowChestModal(true);
+                                    setShowChestModal({ show: true, isWakeup: true });
                                     lastWakeupShownTime = now;
                                 } else {
                                     console.log('[Sleep Detection] Cooldown active, not showing chest');
@@ -2797,7 +2797,7 @@
                     {/* 中毒性MAX：報酬演出 */}
                     {rewardEffect}
                     {/* PerformanceOverlay removed */}
-                    {showChestModal && <ChestModal onClose={() => setShowChestModal(false)} onReward={handleReward} />}
+                    {showChestModal.show && <ChestModal onClose={() => setShowChestModal({ show: false, isWakeup: false })} onReward={handleReward} isWakeupChest={showChestModal.isWakeup} />}
                     {showIgnition && <IgnitionModal />}
                     {contextMenu && (
                         <ContextMenu 
