@@ -2112,6 +2112,7 @@ const ConfettiSystem = ({ rarity }) => {
                                                 ...prev,
                                                 gems: prev.gems + savedGems,
                                                 tempGems: 0,
+                                                initialTempGems: 0,
                                                 isBurning: false,
                                                 devLogs: [...(prev.devLogs || []), `✅ タスク着手！${savedGems}💎を獲得しました。朝の勝負に勝利！`]
                                             }));
