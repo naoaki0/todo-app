@@ -1687,6 +1687,20 @@
                                         e.stopPropagation();
                                         const duration = (task.challengeDuration || 9.5) * 60 * 1000;
                                         onUpdate(task.id, { challengeEndTime: Date.now() + duration });
+
+                                        // Morning Burn: Stop burning and save gems when starting a task
+                                        if (stats.isBurning && stats.tempGems > 0) {
+                                            const savedGems = stats.tempGems;
+                                            setStats(prev => ({
+                                                ...prev,
+                                                gems: prev.gems + savedGems,
+                                                tempGems: 0,
+                                                isBurning: false,
+                                                devLogs: [...(prev.devLogs || []), `✅ タスク着手！${savedGems}💎を獲得しました。朝の勝負に勝利！`]
+                                            }));
+                                            setToastMessage(`🎉 ${savedGems}💎 を獲得！朝の勝負に勝利しました！`);
+                                            AudioEngine.play([200, 300, 400, 500], 'sine', 0.2, 0.3);
+                                        }
                                     }}
                                 />
                                 {/* その他のボタン（ホバー時のみ表示） */}
@@ -1764,6 +1778,40 @@
             const closeToast = useCallback(() => {
                 setToastMessage(null);
             }, []);
+
+            useEffect(() => {
+                if (!stats.isBurning || stats.tempGems <= 0) return;
+
+                const intervalId = setInterval(() => {
+                    setStats(prev => {
+                        if (!prev.isBurning || prev.tempGems <= 0) return prev;
+
+                        const burnAmount = Math.floor(Math.random() * 5) + 1;
+                        const newTempGems = Math.max(0, prev.tempGems - burnAmount);
+
+                        if (newTempGems === 0) {
+                            AudioEngine.play([100, 80, 60, 40], 'sawtooth', 0.3, 0.3);
+                            setToastMessage('💀 報酬が完全に燃え尽きました。朝の勝負に敗北しました。');
+                            return {
+                                ...prev,
+                                tempGems: 0,
+                                isBurning: false,
+                                devLogs: [...(prev.devLogs || []), '🔥 モーニング・バーン発動。報酬が完全に燃え尽きました...']
+                            };
+                        }
+
+                        return {
+                            ...prev,
+                            tempGems: newTempGems,
+                            devLogs: [...(prev.devLogs || []), `🔥 ジェムが燃え落ちています... (-${burnAmount}💎, 残り${newTempGems}💎)`]
+                        };
+                    });
+
+                    AudioEngine.play([80, 100], 'sine', 0.05, 0.1);
+                }, 1000);
+
+                return () => clearInterval(intervalId);
+            }, [stats.isBurning, stats.tempGems]);
 
             useEffect(() => {
                 const h = () => { const m = window.innerWidth < 768; setIsMobile(m); if(!m) setIsSidebarOpen(true); };
@@ -2427,6 +2475,15 @@
                                     {stats.gems}
                                 </span>
                             </button>
+
+                            {/* Morning Burn Counter */}
+                            {stats.isBurning && stats.tempGems > 0 && (
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500 text-white rounded-2xl animate-pulse shadow-lg">
+                                    <span className="text-lg">🔥</span>
+                                    <span className="text-lg font-black">{stats.tempGems}💎</span>
+                                    <span className="text-xs font-bold">燃焼中</span>
+                                </div>
+                            )}
                         </div>
                     </header>
 
@@ -2695,6 +2752,24 @@
                                                             </div>
                                                         )}
                                                     </div>
+
+                                                    {/* Morning Burn Fuse Bar - Only for Section 1 */}
+                                                    {sectionNum === 1 && stats.isBurning && stats.tempGems > 0 && (
+                                                        <div className="px-4 pb-4">
+                                                            <div className="bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                                                                <div
+                                                                    className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative"
+                                                                    style={{ width: `${Math.min(100, (stats.tempGems / (stats.tempGems + 1)) * 100)}%` }}
+                                                                >
+                                                                    <div className="absolute inset-0 animate-pulse bg-white/20"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-center text-xs text-red-600 font-bold mt-1">
+                                                                🔥 導火線燃焼中 - 今すぐタスクを着手せよ！
+                                                            </div>
+                                                        </div>
+                                                    )}
+
                                                     <div
                                                         onDragOver={(e) => handleDragOver(e, t)}
                                                         onDrop={(e) => handleDrop(e, t)}
