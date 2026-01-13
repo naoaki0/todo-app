@@ -212,6 +212,65 @@
             80% { transform: translate(5px, -2px); }
             90% { transform: translate(-5px, 2px); }
         }
+
+        /* ChestModal: The Void - 浮遊と霧のアニメーション */
+        @keyframes float-particle {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translate(10px, -20px) scale(1.2);
+                opacity: 0.6;
+            }
+        }
+
+        @keyframes float-chest {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes aura-intense {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Tier-specific classes */
+        .tier-void {
+            filter: brightness(0.7) contrast(1.2);
+        }
+
+        .tier-bronze {
+            filter: brightness(1) contrast(1.1);
+        }
+
+        .tier-gold {
+            filter: brightness(1.3) contrast(1.2) saturate(1.5);
+        }
+
+        .tier-rainbow {
+            filter: brightness(1.5) contrast(1.3) saturate(2);
+            animation: rainbow-pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes rainbow-pulse {
+            0%, 100% {
+                filter: brightness(1.5) contrast(1.3) saturate(2) hue-rotate(0deg);
+            }
+            50% {
+                filter: brightness(1.8) contrast(1.4) saturate(2.5) hue-rotate(30deg);
+            }
+        }
     </style>
 </head>
 <body class="bg-white h-screen overflow-hidden text-duo-text">
@@ -1069,75 +1128,18 @@
                     goldRatio = 0.1;
                 } else if (rarity === 'rare') {
                     count = 60;
-                    goldRatio = 0.3;
-                } else if (rarity === 'epic') {
-                    count = 100;
-                    goldRatio = 0.5;
-                } else if (rarity === 'legendary') {
-                    count = 150;
-                    goldRatio = 0.7;
-                } else if (rarity === 'mythic') {
-                    count = 250;
-                    goldRatio = 0.9;
-                }
-
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-
-                const newParticles = [];
-                for (let i = 0; i < count; i++) {
-                    const isGold = Math.random() < goldRatio;
-                    const fromLeft = i % 2 === 0;
-
-                    // 左下または右下からの発射位置
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
-
-                    // 中央付近へのランダムな着地点
-                    const spreadX = (Math.random() - 0.5) * 400;
-                    const spreadY = (Math.random() - 0.5) * 400;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
-
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: isGold ? '#FFD700' : '#C0C0C0',
-                        delay: Math.random() * 0.3,
-                        duration: 0.8 + Math.random() * 0.4,
-                        size: 10 + Math.random() * 8,
-                    });
-                }
-
-                setParticles(newParticles);
-
-                // 2.5秒後にクリーンアップ
-                const timeout = setTimeout(() => setParticles([]), 3000);
-                return () => clearTimeout(timeout);
-            }, [rarity]);
-
-            return (
-                <>
-                    {particles.map(p => (
-                        <CrackerConfettiParticle key={p.id} {...p} />
-                    ))}
-                </>
-            );
-        };
-
-        // --- 宝箱モーダル（段階的昇格の儀式：高依存型ギャンブルシステム） ---
+        // --- 宝箱モーダル（基底状態：静寂と予感 / 三段階の変幻儀式） ---
         const ChestModal = ({ onClose, onReward, isWakeupChest = false }) => {
-            const [state, setState] = useState('idle');
-            const [currentTier, setCurrentTier] = useState('bronze'); // bronze, gold, rainbow
+            const [state, setState] = useState('void');
+            const [currentTier, setCurrentTier] = useState('void'); // void, bronze, gold, rainbow
             const [reward, setReward] = useState(null);
             const [mashProgress, setMashProgress] = useState(0);
-            const [mashStartTime, setMashStartTime] = useState(0);
-            const [showNearMiss, setShowNearMiss] = useState(false);
-            const [glitchActive, setGlitchActive] = useState(false);
+            const [auraIntensity, setAuraIntensity] = useState(0);
+            const [showGlitch, setShowGlitch] = useState(false);
+            const [skipToGold, setSkipToGold] = useState(false);
+            const [skipToRainbow, setSkipToRainbow] = useState(false);
             const mashTimerRef = useRef(null);
+            const mashStartTimeRef = useRef(0);
 
             // キーボード入力（Spaceキー）対応
             useEffect(() => {
@@ -1154,120 +1156,175 @@
             const handleInteraction = () => {
                 if (state === 'freeze' || state === 'opened' || state === 'gemAnimation' || state === 'burnOverlay') return;
 
-                // Step 1: idle → bronze
-                if (state === 'idle') {
-                    setState('step1_bronze');
-                    setCurrentTier('bronze');
-                    // 不協和音（低域）
-                    AudioEngine.play([80, 90, 100, 85, 95], 'sawtooth', 0.25, 0.2);
-                    return;
-                }
+                // Step 1: void → bronze/gold/rainbow
+                if (state === 'void') {
+                    const roll = Math.random() * 100;
 
-                // Step 2: bronze → gold (40%) or stay bronze (60%)
-                if (state === 'step1_bronze') {
-                    const roll = Math.random();
-                    if (roll < 0.4) {
-                        // 金に昇格
-                        setState('step2_gold');
+                    if (roll < 2) {
+                        // 2%: 虹へ直行（即ジャックポット）
+                        setSkipToRainbow(true);
+                        setCurrentTier('rainbow');
+                        setState('step1');
+                        setShowGlitch(true);
+                        // グリッチ音 + 虹色確定音
+                        AudioEngine.play([100, 1000, 200, 1500, 300, 2000], 'sawtooth', 0.5, 0.1);
+                        AudioEngine.play([523, 659, 784, 1047], 'sine', 0.4, 0.2);
+
+                        setTimeout(() => {
+                            setShowGlitch(false);
+                            proceedToFreeze();
+                        }, 1000);
+                    } else if (roll < 20) {
+                        // 18%: 金へ飛び級（Step 2スキップ）
+                        setSkipToGold(true);
                         setCurrentTier('gold');
-                        // やや高域の快音
-                        AudioEngine.play([300, 400, 500, 600], 'sine', 0.2, 0.15);
+                        setState('step1');
+                        // 金昇格音
+                        AudioEngine.play([400, 500, 600, 700, 800], 'sine', 0.3, 0.15);
+
+                        setTimeout(() => {
+                            proceedToStep3();
+                        }, 800);
                     } else {
-                        // 銅のまま
-                        setState('step2_bronze');
+                        // 80%: 銅色（通常進行）
                         setCurrentTier('bronze');
-                        // 残念な音
-                        AudioEngine.play([200, 180, 160], 'square', 0.15, 0.1);
+                        setState('step1');
+                        // オーラ強度をランダムに設定（後の昇格率に影響）
+                        const intensity = Math.random();
+                        setAuraIntensity(intensity);
+                        // 不協和音（低域）
+                        AudioEngine.play([80, 90, 100, 85, 95], 'sawtooth', 0.25, 0.2);
+
+                        setTimeout(() => {
+                            proceedToStep2();
+                        }, 800);
                     }
-
-                    // 15%の確率で連打モード発生
-                    setTimeout(() => {
-                        if (Math.random() < 0.15) {
-                            setState('mashMode');
-                            setMashProgress(0);
-                            setMashStartTime(Date.now());
-
-                            // 5秒間のタイマー
-                            mashTimerRef.current = setInterval(() => {
-                                const elapsed = Date.now() - Date.now();
-                                if (elapsed >= 5000) {
-                                    clearInterval(mashTimerRef.current);
-                                    setState('step2_ready');
-                                }
-                            }, 100);
-                        } else {
-                            setState('step2_ready');
-                        }
-                    }, 800);
                     return;
                 }
 
                 // 連打モード中の処理
                 if (state === 'mashMode') {
-                    const progress = Math.min(1, mashProgress + 0.05);
-                    setMashProgress(progress);
-                    // ハートビート音
-                    AudioEngine.play([100 + progress * 200, 120 + progress * 240], 'square', 0.1 + progress * 0.2, 0.05);
+                    const now = Date.now();
+                    const elapsed = now - mashStartTimeRef.current;
 
-                    if (progress >= 1) {
+                    if (elapsed < 5000) {
+                        const progress = Math.min(1, mashProgress + 0.1);
+                        setMashProgress(progress);
+                        // ハートビート音
+                        AudioEngine.play([100 + progress * 300, 120 + progress * 360], 'square', 0.15 + progress * 0.2, 0.05);
+                    }
+
+                    if (elapsed >= 5000 || mashProgress >= 1) {
                         clearInterval(mashTimerRef.current);
-                        setState('step2_ready');
+                        // 連打完了 → 金へ昇格
+                        setCurrentTier('gold');
+                        setState('step2_complete');
+                        AudioEngine.play([400, 500, 600, 700, 800], 'sine', 0.3, 0.15);
+
+                        setTimeout(() => {
+                            proceedToStep3();
+                        }, 800);
                     }
                     return;
                 }
 
-                // Step 3: step2_ready → rainbow (10%) or normal (90%)
-                if (state === 'step2_ready' || state === 'step2_gold' || state === 'step2_bronze') {
-                    const roll = Math.random();
-                    if (roll < 0.1) {
-                        // 虹色に昇格！
-                        setState('step3_rainbow');
-                        setCurrentTier('rainbow');
-                        // 完全和音のベル音
-                        AudioEngine.play([523, 659, 784, 1047], 'sine', 0.3, 0.2);
-                    } else {
-                        // 通常
-                        setState('step3_normal');
+                // Step 2以降は自動進行なのでクリック不要
+            };
 
-                        // 20%でニアミス演出
-                        if (Math.random() < 0.2) {
-                            setShowNearMiss(true);
-                            setTimeout(() => setShowNearMiss(false), 300);
+            const proceedToStep2 = () => {
+                // Step 2: 昇格の試練（40%で金へ、15%で連打モード）
+                const roll = Math.random();
+                const upgradeChance = 0.4 + (auraIntensity * 0.2); // オーラが強いと昇格率UP
+
+                if (roll < 0.15) {
+                    // 15%: 連打モード発生
+                    setState('mashMode');
+                    setMashProgress(0);
+                    mashStartTimeRef.current = Date.now();
+                    // 連打開始音
+                    AudioEngine.play([200, 250, 300], 'square', 0.2, 0.1);
+
+                    // 5秒タイマー
+                    mashTimerRef.current = setInterval(() => {
+                        const elapsed = Date.now() - mashStartTimeRef.current;
+                        if (elapsed >= 5000) {
+                            clearInterval(mashTimerRef.current);
+                            // タイムアップ → 金へ昇格
+                            setCurrentTier('gold');
+                            setState('step2_complete');
+                            AudioEngine.play([400, 500, 600, 700, 800], 'sine', 0.3, 0.15);
+
+                            setTimeout(() => {
+                                proceedToStep3();
+                            }, 800);
                         }
-                    }
-
-                    // 0.7秒の完全停止（The Freeze）
+                    }, 100);
+                } else if (roll < upgradeChance) {
+                    // 40%（+オーラボーナス）: 金へ昇格
+                    setState('step2');
                     setTimeout(() => {
-                        setState('freeze');
-                        // 心音SE
-                        const heartbeatInterval = setInterval(() => {
-                            AudioEngine.play([60, 80], 'sine', 0.15, 0.08);
-                        }, 400);
+                        setCurrentTier('gold');
+                        // 鏡面ゴールドへ変化 + フラッシュ
+                        AudioEngine.play([400, 500, 600, 700, 800], 'sine', 0.3, 0.15);
 
                         setTimeout(() => {
-                            clearInterval(heartbeatInterval);
-                            proceedToReward();
-                        }, 700);
+                            proceedToStep3();
+                        }, 800);
                     }, 500);
-                    return;
+                } else {
+                    // 銅のまま → Step 3へ
+                    setState('step2');
+                    AudioEngine.play([200, 180, 160], 'square', 0.15, 0.1);
+
+                    setTimeout(() => {
+                        proceedToStep3();
+                    }, 800);
                 }
             };
 
-            const proceedToReward = () => {
-                // 5%の確率でグリッチ復活演出
-                if (currentTier === 'bronze' && Math.random() < 0.05) {
-                    setGlitchActive(true);
-                    setCurrentTier('rainbow');
-                    // グリッチ音
-                    AudioEngine.play([100, 1000, 200, 1500, 300], 'sawtooth', 0.4, 0.08);
+            const proceedToStep3 = () => {
+                // Step 3: 最終審判（10%で虹へ）
+                setState('step3');
 
-                    setTimeout(() => {
-                        setGlitchActive(false);
-                        openChest();
-                    }, 600);
-                } else {
+                setTimeout(() => {
+                    if (currentTier === 'gold') {
+                        const roll = Math.random();
+                        if (roll < 0.1) {
+                            // 10%: 虹色へ昇格！
+                            setCurrentTier('rainbow');
+                            setShowGlitch(true);
+                            // グリッチ音 + 虹色確定音
+                            AudioEngine.play([100, 1000, 200, 1500, 300, 2000], 'sawtooth', 0.5, 0.1);
+                            AudioEngine.play([523, 659, 784, 1047], 'sine', 0.4, 0.2);
+
+                            setTimeout(() => {
+                                setShowGlitch(false);
+                                proceedToFreeze();
+                            }, 800);
+                        } else {
+                            // 90%: 金のまま
+                            proceedToFreeze();
+                        }
+                    } else {
+                        // 銅のまま
+                        proceedToFreeze();
+                    }
+                }, 500);
+            };
+
+            const proceedToFreeze = () => {
+                // 0.7秒の完全停止（The Freeze）
+                setState('freeze');
+
+                // 心音SE
+                const heartbeatInterval = setInterval(() => {
+                    AudioEngine.play([60, 80], 'sine', 0.15, 0.08);
+                }, 400);
+
+                setTimeout(() => {
+                    clearInterval(heartbeatInterval);
                     openChest();
-                }
+                }, 700);
             };
 
             const openChest = () => {
@@ -1376,16 +1433,25 @@
             };
 
             const getAuraColor = () => {
-                if (currentTier === 'rainbow') return 'rgba(255, 0, 255, 0.8)';
-                if (currentTier === 'gold') return 'rgba(255, 215, 0, 0.6)';
-                return 'rgba(139, 69, 19, 0.5)'; // bronze
+                if (currentTier === 'rainbow') return 'rgba(255, 0, 255, 0.9)';
+                if (currentTier === 'gold') return 'rgba(255, 215, 0, 0.7)';
+                if (currentTier === 'bronze') return `rgba(139, 69, 19, ${0.3 + auraIntensity * 0.4})`;
+                return 'rgba(0, 0, 0, 0.5)'; // void
+            };
+
+            const getTierClassName = () => {
+                if (currentTier === 'rainbow') return 'tier-rainbow';
+                if (currentTier === 'gold') return 'tier-gold';
+                if (currentTier === 'bronze') return 'tier-bronze';
+                return 'tier-void';
             };
 
             // 宝箱ビジュアル
             const ChestVisual = () => {
-                const isShaking = state === 'mashMode' || state === 'step3_normal' || state === 'step3_rainbow';
-                const shakeIntensity = currentTier === 'rainbow' ? 3 : 1;
+                const isShaking = state === 'mashMode' || state === 'step3';
+                const shakeIntensity = currentTier === 'rainbow' ? 5 : currentTier === 'gold' ? 3 : 1;
                 const auraColor = getAuraColor();
+                const tierClass = getTierClassName();
 
                 return (
                     <div
@@ -1396,30 +1462,39 @@
                             willChange: 'transform'
                         }}
                     >
-                        {/* オーラエフェクト */}
-                        <div
-                            className="absolute inset-0 rounded-full blur-3xl animate-pulse"
-                            style={{
-                                backgroundColor: auraColor,
-                                opacity: state === 'idle' ? 0 : 0.8,
-                                willChange: 'opacity'
-                            }}
-                        />
+                        {/* 黒い霧パーティクル（void状態） */}
+                        {state === 'void' && (
+                            <div className="absolute inset-0 pointer-events-none">
+                                {Array.from({ length: 15 }, (_, i) => (
+                                    <div
+                                        key={i}
+                                        className="absolute w-2 h-2 rounded-full bg-black/30"
+                                        style={{
+                                            top: `${Math.random() * 100}%`,
+                                            left: `${Math.random() * 100}%`,
+                                            animation: `float-particle ${3 + Math.random() * 2}s ease-in-out infinite`,
+                                            animationDelay: `${Math.random() * 2}s`
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
-                        {/* ニアミスの虹色フラッシュ */}
-                        {showNearMiss && (
+                        {/* オーラエフェクト */}
+                        {state !== 'void' && (
                             <div
-                                className="absolute inset-0 rounded-full blur-2xl"
+                                className="absolute inset-0 rounded-full blur-3xl animate-pulse"
                                 style={{
-                                    background: 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)',
-                                    animation: 'flash 0.3s ease-out',
-                                    willChange: 'opacity'
+                                    backgroundColor: auraColor,
+                                    opacity: 0.8,
+                                    willChange: 'opacity',
+                                    animation: currentTier === 'bronze' && auraIntensity > 0.7 ? 'aura-intense 1s ease-in-out infinite' : 'pulse 2s ease-in-out infinite'
                                 }}
                             />
                         )}
 
                         {/* グリッチエフェクト */}
-                        {glitchActive && (
+                        {showGlitch && (
                             <div
                                 className="absolute inset-0"
                                 style={{
@@ -1433,30 +1508,267 @@
 
                         {/* 宝箱本体 */}
                         <div
-                            className="relative w-32 h-32 transition-all duration-300"
+                            className={`relative w-32 h-32 transition-all duration-500 ${tierClass}`}
                             style={{
                                 filter: currentTier === 'rainbow'
                                     ? 'drop-shadow(0 0 20px rgba(255,0,255,1)) drop-shadow(0 0 40px rgba(255,0,255,0.8)) drop-shadow(0 0 60px rgba(255,0,255,0.6))'
                                     : currentTier === 'gold'
-                                    ? 'drop-shadow(0 0 15px rgba(255,215,0,0.8))'
-                                    : 'drop-shadow(0 0 10px rgba(139,69,19,0.5))',
+                                    ? 'drop-shadow(0 0 20px rgba(255,215,0,0.8)) drop-shadow(0 0 40px rgba(255,215,0,0.6))'
+                                    : currentTier === 'bronze'
+                                    ? 'drop-shadow(0 0 10px rgba(139,69,19,0.5))'
+                                    : 'drop-shadow(0 0 15px rgba(0,0,0,0.9))',
                                 transformStyle: 'preserve-3d',
-                                willChange: 'filter'
+                                willChange: 'filter',
+                                animation: state === 'void' ? 'float-chest 3s ease-in-out infinite' : 'none'
                             }}
                         >
                             {/* 蓋 */}
                             <div
                                 className="absolute top-0 left-0 w-full h-16 rounded-t-2xl overflow-hidden"
                                 style={{
-                                    background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 15%, #2a2a2a 30%, #1a1a1a 50%, #0a0a0a 70%, #000000 100%)',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.9), inset 0 2px 6px rgba(255,255,255,0.15)',
-                                    border: '3px solid #333',
+                                    background: currentTier === 'rainbow'
+                                        ? 'linear-gradient(135deg, #ff0080 0%, #ff8c00 20%, #ffd700 40%, #00ff00 60%, #0080ff 80%, #8000ff 100%)'
+                                        : currentTier === 'gold'
+                                        ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ffd700 50%, #ffb700 75%, #ffa500 100%)'
+                                        : currentTier === 'bronze'
+                                        ? 'linear-gradient(135deg, #cd7f32 0%, #b87333 25%, #cd7f32 50%, #8b4513 75%, #654321 100%)'
+                                        : 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 25%, #0f0f0f 50%, #0a0a0a 75%, #000000 100%)',
+                                    boxShadow: currentTier === 'void'
+                                        ? '0 4px 12px rgba(0,0,0,0.95), inset 0 2px 6px rgba(255,255,255,0.05)'
+                                        : '0 4px 12px rgba(0,0,0,0.9), inset 0 2px 6px rgba(255,255,255,0.2)',
+                                    border: currentTier === 'void' ? '3px solid #0a0a0a' : '3px solid #333',
                                     transformOrigin: 'bottom',
                                     transform: state === 'opened' ? 'rotateX(-120deg)' : 'rotateX(0deg)',
-                                    transition: 'transform 0.6s ease-out'
+                                    transition: 'transform 0.6s ease-out, background 0.5s ease'
                                 }}
                             >
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400">
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs">
+                                        {currentTier === 'void' ? '?' : '💎'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 本体 */}
+                            <div
+                                className="absolute bottom-0 left-0 w-full h-20 rounded-b-2xl"
+                                style={{
+                                    background: currentTier === 'rainbow'
+                                        ? 'linear-gradient(135deg, #ff0080 0%, #ff8c00 20%, #ffd700 40%, #00ff00 60%, #0080ff 80%, #8000ff 100%)'
+                                        : currentTier === 'gold'
+                                        ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ffd700 50%, #ffb700 75%, #ffa500 100%)'
+                                        : currentTier === 'bronze'
+                                        ? 'linear-gradient(135deg, #cd7f32 0%, #b87333 25%, #cd7f32 50%, #8b4513 75%, #654321 100%)'
+                                        : 'linear-gradient(135deg, #0f0f0f 0%, #1f1f1f 25%, #0f0f0f 50%, #0a0a0a 75%, #050505 100%)',
+                                    boxShadow: currentTier === 'void'
+                                        ? '0 8px 20px rgba(0,0,0,0.98), inset 0 2px 6px rgba(255,255,255,0.03)'
+                                        : '0 8px 20px rgba(0,0,0,0.95), inset 0 2px 6px rgba(255,255,255,0.15)',
+                                    border: currentTier === 'void' ? '3px solid #0a0a0a' : '3px solid #2a2a2a',
+                                    transition: 'background 0.5s ease'
+                                }}
+                            >
+                                <div className="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gray-400 to-transparent opacity-70" />
+                            </div>
+
+                            {/* 開封時の光 */}
+                            {state === 'opened' && (
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-64 -translate-y-32 pointer-events-none">
+                                    <div
+                                        className="absolute inset-0 bg-gradient-to-t from-blue-200 via-white to-transparent opacity-90"
+                                        style={{
+                                            animation: 'chest-burst-open 0.6s ease-out forwards',
+                                            filter: 'blur(8px)'
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 報酬アイコン */}
+                        {state === 'opened' && reward && (
+                            <div
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                                style={{
+                                    animation: 'reward-emerge 0.8s ease-out forwards',
+                                    opacity: 0
+                                }}
+                            >
+                                <div className="text-7xl">
+                                    {reward.icon && <reward.icon size={80} className="text-white drop-shadow-[0_0_20px_rgba(255,215,0,1)]" fill="currentColor" />}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // ジェム散乱→吸収アニメーション
+            const GemAbsorptionEffect = () => {
+                const gemCount = 20;
+                const gems = Array.from({ length: gemCount }, (_, i) => ({
+                    id: i,
+                    delay: i * 0.05,
+                    x: (Math.random() - 0.5) * 400,
+                    y: (Math.random() - 0.5) * 400
+                }));
+
+                return (
+                    <div className="fixed inset-0 pointer-events-none z-[250]">
+                        {gems.map(gem => (
+                            <div
+                                key={gem.id}
+                                className="absolute top-1/2 left-1/2"
+                                style={{
+                                    animation: `gem-scatter-absorb 1.5s cubic-bezier(0.4, 0, 0.2, 1) ${gem.delay}s forwards`,
+                                    '--scatter-x': `${gem.x}px`,
+                                    '--scatter-y': `${gem.y}px`
+                                }}
+                            >
+                                💎
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
+            return (
+                <div
+                    className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center backdrop-blur-sm"
+                    style={{
+                        animation: state === 'mashMode' || currentTier === 'rainbow' ? 'screen-shake 0.1s infinite' : 'none'
+                    }}
+                >
+                    {/* ConfettiSystem */}
+                    {state === 'opened' && reward && <ConfettiSystem rarity={reward.rarity} />}
+
+                    {/* ジェム吸収アニメーション */}
+                    {state === 'gemAnimation' && <GemAbsorptionEffect />}
+
+                    {/* 燃焼開始オーバーレイ */}
+                    {state === 'burnOverlay' && (
+                        <div
+                            className="fixed inset-0 bg-gradient-to-br from-red-600 to-orange-500 z-[250] flex items-center justify-center"
+                            style={{
+                                animation: 'burn-overlay 1s ease-out forwards'
+                            }}
+                        >
+                            <div className="text-9xl font-black text-white animate-pulse">
+                                🔥 燃焼開始 🔥
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col items-center">
+                        <div
+                            className="relative mb-8 cursor-pointer"
+                            onClick={handleInteraction}
+                        >
+                            <ChestVisual />
+                        </div>
+
+                        <div className="text-white text-center min-h-[120px]">
+                            {state === 'void' && (
+                                <div className="animate-pulse">
+                                    <p className="text-3xl font-black mb-2 text-gray-400">
+                                        {isWakeupChest ? '✨ おかえり ✨' : '🎉 セクション完了 🎉'}
+                                    </p>
+                                    <p className="text-xl font-bold text-gray-500">
+                                        クリックまたはSpaceキーで開封
+                                    </p>
+                                    <p className="text-sm text-gray-600 mt-2">
+                                        静寂と予感...
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'step1' && !skipToGold && !skipToRainbow && (
+                                <div>
+                                    <p className={`text-4xl font-black mb-2 ${auraIntensity > 0.7 ? 'text-amber-600 animate-pulse' : 'text-amber-700'}`}>
+                                        🟫 BRONZE 🟫
+                                    </p>
+                                    <p className="text-lg text-gray-300">
+                                        {auraIntensity > 0.7 ? '強いオーラ！期待度UP...' : '変幻の儀式が始まる...'}
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'step1' && skipToGold && (
+                                <div>
+                                    <p className="text-5xl font-black mb-2 text-yellow-400 animate-pulse">
+                                        🟨 GOLD SKIP! 🟨
+                                    </p>
+                                    <p className="text-lg text-yellow-300">
+                                        金へ飛び級！
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'step1' && skipToRainbow && (
+                                <div>
+                                    <p className="text-6xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 animate-pulse">
+                                        🌈 RAINBOW DIRECT! 🌈
+                                    </p>
+                                    <p className="text-lg text-white">
+                                        虹へ直行！即ジャックポット！
+                                    </p>
+                                </div>
+                            )}
+                            {(state === 'step2' || state === 'step2_complete') && (
+                                <div>
+                                    <p className={`text-4xl font-black mb-2 ${currentTier === 'gold' ? 'text-yellow-400' : 'text-amber-700'}`}>
+                                        {currentTier === 'gold' ? '🟨 GOLD UPGRADE! 🟨' : '🟫 BRONZE 🟫'}
+                                    </p>
+                                    <p className="text-lg text-gray-300">
+                                        {currentTier === 'gold' ? '鏡面ゴールドへ昇格！' : '昇格失敗...'}
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'mashMode' && (
+                                <div>
+                                    <p className="text-4xl font-black text-cyan-400 mb-2 animate-pulse">
+                                        ⚡ 連打せよ！ ⚡
+                                    </p>
+                                    <div className="w-64 h-4 bg-gray-700 rounded-full overflow-hidden mt-4">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all"
+                                            style={{ width: `${mashProgress * 100}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-sm text-gray-400 mt-2">
+                                        残り {Math.max(0, Math.ceil((5000 - (Date.now() - mashStartTimeRef.current)) / 1000))} 秒
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'step3' && (
+                                <div>
+                                    <p className="text-5xl font-black mb-2 text-white animate-pulse">
+                                        最終審判...
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'freeze' && (
+                                <div className="animate-pulse">
+                                    <p className="text-6xl font-black text-white">
+                                        💓
+                                    </p>
+                                </div>
+                            )}
+                            {state === 'opened' && reward && (
+                                <div className="animate-in zoom-in duration-500">
+                                    <p className={`text-base font-black uppercase tracking-widest mb-2 ${getRarityColor(reward.rarity)}`}>
+                                        ✦ {reward.rarityText} ✦
+                                    </p>
+                                    <p className="text-5xl font-black mb-8">{reward.text}</p>
+                                    <button
+                                        onClick={handleClose}
+                                        className="bg-gradient-to-b from-white to-gray-100 text-gray-800 px-10 py-4 rounded-2xl font-black text-xl border-4 border-white shadow-2xl active:scale-95 transition-all hover:scale-110"
+                                    >
+                                        🎁 受け取る
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-xs">💎</div>
                                 </div>
                             </div>
