@@ -2200,36 +2200,38 @@ const ConfettiSystem = ({ rarity }) => {
             useEffect(() => {
                 if (!stats.isBurning || stats.tempGems <= 0) return;
 
-                const intervalId = setInterval(() => {
+                const 消滅までの秒数 = 150; // 2分30秒 = 150秒
+
+                const 燃焼タイマー = setInterval(() => {
                     setStats(prev => {
                         if (!prev.isBurning || prev.tempGems <= 0) return prev;
 
-                        const burnAmount = Math.floor(Math.random() * 5) + 1;
-                        const newTempGems = Math.max(0, prev.tempGems - burnAmount);
+                        const 現在時刻 = Date.now();
+                        const 経過秒数 = Math.floor((現在時刻 - prev.burnStartTime) / 1000);
 
-                        if (newTempGems === 0) {
+                        // 残量 = 初期額 × (1 - 経過秒 / 150)
+                        const 残りのダイヤ = Math.max(0, Math.floor(
+                            prev.initialTempGems * (1 - 経過秒数 / 消滅までの秒数)
+                        ));
+
+                        if (残りのダイヤ === 0) {
                             AudioEngine.play([100, 80, 60, 40], 'sawtooth', 0.3, 0.3);
-                            setToastMessage('💀 報酬が完全に燃え尽きました。朝の勝負に敗北しました。');
                             return {
                                 ...prev,
                                 tempGems: 0,
                                 isBurning: false,
-                                devLogs: [...(prev.devLogs || []), '🔥 モーニング・バーン発動。報酬が完全に燃え尽きました...']
+                                devLogs: [{ id: Date.now(), text: "💀 報酬が完全に燃え尽きました。朝の勝負に敗北。", colorClass: "text-red-600 font-black" }, ...prev.devLogs]
                             };
                         }
 
-                        return {
-                            ...prev,
-                            tempGems: newTempGems,
-                            devLogs: [...(prev.devLogs || []), `🔥 ジェムが燃え落ちています... (-${burnAmount}💎, 残り${newTempGems}💎)`]
-                        };
+                        return { ...prev, tempGems: 残りのダイヤ };
                     });
 
                     AudioEngine.play([80, 100], 'sine', 0.05, 0.1);
                 }, 1000);
 
-                return () => clearInterval(intervalId);
-            }, [stats.isBurning, stats.tempGems]);
+                return () => clearInterval(燃焼タイマー);
+            }, [stats.isBurning]);
 
             useEffect(() => {
                 const h = () => { const m = window.innerWidth < 768; setIsMobile(m); if(!m) setIsSidebarOpen(true); };
@@ -2740,10 +2742,11 @@ const ConfettiSystem = ({ rarity }) => {
                     if (isWakeupChest) {
                         setStats(prev => ({
                             ...prev,
-                            tempGems: prev.tempGems + reward.amount,
-                            isBurning: true,
-                            burnStartTime: Date.now(),
-                            devLogs: [...(prev.devLogs || []), `⚠️ ${reward.amount}💎を仮獲得。朝の勝負が始まりました...`]
+                            tempGems: reward.amount,      
+                            initialTempGems: reward.amount, 
+                            isBurning: true,              
+                            burnStartTime: Date.now(),    
+                            devLogs: [{ id: Date.now(), text: `⚠️ ${reward.amount}💎を仮獲得。150秒以内に着手せよ！`, colorClass: "text-orange-600 font-bold" }, ...prev.devLogs]
                         }));
                         setToastMessage(`🔥 ${reward.text} を仮獲得！すぐに着手しないと燃え尽きます！`);
                     } else {
@@ -3191,7 +3194,7 @@ const ConfettiSystem = ({ rarity }) => {
                                                             <div className="bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
                                                                 <div
                                                                     className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative"
-                                                                    style={{ width: `${Math.min(100, (stats.tempGems / (stats.tempGems + 1)) * 100)}%` }}
+                                                                   style={{ width: `${(stats.tempGems / stats.initialTempGems) * 100}%` }}
                                                                 >
                                                                     <div className="absolute inset-0 animate-pulse bg-white/20"></div>
                                                                 </div>
