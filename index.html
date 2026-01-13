@@ -1115,19 +1115,65 @@
             );
         };
 
-        const ConfettiSystem = ({ rarity }) => {
+const ConfettiSystem = ({ rarity }) => {
             const [particles, setParticles] = useState([]);
 
             useEffect(() => {
                 // レアリティに応じてパーティクル数を決定
                 let count = 0;
-                let goldRatio = 0;
+                // let goldRatio = 0; // 使われていないため省略可
 
                 if (rarity === 'common') {
                     count = 30;
-                    goldRatio = 0.1;
                 } else if (rarity === 'rare') {
                     count = 60;
+                } else if (rarity === 'epic') {
+                    count = 100;
+                } else if (rarity === 'legendary') {
+                    count = 200;
+                } else if (rarity === 'mythic') {
+                    count = 500;
+                }
+
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                const newParticles = [];
+                const colors = ['#FFD700', '#FFA500', '#FF6B9D', '#4ECDC4', '#A8E6CF'];
+
+                for (let i = 0; i < count; i++) {
+                    const fromLeft = i % 2 === 0;
+                    const startX = fromLeft ? '5%' : '95%';
+                    const startY = '5%';
+                    
+                    const spreadX = (Math.random() - 0.5) * 600;
+                    const spreadY = (Math.random() - 0.5) * 600;
+
+                    newParticles.push({
+                        id: i,
+                        startX,
+                        startY,
+                        targetX: `${centerX + spreadX}px`,
+                        targetY: `${centerY + spreadY}px`,
+                        color: colors[i % colors.length],
+                        delay: Math.random() * 0.5,
+                        duration: 1 + Math.random() * 0.5,
+                        size: 8 + Math.random() * 8,
+                    });
+                }
+                setParticles(newParticles);
+                
+                // クリーンアップ
+                return () => setParticles([]);
+            }, [rarity]);
+
+            return (
+                <>
+                    {particles.map(p => (
+                        <CrackerConfettiParticle key={p.id} {...p} />
+                    ))}
+                </>
+            );
+        };
         // --- 宝箱モーダル（基底状態：静寂と予感 / 三段階の変幻儀式） ---
         const ChestModal = ({ onClose, onReward, isWakeupChest = false }) => {
             const [state, setState] = useState('void');
