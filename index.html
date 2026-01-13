@@ -1442,6 +1442,231 @@
             </div>
         );
 
+        // 🌅 モーニングボーナス宝箱モーダル
+        const MorningBonusChestModal = ({ onClose, onClaim }) => {
+            const [timeRemaining, setTimeRemaining] = useState('');
+            const [isOpening, setIsOpening] = useState(false);
+
+            useEffect(() => {
+                const updateTimer = () => {
+                    const now = new Date();
+                    const endTime = new Date();
+                    endTime.setHours(9, 0, 0, 0);
+
+                    if (now >= endTime) {
+                        setTimeRemaining('00:00:00');
+                        return;
+                    }
+
+                    const diff = endTime - now;
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                    setTimeRemaining(`${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
+                };
+
+                updateTimer();
+                const interval = setInterval(updateTimer, 1000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const handleOpen = () => {
+                setIsOpening(true);
+                AudioEngine.play([400, 500, 600, 700, 800, 1000], 'sine', 0.35, 0.15);
+
+                // 確率2倍ブースト適用
+                const boostedRoll = Math.random() * 100;
+                let reward = 30; // 基本報酬
+                let rarity = 'rare';
+
+                if (boostedRoll < 10) {
+                    reward = 200;
+                    rarity = 'legendary';
+                } else if (boostedRoll < 30) {
+                    reward = 80;
+                    rarity = 'epic';
+                } else if (boostedRoll < 60) {
+                    reward = 50;
+                    rarity = 'rare';
+                }
+
+                setTimeout(() => {
+                    onClaim(reward, rarity);
+                }, 1500);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/90 z-[250] flex items-center justify-center backdrop-blur-md animate-scale-in">
+                    {/* 背景のサンライズグラデーション */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-orange-600/30 via-yellow-500/20 to-transparent pointer-events-none" />
+
+                    {/* 太陽光線エフェクト */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200vw] h-[50vh] bg-gradient-to-b from-yellow-400/40 to-transparent pointer-events-none"
+                        style={{ clipPath: 'polygon(50% 0, 100% 100%, 0 100%)' }} />
+
+                    <div className="relative text-center z-10">
+                        {/* ヘッダー */}
+                        <div className="mb-6">
+                            <div className="text-6xl mb-2 animate-bounce-soft">☀️</div>
+                            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 mb-2">
+                                MORNING BONUS!
+                            </h2>
+                            <p className="text-orange-200 font-bold text-sm">
+                                早起きのご褒美 - 確率2倍ブースト中！
+                            </p>
+                        </div>
+
+                        {/* カウントダウン */}
+                        <div className="bg-black/50 rounded-2xl px-6 py-3 mb-6 inline-block">
+                            <div className="text-xs text-orange-300 font-bold uppercase tracking-widest mb-1">
+                                残り時間
+                            </div>
+                            <div className="text-2xl font-mono font-black text-white">
+                                {timeRemaining}
+                            </div>
+                        </div>
+
+                        {/* 宝箱 */}
+                        <div className={`relative w-40 h-40 mx-auto mb-8 ${isOpening ? 'animate-shake' : 'animate-bounce-soft'}`}>
+                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-400 rounded-3xl blur-2xl opacity-60 animate-pulse" />
+                            <div className="relative w-full h-full flex items-center justify-center text-8xl filter drop-shadow-2xl">
+                                {isOpening ? '✨' : '🎁'}
+                            </div>
+                        </div>
+
+                        {/* ボタン */}
+                        {!isOpening ? (
+                            <button
+                                onClick={handleOpen}
+                                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-black text-xl px-12 py-4 rounded-2xl border-b-4 border-orange-700 hover:scale-105 active:scale-95 active:border-b-0 active:translate-y-1 transition-all shadow-2xl"
+                            >
+                                🌅 開封する！
+                            </button>
+                        ) : (
+                            <div className="text-2xl text-yellow-300 font-black animate-pulse">
+                                開封中...
+                            </div>
+                        )}
+
+                        {/* 見逃し警告 */}
+                        <p className="mt-6 text-orange-400/70 text-xs font-bold">
+                            ⚠️ 9時を過ぎると消えます。24時間後まで待機。
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // 💎 睡眠チャージモーダル
+        const SleepChargeModal = ({ amount, onCollect, onClose }) => {
+            const [collected, setCollected] = useState(false);
+            const [displayAmount, setDisplayAmount] = useState(0);
+
+            useEffect(() => {
+                // 数字カウントアップアニメーション
+                const duration = 1500;
+                const start = Date.now();
+                const animate = () => {
+                    const elapsed = Date.now() - start;
+                    const progress = Math.min(elapsed / duration, 1);
+                    setDisplayAmount(Math.floor(amount * progress));
+                    if (progress < 1) requestAnimationFrame(animate);
+                };
+                animate();
+            }, [amount]);
+
+            const handleCollect = () => {
+                setCollected(true);
+                AudioEngine.play([523, 659, 784, 880, 1047, 1319], 'sine', 0.25, 0.1);
+                setTimeout(() => onCollect(amount), 800);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/85 z-[240] flex items-center justify-center backdrop-blur-sm animate-scale-in">
+                    {/* 夜空の星エフェクト */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        {Array.from({ length: 30 }, (_, i) => (
+                            <div
+                                key={i}
+                                className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    opacity: 0.3 + Math.random() * 0.7
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="relative text-center z-10">
+                        {/* ヘッダー */}
+                        <div className="mb-6">
+                            <div className="text-6xl mb-2">💤</div>
+                            <h2 className="text-2xl font-black text-blue-300 mb-2">
+                                SLEEP CHARGE
+                            </h2>
+                            <p className="text-blue-200/70 font-bold text-sm">
+                                寝ている間にジェムが溜まりました！
+                            </p>
+                        </div>
+
+                        {/* ジェム表示 */}
+                        <div className="bg-gradient-to-br from-blue-900/80 to-purple-900/80 rounded-3xl px-10 py-8 mb-6 border-2 border-blue-400/30">
+                            <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-300 mb-2">
+                                +{displayAmount}💎
+                            </div>
+                            <div className="text-blue-300 text-sm font-bold">
+                                おはようございます
+                            </div>
+                        </div>
+
+                        {/* 減衰警告 */}
+                        <div className="bg-red-900/30 border border-red-500/30 rounded-xl px-4 py-2 mb-6">
+                            <p className="text-red-300 text-xs font-bold animate-pulse">
+                                ⚠️ 回収しないと10分で減衰開始！
+                            </p>
+                        </div>
+
+                        {/* ボタン */}
+                        {!collected ? (
+                            <button
+                                onClick={handleCollect}
+                                className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-black text-lg px-10 py-3 rounded-2xl border-b-4 border-blue-700 hover:scale-105 active:scale-95 active:border-b-0 active:translate-y-1 transition-all"
+                            >
+                                💎 回収する
+                            </button>
+                        ) : (
+                            <div className="text-2xl text-cyan-300 font-black animate-pulse">
+                                回収完了！
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // 🔥 ストリーク警告バナー
+        const StreakWarningBanner = ({ streak, onDismiss }) => (
+            <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[150] animate-bounce">
+                <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-3 rounded-2xl shadow-2xl border-b-4 border-red-800 flex items-center gap-3">
+                    <span className="text-2xl animate-pulse">🔥</span>
+                    <div>
+                        <div className="font-black text-sm">ストリーク消滅まであと1時間！</div>
+                        <div className="text-xs text-red-200 font-bold">
+                            {streak}日連続を守れ！今すぐタスクを完了しよう
+                        </div>
+                    </div>
+                    <button
+                        onClick={onDismiss}
+                        className="text-red-200 hover:text-white font-bold text-lg ml-2"
+                    >
+                        ×
+                    </button>
+                </div>
+            </div>
+        );
+
         // --- Context Menu ---
         const ContextMenu = ({ x, y, onDivide, onMerge, onPurge, showMerge, showPurge }) => (
             <div className="fixed z-[9999] bg-white border-2 border-gray-200 rounded-xl shadow-floating py-1 w-56 animate-scale-in" style={{ left: x, top: y }}>
@@ -3054,10 +3279,10 @@
             return (
                 <div
                     className={`group flex items-start py-5 px-5 border-b-2 transition-all ${springClass} ${disabledClass} ${isDragging ? 'opacity-50 bg-blue-50' : ''} ${task.completed
-                            ? 'bg-gray-50 opacity-60 border-gray-100'
-                            : isFocusedSection
-                                ? 'bg-white border-gray-200 hover:bg-gray-50'
-                                : 'bg-gray-100 border-gray-200'
+                        ? 'bg-gray-50 opacity-60 border-gray-100'
+                        : isFocusedSection
+                            ? 'bg-white border-gray-200 hover:bg-gray-50'
+                            : 'bg-gray-100 border-gray-200'
                         }`}
                     draggable={!task.completed}
                     onDragStart={(e) => {
@@ -3077,20 +3302,20 @@
                     <div className="pt-0.5 pr-4 flex-shrink-0 relative" ref={buttonRef} onClick={(e) => handleToggle(e)}>
                         {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
                         <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${task.completed || isCompleting
-                                ? 'bg-duo-blue border-duo-blue scale-110'
-                                : isFocusedSection
-                                    ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50'
-                                    : 'border-gray-300 bg-gray-200'
+                            ? 'bg-duo-blue border-duo-blue scale-110'
+                            : isFocusedSection
+                                ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50'
+                                : 'border-gray-300 bg-gray-200'
                             }`}>
                             {(task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
                         </div>
                     </div>
                     <div className="flex-grow min-w-0 pr-2 pt-0.5">
                         <div className={`text-lg font-black leading-tight ${task.completed
-                                ? 'text-gray-400 line-through'
-                                : isFocusedSection
-                                    ? 'text-gray-900'
-                                    : 'text-gray-500'
+                            ? 'text-gray-400 line-through'
+                            : isFocusedSection
+                                ? 'text-gray-900'
+                                : 'text-gray-500'
                             }`}>{task.title}</div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -3224,6 +3449,12 @@
                 initialTempGems: 0,
                 isBurning: false,
                 burnStartTime: 0,
+                // 🌅 モーニングボーナス宝箱用
+                morningChestClaimedDate: null, // 最後にモーニング宝箱を開けた日付
+                // 💎 睡眠チャージ用
+                lastCloseTime: Date.now(), // 最後にアプリを閉じた時刻
+                sleepChargeCollected: false, // 今日のスリープチャージを回収済みか
+                sleepChargeCollectedDate: null, // 最後にスリープチャージを回収した日付
             }));
 
             const SECTION_SIZE = 4;
@@ -3244,6 +3475,14 @@
 
             // 中毒性MAX：報酬演出システムのstate
             const [rewardEffect, setRewardEffect] = useState(null);
+
+            // 🌅 モーニングボーナス宝箱用state
+            const [showMorningChest, setShowMorningChest] = useState(false);
+            // 💎 睡眠チャージ用state
+            const [sleepChargeAmount, setSleepChargeAmount] = useState(0);
+            const [showSleepChargeModal, setShowSleepChargeModal] = useState(false);
+            // 🔥 ストリーク警告用state
+            const [showStreakWarning, setShowStreakWarning] = useState(false);
 
             const [contextMenu, setContextMenu] = useState(null);
 
@@ -3392,6 +3631,93 @@
                 localStorage.setItem('duo_v18_tasks', JSON.stringify(tasks));
                 localStorage.setItem('duo_v18_stats', JSON.stringify(stats));
             }, [tasks, stats]);
+
+            // 🌅 モーニングボーナス宝箱チェック（アプリ起動時）
+            useEffect(() => {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const today = getAdjustedToday();
+
+                // 朝5:00〜9:00の時間帯かつ、今日まだ開けていない
+                const isMorningWindow = currentHour >= 5 && currentHour < 9;
+                const notClaimedToday = stats.morningChestClaimedDate !== today;
+
+                if (isMorningWindow && notClaimedToday) {
+                    console.log('[Morning Bonus] Morning window active! Showing morning chest.');
+                    // 2秒後に表示（アプリ読み込み完了を待つ）
+                    const timer = setTimeout(() => {
+                        setShowMorningChest(true);
+                        AudioEngine.play([523, 659, 784, 880, 1047], 'sine', 0.2, 0.12);
+                    }, 2000);
+                    return () => clearTimeout(timer);
+                }
+            }, []);
+
+            // 💎 睡眠チャージ計算（アプリ起動時）
+            useEffect(() => {
+                const today = getAdjustedToday();
+                const lastClose = stats.lastCloseTime || Date.now();
+                const now = Date.now();
+                const hoursAsleep = Math.min(8, (now - lastClose) / (1000 * 60 * 60)); // 最大8時間
+
+                // 1時間以上離れていて、今日まだ回収していない
+                const notCollectedToday = stats.sleepChargeCollectedDate !== today;
+
+                if (hoursAsleep >= 1 && notCollectedToday) {
+                    // 1時間あたり5ジェム、最大40ジェム
+                    const charge = Math.floor(hoursAsleep * 5);
+                    setSleepChargeAmount(charge);
+
+                    console.log('[Sleep Charge] You slept for', hoursAsleep.toFixed(1), 'hours. Charge:', charge, 'gems');
+
+                    // 3秒後に表示（モーニング宝箱より後）
+                    const timer = setTimeout(() => {
+                        // モーニング宝箱が表示されていない場合のみ
+                        if (!showMorningChest) {
+                            setShowSleepChargeModal(true);
+                            AudioEngine.play([400, 500, 600], 'sine', 0.15, 0.1);
+                        }
+                    }, 5000);
+                    return () => clearTimeout(timer);
+                }
+            }, []);
+
+            // 🔥 ストリーク警告チェック（毎分チェック）
+            useEffect(() => {
+                const checkStreakDanger = () => {
+                    if (!stats.lastDate || stats.streakBroken || stats.streak === 0) return;
+
+                    const now = new Date();
+                    const lastActivity = new Date(stats.lastDate + 'T03:00:00'); // 3AM reset
+                    const nextReset = new Date(lastActivity);
+                    nextReset.setDate(nextReset.getDate() + 1);
+
+                    const msUntilReset = nextReset.getTime() - now.getTime();
+                    const hoursUntilReset = msUntilReset / (1000 * 60 * 60);
+
+                    // 残り1時間以下で警告
+                    if (hoursUntilReset <= 1 && hoursUntilReset > 0) {
+                        setShowStreakWarning(true);
+                        console.log('[Streak Warning] Only', Math.ceil(hoursUntilReset * 60), 'minutes left!');
+                    } else {
+                        setShowStreakWarning(false);
+                    }
+                };
+
+                checkStreakDanger();
+                const interval = setInterval(checkStreakDanger, 60000); // 1分ごと
+                return () => clearInterval(interval);
+            }, [stats.lastDate, stats.streakBroken, stats.streak]);
+
+            // 📴 アプリを閉じる時に時刻を保存
+            useEffect(() => {
+                const handleBeforeUnload = () => {
+                    const updatedStats = { ...stats, lastCloseTime: Date.now() };
+                    localStorage.setItem('duo_v18_stats', JSON.stringify(updatedStats));
+                };
+                window.addEventListener('beforeunload', handleBeforeUnload);
+                return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+            }, [stats]);
 
             useEffect(() => {
                 const today = getAdjustedToday();
@@ -4370,6 +4696,63 @@
                     {/* PerformanceOverlay removed */}
                     {showChestModal.show && <ChestModal onClose={() => setShowChestModal({ show: false, isWakeup: false })} onReward={handleReward} isWakeupChest={showChestModal.isWakeup} />}
                     {showIgnition && <IgnitionModal />}
+
+                    {/* 🌅 モーニングボーナス宝箱 */}
+                    {showMorningChest && (
+                        <MorningBonusChestModal
+                            onClose={() => setShowMorningChest(false)}
+                            onClaim={(reward, rarity) => {
+                                setStats(prev => ({
+                                    ...prev,
+                                    gems: prev.gems + reward,
+                                    morningChestClaimedDate: getAdjustedToday(),
+                                    devLogs: [{
+                                        id: Date.now(),
+                                        text: `[☀️ Morning Bonus] +${reward}💎 獲得！${rarity === 'legendary' ? '🎉 LEGENDARY!!' : ''}`,
+                                        colorClass: rarity === 'legendary' ? 'text-yellow-600 font-black' : 'text-orange-600 font-bold'
+                                    }, ...prev.devLogs]
+                                }));
+                                setShowMorningChest(false);
+                                setToastMessage(`☀️ +${reward}💎 モーニングボーナス！`);
+                                // 睡眠チャージがある場合、続けて表示
+                                if (sleepChargeAmount > 0) {
+                                    setTimeout(() => setShowSleepChargeModal(true), 500);
+                                }
+                            }}
+                        />
+                    )}
+
+                    {/* 💎 睡眠チャージモーダル */}
+                    {showSleepChargeModal && (
+                        <SleepChargeModal
+                            amount={sleepChargeAmount}
+                            onClose={() => setShowSleepChargeModal(false)}
+                            onCollect={(amount) => {
+                                setStats(prev => ({
+                                    ...prev,
+                                    gems: prev.gems + amount,
+                                    sleepChargeCollectedDate: getAdjustedToday(),
+                                    devLogs: [{
+                                        id: Date.now(),
+                                        text: `[💤 Sleep Charge] +${amount}💎 回収完了`,
+                                        colorClass: 'text-blue-600 font-bold'
+                                    }, ...prev.devLogs]
+                                }));
+                                setShowSleepChargeModal(false);
+                                setSleepChargeAmount(0);
+                                setToastMessage(`💎 +${amount}💎 睡眠チャージ回収！`);
+                            }}
+                        />
+                    )}
+
+                    {/* 🔥 ストリーク警告バナー */}
+                    {showStreakWarning && !stats.streakBroken && (
+                        <StreakWarningBanner
+                            streak={stats.streak}
+                            onDismiss={() => setShowStreakWarning(false)}
+                        />
+                    )}
+
                     {contextMenu && (
                         <ContextMenu
                             x={contextMenu.x}
