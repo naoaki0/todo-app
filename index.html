@@ -1570,12 +1570,12 @@ const ConfettiSystem = ({ rarity }) => {
                             className={`relative w-32 h-32 transition-all duration-500 ${tierClass}`}
                             style={{
                                 filter: currentTier === 'rainbow'
-                                    ? 'drop-shadow(0 0 20px rgba(255,0,255,1)) drop-shadow(0 0 40px rgba(255,0,255,0.8)) drop-shadow(0 0 60px rgba(255,0,255,0.6))'
-                                    : currentTier === 'gold'
-                                    ? 'drop-shadow(0 0 20px rgba(255,215,0,0.8)) drop-shadow(0 0 40px rgba(255,215,0,0.6))'
-                                    : currentTier === 'bronze'
-                                    ? 'drop-shadow(0 0 10px rgba(139,69,19,0.5))'
-                                    : 'drop-shadow(0 0 15px rgba(0,0,0,0.9))',
+    ? 'drop-shadow(0 0 20px rgba(255,0,255,1)) drop-shadow(0 0 40px rgba(255,0,255,0.8)) drop-shadow(0 0 60px rgba(255,0,255,0.6))'
+    : currentTier === 'gold'
+    ? 'drop-shadow(0 0 20px rgba(255,215,0,0.8)) drop-shadow(0 0 40px rgba(255,215,0,0.6))'
+    : currentTier === 'bronze'
+    ? 'drop-shadow(0 0 10px rgba(139,69,19,0.5))'
+    : 'grayscale(1) opacity(0.8)',
                                 transformStyle: 'preserve-3d',
                                 willChange: 'filter',
                                 animation: state === 'void' ? 'float-chest 3s ease-in-out infinite' : 'none'
@@ -1585,13 +1585,13 @@ const ConfettiSystem = ({ rarity }) => {
                             <div
                                 className="absolute top-0 left-0 w-full h-16 rounded-t-2xl overflow-hidden"
                                 style={{
-                                    background: currentTier === 'rainbow'
-                                        ? 'linear-gradient(135deg, #ff0080 0%, #ff8c00 20%, #ffd700 40%, #00ff00 60%, #0080ff 80%, #8000ff 100%)'
-                                        : currentTier === 'gold'
-                                        ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ffd700 50%, #ffb700 75%, #ffa500 100%)'
-                                        : currentTier === 'bronze'
-                                        ? 'linear-gradient(135deg, #cd7f32 0%, #b87333 25%, #cd7f32 50%, #8b4513 75%, #654321 100%)'
-                                        : 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 25%, #0f0f0f 50%, #0a0a0a 75%, #000000 100%)',
+                                   background: currentTier === 'rainbow'
+    ? 'linear-gradient(135deg, #ff0080 0%, #ff8c00 20%, #ffd700 40%, #00ff00 60%, #0080ff 80%, #8000ff 100%)'
+    : currentTier === 'gold'
+    ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ffd700 50%, #ffb700 75%, #ffa500 100%)'
+    : currentTier === 'bronze'
+    ? 'linear-gradient(135deg, #cd7f32 0%, #b87333 25%, #cd7f32 50%, #8b4513 75%, #654321 100%)'
+    : 'linear-gradient(135deg, #4a4a4a 0%, #666666 25%, #3d3d3d 50%, #4a4a4a 75%, #2e2e2e 100%)',
                                     boxShadow: currentTier === 'void'
                                         ? '0 4px 12px rgba(0,0,0,0.95), inset 0 2px 6px rgba(255,255,255,0.05)'
                                         : '0 4px 12px rgba(0,0,0,0.9), inset 0 2px 6px rgba(255,255,255,0.2)',
@@ -1613,12 +1613,12 @@ const ConfettiSystem = ({ rarity }) => {
                                 className="absolute bottom-0 left-0 w-full h-20 rounded-b-2xl"
                                 style={{
                                     background: currentTier === 'rainbow'
-                                        ? 'linear-gradient(135deg, #ff0080 0%, #ff8c00 20%, #ffd700 40%, #00ff00 60%, #0080ff 80%, #8000ff 100%)'
-                                        : currentTier === 'gold'
-                                        ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ffd700 50%, #ffb700 75%, #ffa500 100%)'
-                                        : currentTier === 'bronze'
-                                        ? 'linear-gradient(135deg, #cd7f32 0%, #b87333 25%, #cd7f32 50%, #8b4513 75%, #654321 100%)'
-                                        : 'linear-gradient(135deg, #0f0f0f 0%, #1f1f1f 25%, #0f0f0f 50%, #0a0a0a 75%, #050505 100%)',
+    ? 'linear-gradient(135deg, #ff0080 0%, #ff8c00 20%, #ffd700 40%, #00ff00 60%, #0080ff 80%, #8000ff 100%)'
+    : currentTier === 'gold'
+    ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ffd700 50%, #ffb700 75%, #ffa500 100%)'
+    : currentTier === 'bronze'
+    ? 'linear-gradient(135deg, #cd7f32 0%, #b87333 25%, #cd7f32 50%, #8b4513 75%, #654321 100%)'
+    : 'linear-gradient(135deg, #3d3d3d 0%, #555555 25%, #3d3d3d 50%, #2e2e2e 75%, #1a1a1a 100%)',
                                     boxShadow: currentTier === 'void'
                                         ? '0 8px 20px rgba(0,0,0,0.98), inset 0 2px 6px rgba(255,255,255,0.03)'
                                         : '0 8px 20px rgba(0,0,0,0.95), inset 0 2px 6px rgba(255,255,255,0.15)',
