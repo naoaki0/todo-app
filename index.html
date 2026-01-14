@@ -3489,6 +3489,11 @@
             // 🔥 ストリーク警告用state
             const [showStreakWarning, setShowStreakWarning] = useState(false);
 
+            // 🔔 通知許可状態（granted/denied/default）
+            const [notificationPermission, setNotificationPermission] = useState(
+                typeof Notification !== 'undefined' ? Notification.permission : 'default'
+            );
+
             const [contextMenu, setContextMenu] = useState(null);
 
             // Progress Bar Animation State
@@ -4484,13 +4489,23 @@
                             <div className="max-w-2xl mx-auto pt-8">
                                 <div className="flex items-center gap-3 mb-6">
                                     <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
-                                    <button
-                                        onClick={() => window.requestNotificationPermission && window.requestNotificationPermission()}
-                                        className="ml-auto p-2 bg-blue-50 text-blue-500 rounded-full hover:bg-blue-100 transition-colors"
-                                        title="通知を許可"
-                                    >
-                                        <Icons.Bell size={18} />
-                                    </button>
+                                    {notificationPermission !== 'granted' && (
+                                        <button
+                                            onClick={async () => {
+                                                if (window.requestNotificationPermission) {
+                                                    await window.requestNotificationPermission();
+                                                    // 許可状態を更新
+                                                    if (typeof Notification !== 'undefined') {
+                                                        setNotificationPermission(Notification.permission);
+                                                    }
+                                                }
+                                            }}
+                                            className="ml-auto p-2 bg-blue-50 text-blue-500 rounded-full hover:bg-blue-100 transition-colors"
+                                            title="通知を許可"
+                                        >
+                                            <Icons.Bell size={18} />
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* 崇高な意味：1%成長メッセージ */}
