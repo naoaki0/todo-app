@@ -4591,21 +4591,49 @@
                                 </div>
 
                                 {/* 🔥 Morning Burn Fuse Bar - タスク入力の下に配置 */}
-                                {stats.isBurning && stats.tempGems > 0 && (
-                                    <div className="mb-4 px-2">
-                                        <div className="bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative"
-                                                style={{ width: `${(stats.tempGems / stats.initialTempGems) * 100}%` }}
-                                            >
-                                                <div className="absolute inset-0 animate-pulse bg-white/20"></div>
+                                {stats.isBurning && stats.tempGems > 0 && (() => {
+                                    const remainingPercent = (stats.tempGems / stats.initialTempGems) * 100;
+
+                                    // 段階的メッセージ（心理学的損失回避を最大化）
+                                    let burnMessage = '🔥 導火線燃焼中 - 今すぐタスクを着手せよ！';
+                                    let messageClass = 'text-red-600';
+
+                                    if (remainingPercent <= 5) {
+                                        burnMessage = '🔴 もう間に合わない...？';
+                                        messageClass = 'text-red-800 animate-pulse';
+                                    } else if (remainingPercent <= 10) {
+                                        burnMessage = '‼️ 消滅間近 ‼️';
+                                        messageClass = 'text-red-700 font-black';
+                                    } else if (remainingPercent <= 25) {
+                                        burnMessage = '💀 残りわずか...消えるぞ';
+                                        messageClass = 'text-red-700';
+                                    } else if (remainingPercent <= 50) {
+                                        burnMessage = '⚠️ 半分消滅！急げ！';
+                                        messageClass = 'text-orange-600';
+                                    } else if (remainingPercent <= 75) {
+                                        burnMessage = '🔥 導火線燃焼中 - 今すぐタスクを着手せよ！';
+                                    }
+
+                                    // 10%以下で点滅、5%以下で画面揺れ
+                                    const barFlash = remainingPercent <= 10;
+                                    const screenShake = remainingPercent <= 5;
+
+                                    return (
+                                        <div className={`mb-4 px-2 ${screenShake ? 'animate-[screen-shake_0.3s_ease-in-out_infinite]' : ''}`}>
+                                            <div className={`bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner ${barFlash ? 'ring-2 ring-red-500 ring-opacity-75' : ''}`}>
+                                                <div
+                                                    className={`h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative ${barFlash ? 'animate-pulse' : ''}`}
+                                                    style={{ width: `${remainingPercent}%` }}
+                                                >
+                                                    <div className={`absolute inset-0 bg-white/20 ${barFlash ? 'animate-ping' : 'animate-pulse'}`}></div>
+                                                </div>
+                                            </div>
+                                            <div className={`text-center text-xs font-bold mt-1 ${messageClass} ${barFlash ? 'text-sm' : ''}`}>
+                                                {burnMessage}
                                             </div>
                                         </div>
-                                        <div className="text-center text-xs text-red-600 font-bold mt-1">
-                                            🔥 導火線燃焼中 - 今すぐタスクを着手せよ！
-                                        </div>
-                                    </div>
-                                )}
+                                    );
+                                })()}
 
                                 <div className="space-y-3 relative">
                                     {incomplete.map((t, index) => {
