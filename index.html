@@ -3544,17 +3544,29 @@
                 return () => window.removeEventListener('click', handleClick);
             }, []);
 
-            // F12キー：デバッグ用にスリープ宝箱を即座に表示
+            // デバッグ用キーボードショートカット
+            // F12: スリープ宝箱, F11: 睡眠チャージ, F10: モーニングボーナス
             useEffect(() => {
-                const handleF12 = (e) => {
+                const handleDebugKeys = (e) => {
                     if (e.key === 'F12') {
                         e.preventDefault();
                         console.log('[Debug] F12 pressed - Showing wakeup chest!');
                         setShowChestModal({ show: true, isWakeup: true });
                     }
+                    if (e.key === 'F11') {
+                        e.preventDefault();
+                        console.log('[Debug] F11 pressed - Showing sleep charge modal!');
+                        setSleepChargeAmount(40);
+                        setShowSleepChargeModal(true);
+                    }
+                    if (e.key === 'F10') {
+                        e.preventDefault();
+                        console.log('[Debug] F10 pressed - Showing morning bonus chest!');
+                        setShowMorningChest(true);
+                    }
                 };
-                window.addEventListener('keydown', handleF12);
-                return () => window.removeEventListener('keydown', handleF12);
+                window.addEventListener('keydown', handleDebugKeys);
+                return () => window.removeEventListener('keydown', handleDebugKeys);
             }, []);
 
             // スリープ検知：タブがアクティブな状態でPCスリープを検知
@@ -3653,39 +3665,24 @@
                 }
             }, []);
 
-            // 💎 睡眠チャージ計算（アプリ起動時）
+            // 💎 睡眠チャージ計算（アプリ起動時）- 8時間以上で40💎のみ
             useEffect(() => {
                 const today = getAdjustedToday();
                 const lastClose = stats.lastCloseTime || Date.now();
                 const now = Date.now();
-                const currentHour = new Date().getHours();
-                const hoursAsleep = Math.min(8, (now - lastClose) / (1000 * 60 * 60)); // 最大8時間
+                const hoursAsleep = (now - lastClose) / (1000 * 60 * 60);
 
-                // 1時間以上離れていて、今日まだ回収していない
+                // 8時間以上離れていて、今日まだ回収していない場合のみ
                 const notCollectedToday = stats.sleepChargeCollectedDate !== today;
 
-                if (hoursAsleep >= 1 && notCollectedToday) {
-                    // 1時間あたり5ジェム、最大40ジェム
-                    let charge = Math.floor(hoursAsleep * 5);
-
-                    // 🕐 14時以降は指数関数的減衰（30分で半減！）
-                    if (currentHour >= 14) {
-                        const now = new Date();
-                        const decayStartTime = new Date();
-                        decayStartTime.setHours(14, 0, 0, 0);
-
-                        const minutesLate = (now - decayStartTime) / (1000 * 60);
-                        // 30分で半減: charge * (0.5 ^ (minutes / 30))
-                        const decayMultiplier = Math.pow(0.5, minutesLate / 30);
-                        charge = Math.max(5, Math.floor(charge * decayMultiplier)); // 最低5ジェムは保証
-                        console.log('[Sleep Charge] Exponential decay! Minutes late:', minutesLate.toFixed(0), 'Multiplier:', decayMultiplier.toFixed(2));
-                    }
-
+                if (hoursAsleep >= 8 && notCollectedToday) {
+                    // 8時間以上なら固定40💎
+                    const charge = 40;
                     setSleepChargeAmount(charge);
 
-                    console.log('[Sleep Charge] You slept for', hoursAsleep.toFixed(1), 'hours. Final charge:', charge, 'gems');
+                    console.log('[Sleep Charge] Full sleep detected!', hoursAsleep.toFixed(1), 'hours. Reward: 40💎');
 
-                    // 3秒後に表示（モーニング宝箱より後）
+                    // 5秒後に表示（モーニング宝箱より後）
                     const timer = setTimeout(() => {
                         // モーニング宝箱が表示されていない場合のみ
                         if (!showMorningChest) {
