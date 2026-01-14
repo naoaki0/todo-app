@@ -4905,7 +4905,8 @@
 
                 // Service Worker登録
                 if ('serviceWorker' in navigator) {
-                    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    // GitHub Pagesのサブディレクトリ(/todo-app/)に対応するため相対パスを使用
+                    const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
                     console.log('Service Worker registered with scope:', registration.scope);
                 }
 
