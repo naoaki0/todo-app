@@ -4884,11 +4884,24 @@
                             console.log('Notification permission granted.');
 
                             try {
-                                // キャッシュクリアのために一度削除を試みる
-                                await messaging.deleteToken().catch(() => { console.log('Delete token skipped'); });
+                                // Service Workerを明示的に取得・登録
+                                let registration;
+                                if ('serviceWorker' in navigator) {
+                                    // まず既存の登録を確認
+                                    registration = await navigator.serviceWorker.getRegistration('./');
+                                    if (!registration) {
+                                        // なければ登録（スコープはカレント）
+                                        registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js', { scope: './' });
+                                    }
+                                    console.log('SW Registered:', registration);
+                                }
 
-                                alert('通信中: トークンを取得しています...\n(ここで止まる場合はSWエラー)');
-                                const token = await messaging.getToken();
+                                alert('通信中: トークンを取得開始...\n(SW登録: ' + (registration ? 'OK' : 'Skip') + ')');
+
+                                // registrationを渡してgetTokenを呼ぶ
+                                const token = await messaging.getToken({
+                                    serviceWorkerRegistration: registration
+                                });
                                 console.log('FCM Token:', token);
                                 alert('通信中: トークン取得成功！\n次は保存します...');
 
