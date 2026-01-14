@@ -4563,6 +4563,23 @@
                                     </div>
                                 </div>
 
+                                {/* 🔥 Morning Burn Fuse Bar - タスク入力の下に配置 */}
+                                {stats.isBurning && stats.tempGems > 0 && (
+                                    <div className="mb-4 px-2">
+                                        <div className="bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative"
+                                                style={{ width: `${(stats.tempGems / stats.initialTempGems) * 100}%` }}
+                                            >
+                                                <div className="absolute inset-0 animate-pulse bg-white/20"></div>
+                                            </div>
+                                        </div>
+                                        <div className="text-center text-xs text-red-600 font-bold mt-1">
+                                            🔥 導火線燃焼中 - 今すぐタスクを着手せよ！
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="space-y-3 relative">
                                     {incomplete.map((t, index) => {
                                         const isFirst = index === 0;
@@ -4597,22 +4614,39 @@
                                                         )}
                                                     </div>
 
-                                                    {/* Morning Burn Fuse Bar - Only for Section 1 */}
-                                                    {sectionNum === 1 && stats.isBurning && stats.tempGems > 0 && (
-                                                        <div className="px-4 pb-4">
-                                                            <div className="bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-                                                                <div
-                                                                    className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative"
-                                                                    style={{ width: `${(stats.tempGems / stats.initialTempGems) * 100}%` }}
-                                                                >
-                                                                    <div className="absolute inset-0 animate-pulse bg-white/20"></div>
+                                                    {/* 📊 セクション進捗バー - Section 1のみ */}
+                                                    {sectionNum === 1 && (() => {
+                                                        // セクション1のタスク数を計算
+                                                        let section1Tasks = [];
+                                                        for (let i = 0; i < incomplete.length; i++) {
+                                                            if (i > 0 && incomplete[i].isSectionHead) break;
+                                                            section1Tasks.push(incomplete[i]);
+                                                        }
+                                                        const totalTasks = section1Tasks.length;
+                                                        const completedInSession = 0; // セクション内で完了したタスク（未完了リストなので0）
+                                                        const progress = totalTasks > 0 ? ((totalTasks - section1Tasks.length) / totalTasks) * 100 : 0;
+                                                        const remaining = section1Tasks.length;
+
+                                                        return (
+                                                            <div className="px-4 pb-2">
+                                                                <div className="bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner">
+                                                                    <div
+                                                                        className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500"
+                                                                        style={{ width: `${100 - (remaining / Math.max(totalTasks, 1)) * 100}%` }}
+                                                                    />
+                                                                </div>
+                                                                <div className="text-center text-xs text-gray-600 font-bold mt-1">
+                                                                    {remaining === 1 ? (
+                                                                        <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
+                                                                    ) : remaining === 0 ? (
+                                                                        <span className="text-green-600">✨ セクション完了！</span>
+                                                                    ) : (
+                                                                        <span>あと{remaining}タスク → 完了で50💎</span>
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                            <div className="text-center text-xs text-red-600 font-bold mt-1">
-                                                                🔥 導火線燃焼中 - 今すぐタスクを着手せよ！
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                        );
+                                                    })()}
 
                                                     <div
                                                         onDragOver={(e) => handleDragOver(e, t)}
