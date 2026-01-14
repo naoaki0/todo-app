@@ -10,6 +10,7 @@
         rel="stylesheet">
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -1407,6 +1408,7 @@
             Shield: (p) => <SvgIcon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></SvgIcon>,
             Zap: (p) => <SvgIcon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></SvgIcon>,
             Trash: (p) => <SvgIcon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></SvgIcon>,
+            Bell: (p) => <SvgIcon {...p}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></SvgIcon>,
         };
 
         // --- 共通UI部品 ---
@@ -4482,6 +4484,13 @@
                             <div className="max-w-2xl mx-auto pt-8">
                                 <div className="flex items-center gap-3 mb-6">
                                     <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
+                                    <button
+                                        onClick={() => window.requestNotificationPermission && window.requestNotificationPermission()}
+                                        className="ml-auto p-2 bg-blue-50 text-blue-500 rounded-full hover:bg-blue-100 transition-colors"
+                                        title="通知を許可"
+                                    >
+                                        <Icons.Bell size={18} />
+                                    </button>
                                 </div>
 
                                 {/* 崇高な意味：1%成長メッセージ */}
@@ -4854,22 +4863,50 @@
                 firebase.initializeApp(firebaseConfig);
                 const messaging = firebase.messaging();
 
+                // グローバル関数として公開（Reactから呼ぶため）
+                window.requestNotificationPermission = async () => {
+                    console.log('Requesting notification permission...');
+                    try {
+                        const permission = await Notification.requestPermission();
+                        if (permission === 'granted') {
+                            alert('通知が許可されました！毎日ボーナス通知が届きます🎁');
+                            console.log('Notification permission granted.');
+                            // VapidKeyは一旦削除してデフォルト設定で取得
+                            try {
+                                // キャッシュクリアのために一度削除を試みる
+                                await messaging.deleteToken().catch(() => { });
+                                const token = await messaging.getToken();
+                                console.log('FCM Token:', token);
+
+                                // Firestoreに保存
+                                try {
+                                    const db = firebase.firestore();
+                                    await db.collection('fcmTokens').doc(token).set({
+                                        token: token,
+                                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                        userAgent: navigator.userAgent
+                                    });
+                                    console.log('Token saved to Firestore');
+                                } catch (dbError) {
+                                    console.error('Error saving to Firestore:', dbError);
+                                }
+                            } catch (e) {
+                                console.error('Token error (silent):', e);
+                            }
+                        } else {
+                            alert('通知がブロックされました。ブラウザの設定から許可してください。');
+                            console.log('Unable to get permission to notify.');
+                        }
+                    } catch (err) {
+                        console.error('Error requesting permission:', err);
+                        // ユーザーへのアラートは抑制する（通知許可自体は成功しているため）
+                    }
+                };
+
                 // Service Worker登録
                 if ('serviceWorker' in navigator) {
                     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
                     console.log('Service Worker registered with scope:', registration.scope);
-
-                    // 通知権限の確認と要求
-                    const permission = await Notification.requestPermission();
-                    if (permission === 'granted') {
-                        console.log('Notification permission granted.');
-                        const token = await messaging.getToken({ vapidKey: 'BMD2PffxX8XbXvT0qC... (Optional but recommended for Web Push)' });
-                        // Note: vapidKey is optional for basic setup but needed for web push specifically sometimes.
-                        // Using default for now.
-                        console.log('FCM Token:', token);
-                    } else {
-                        console.log('Unable to get permission to notify.');
-                    }
                 }
 
                 // フォアグラウンドでのメッセージ受信

@@ -1,0 +1,24 @@
+{
+  "name": "fiery-ionosphere",
+  "version": "1.0.0",
+  "description": "",
+  "main": "firebase-messaging-sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/naoaki0/todo-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/naoaki0/todo-app/issues"
+  },
+  "homepage": "https://github.com/naoaki0/todo-app#readme",
+  "dependencies": {
+    "firebase-admin": "^13.6.0"
+  }
+}
