@@ -4873,6 +4873,11 @@
                     alert('処理を開始します...'); // デバッグ用
                     console.log('Requesting notification permission...');
                     try {
+                        if (!("Notification" in window)) {
+                            alert("この環境では通知機能が使えません。\niPhoneの場合は「共有」→「ホーム画面に追加」してから、アプリとして開いてください！");
+                            return;
+                        }
+
                         const permission = await Notification.requestPermission();
                         if (permission === 'granted') {
                             alert('通知が許可されました！\nここから通信を開始します🚀');
