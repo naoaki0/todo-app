@@ -4616,23 +4616,30 @@
 
                                                     {/* 📊 セクション進捗バー - Section 1のみ */}
                                                     {sectionNum === 1 && (() => {
-                                                        // セクション1のタスク数を計算
-                                                        let section1Tasks = [];
+                                                        // セクション1の未完了タスク数を計算
+                                                        let section1Incomplete = [];
                                                         for (let i = 0; i < incomplete.length; i++) {
                                                             if (i > 0 && incomplete[i].isSectionHead) break;
-                                                            section1Tasks.push(incomplete[i]);
+                                                            section1Incomplete.push(incomplete[i]);
                                                         }
-                                                        const totalTasks = section1Tasks.length;
-                                                        const completedInSession = 0; // セクション内で完了したタスク（未完了リストなので0）
-                                                        const progress = totalTasks > 0 ? ((totalTasks - section1Tasks.length) / totalTasks) * 100 : 0;
-                                                        const remaining = section1Tasks.length;
+
+                                                        // 今日完了したタスク数を計算
+                                                        const today = getAdjustedToday();
+                                                        const section1Completed = completed.filter(task => {
+                                                            const completedDate = task.completedAt ? new Date(task.completedAt).toISOString().split('T')[0] : null;
+                                                            return completedDate === today;
+                                                        }).length;
+
+                                                        const remaining = section1Incomplete.length;
+                                                        const totalTasks = remaining + section1Completed;
+                                                        const progressPercent = totalTasks > 0 ? (section1Completed / totalTasks) * 100 : 0;
 
                                                         return (
                                                             <div className="px-4 pb-2">
                                                                 <div className="bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner">
                                                                     <div
                                                                         className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500"
-                                                                        style={{ width: `${100 - (remaining / Math.max(totalTasks, 1)) * 100}%` }}
+                                                                        style={{ width: `${progressPercent}%` }}
                                                                     />
                                                                 </div>
                                                                 <div className="text-center text-xs text-gray-600 font-bold mt-1">
@@ -4641,7 +4648,7 @@
                                                                     ) : remaining === 0 ? (
                                                                         <span className="text-green-600">✨ セクション完了！</span>
                                                                     ) : (
-                                                                        <span>あと{remaining}タスク → 完了で50💎</span>
+                                                                        <span>{section1Completed}/{totalTasks} 完了 → あと{remaining}タスクで50💎</span>
                                                                     )}
                                                                 </div>
                                                             </div>
