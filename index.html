@@ -3173,6 +3173,7 @@
 
         const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false, setRewardEffect, stats, setStats, setToastMessage }) => {
             const [isCompleting, setIsCompleting] = useState(false);
+            const [isStarting, setIsStarting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
             const [animateCheckbox, setAnimateCheckbox] = useState(false);
@@ -3198,7 +3199,7 @@
 
                 // 既に完了している場合は単純にトグル（未完了に戻す）
                 if (task.completed) return onToggle(task);
-                if (isCompleting) return;
+                if (isCompleting || isStarting) return;
 
                 const rect = buttonRef.current ? buttonRef.current.getBoundingClientRect() : null;
                 const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
@@ -3206,7 +3207,7 @@
 
                 // === 1回目クリック: 開始（完了時と同じフル演出） ===
                 if (!task.started) {
-                    setIsCompleting(true);
+                    setIsStarting(true);
 
                     // フェーズ1: 予兆アニメーション（期待の空白 - 0.8秒）
                     setAnimateCheckbox(true);
@@ -3242,7 +3243,7 @@
                     // フェーズ3: 報酬演出の発火（開始時）
                     const effectComplete = () => {
                         setRewardEffect(null);
-                        setIsCompleting(false);
+                        setIsStarting(false);
                         setAnimateCheckbox(false);
                     };
 
@@ -3261,7 +3262,7 @@
                         setRewardEffect(<RewardJackpot onComplete={effectComplete} />);
                         setToastMessage('🎰 JACKPOT START!!! 完了時にさらなる報酬が！');
                     }
-                    
+
                     return;
                 }
 
@@ -3381,14 +3382,14 @@
                         {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
                         <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${task.completed || isCompleting
                             ? 'bg-duo-blue border-duo-blue scale-110'
-                            : task.started
+                            : (task.started || isStarting)
                                 ? 'bg-green-100 border-green-500 border-[3px]'
                                 : isFocusedSection
                                     ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50'
                                     : 'border-gray-300 bg-gray-200'
                             }`}>
                             {(task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
-                            {task.started && !task.completed && !isCompleting && <Icons.Play size={12} className="text-green-600" fill="currentColor" />}
+                            {(task.started || isStarting) && !task.completed && !isCompleting && <Icons.Play size={12} className="text-green-600" fill="currentColor" />}
                         </div>
                     </div>
                     <div className="flex-grow min-w-0 pr-2 pt-0.5">
