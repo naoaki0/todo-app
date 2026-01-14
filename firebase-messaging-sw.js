@@ -20,7 +20,7 @@ const messaging = firebase.messaging();
 // バックグラウンドメッセージ受信時の処理
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
-  
+
   const notificationTitle = payload.notification?.title || '🎁 Todoアプリ';
   const notificationOptions = {
     body: payload.notification?.body || '新しい通知があります',
@@ -38,7 +38,7 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
   console.log('[firebase-messaging-sw.js] Notification clicked');
   event.notification.close();
-  
+
   // アプリを開く
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -51,7 +51,8 @@ self.addEventListener('notificationclick', (event) => {
         }
         // なければ新しいタブで開く
         if (clients.openWindow) {
-          return clients.openWindow('https://todo-1c26a.web.app');
+          // GitHub PagesのURLに変更
+          return clients.openWindow('https://naoaki0.github.io/todo-app/');
         }
       })
   );

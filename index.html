@@ -4865,6 +4865,7 @@
 
                 // グローバル関数として公開（Reactから呼ぶため）
                 window.requestNotificationPermission = async () => {
+                    alert('処理を開始します...'); // デバッグ用
                     console.log('Requesting notification permission...');
                     try {
                         const permission = await Notification.requestPermission();
