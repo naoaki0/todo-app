@@ -8,6 +8,9 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Roboto:wght@400;500;700;900&family=JetBrains+Mono:wght@700&display=swap"
         rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -4833,6 +4836,55 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+    </script>
+    <!-- Firebase Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBzIHjUneCjIRToqkdsyYL9b1RzVKSEoxg",
+                authDomain: "todo-1c26a.firebaseapp.com",
+                projectId: "todo-1c26a",
+                storageBucket: "todo-1c26a.firebasestorage.app",
+                messagingSenderId: "697462680954",
+                appId: "1:697462680954:web:5e9f08ecd07b814ccffac3",
+                measurementId: "G-6BFDKWQ5ZL"
+            };
+
+            try {
+                firebase.initializeApp(firebaseConfig);
+                const messaging = firebase.messaging();
+
+                // Service Worker登録
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+                    console.log('Service Worker registered with scope:', registration.scope);
+
+                    // 通知権限の確認と要求
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                        const token = await messaging.getToken({ vapidKey: 'BMD2PffxX8XbXvT0qC... (Optional but recommended for Web Push)' });
+                        // Note: vapidKey is optional for basic setup but needed for web push specifically sometimes.
+                        // Using default for now.
+                        console.log('FCM Token:', token);
+                    } else {
+                        console.log('Unable to get permission to notify.');
+                    }
+                }
+
+                // フォアグラウンドでのメッセージ受信
+                messaging.onMessage((payload) => {
+                    console.log('Message received. ', payload);
+                    // フォアグラウンドでも通知を表示
+                    new Notification(payload.notification.title || 'Todo App', {
+                        body: payload.notification.body,
+                        icon: '/favicon.ico'
+                    });
+                });
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+            }
+        });
     </script>
 </body>
 
