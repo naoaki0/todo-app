@@ -4889,17 +4889,18 @@
                                     console.log('Token saved to Firestore');
                                 } catch (dbError) {
                                     console.error('Error saving to Firestore:', dbError);
+                                    alert('エラー: データ保存に失敗しました\n' + dbError.message);
                                 }
                             } catch (e) {
-                                console.error('Token error (silent):', e);
+                                console.error('Token error:', e);
+                                alert('エラー: トークン取得に失敗しました\n' + e.message);
                             }
                         } else {
                             alert('通知がブロックされました。ブラウザの設定から許可してください。');
-                            console.log('Unable to get permission to notify.');
                         }
                     } catch (err) {
                         console.error('Error requesting permission:', err);
-                        // ユーザーへのアラートは抑制する（通知許可自体は成功しているため）
+                        alert('エラー: 許可リクエストに失敗しました\n' + err.message);
                     }
                 };
 
