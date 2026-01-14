@@ -4870,7 +4870,6 @@
 
                 // グローバル関数として公開（Reactから呼ぶため）
                 window.requestNotificationPermission = async () => {
-                    alert('処理を開始します...'); // デバッグ用
                     console.log('Requesting notification permission...');
                     try {
                         if (!("Notification" in window)) {
@@ -4880,7 +4879,6 @@
 
                         const permission = await Notification.requestPermission();
                         if (permission === 'granted') {
-                            alert('通知が許可されました！\nここから通信を開始します🚀');
                             console.log('Notification permission granted.');
 
                             try {
@@ -4896,14 +4894,11 @@
                                     console.log('SW Registered:', registration);
                                 }
 
-                                alert('通信中: トークンを取得開始...\n(SW登録: ' + (registration ? 'OK' : 'Skip') + ')');
-
                                 // registrationを渡してgetTokenを呼ぶ
                                 const token = await messaging.getToken({
                                     serviceWorkerRegistration: registration
                                 });
                                 console.log('FCM Token:', token);
-                                alert('通信中: トークン取得成功！\n次は保存します...');
 
                                 // Firestoreに保存
                                 try {
