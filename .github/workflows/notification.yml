@@ -2,10 +2,15 @@ name: Send Notifications
 
 on:
   schedule:
-    - cron: '30 3 * * *' # 12:30 JST
-    - cron: '0 5 * * *'  # 14:00 JST
-    - cron: '0 6 * * *'  # 15:00 JST
-    - cron: '0 12 * * *' # 21:00 JST
+    - cron: '0 3 * * *'  # 12:00 JST (先行通知)
+    - cron: '30 3 * * *' # 12:30 JST (メイン通知)
+    - cron: '0 4 * * *'  # 13:00 JST (進捗/ニアミス)
+    - cron: '0 5 * * *'  # 14:00 JST (緊急通知)
+    - cron: '30 5 * * *' # 14:30 JST (天井予告)
+    - cron: '0 6 * * *'  # 15:00 JST (最終警告)
+    - cron: '30 6 * * *' # 15:30 JST (最強の警告)
+    - cron: '0 12 * * *' # 21:00 JST (ストリーク警告/達成予告)
+    - cron: '0 17 * * *' # 02:00 JST (深夜最終警告)
   workflow_dispatch: # 手動実行用
 
 jobs:

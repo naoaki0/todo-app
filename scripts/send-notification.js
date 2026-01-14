@@ -35,33 +35,62 @@ async function sendNotifications() {
         // UTCからJSTへ変換 (+9時間)
         const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
         const hour = jstNow.getUTCHours();
+        const minute = jstNow.getUTCMinutes();
 
-        console.log(`Current JST Hour: ${hour}`);
+        console.log(`Current JST Time: ${hour}:${minute}`);
 
         let title = 'Todo App';
         let body = 'タスクを確認しましょう！';
 
-        // 時間帯によるメッセージ分岐（ユーザーの13-14時起床リズム、12:00通知設定などを考慮）
-        // GitHub ActionsのスケジュールはUTCなので、JSTに直して判定
-
-        if (hour >= 12 && hour < 14) {
-            // 12:00 keep - モーニングボーナス
-            title = '🎁 今日のランダムボーナス: ???💎';
+        // 通知戦略に基づく分岐
+        if (hour === 12 && minute < 15) {
+            // 12:00 先行通知（希少性）
+            title = '🎁 もうすぐモーニングボーナスタイム開始！';
+            body = '12:00〜16:00限定。見逃すと24時間待ち。';
+        } else if (hour === 12 && minute >= 15) { // cron 12:30 -> around 12:30-45
+            // 12:30 メイン通知（可変報酬 + 謎）
+            title = '🎰 今日のモーニングボーナス: ???💎';
             body = '開けてみないと分からない...大当たりかも？';
-        } else if (hour >= 14 && hour < 15) {
-            // 14:00 - 緊急通知
-            title = '⏰ ボーナス消滅まであと2時間';
-            body = '今日の報酬を開封していません...';
-        } else if (hour >= 15 && hour < 16) {
-            // 15:00 - 最終警告
+        } else if (hour === 13) {
+            // 13:00 ニアミス or 進捗報告（ランダム）
+            if (Math.random() > 0.5) {
+                title = '📊 昨日の統計:';
+                body = '・大当たりまであと1マス...惜しかった！\n・今日こそ777を揃えよう🎰';
+            } else {
+                title = '📈 Day 15: 1.16倍の自分になりました。';
+                body = '毎日1%。1年後に37倍。今日も積み上げよう。';
+            }
+        } else if (hour === 14 && minute < 15) {
+            // 14:00 緊急通知（損失回避・中）
+            title = '⏰ モーニングボーナス消滅まであと2時間';
+            body = '今日の報酬: ???💎（未開封）\n開けないと消えます...';
+        } else if (hour === 14 && minute >= 15) { // cron 14:30
+            // 14:30 天井予告
+            title = '🔥 連続ハズレ4回...';
+            body = 'あと1回で天井到達！次は高確率で大当たり！';
+        } else if (hour === 15 && minute < 15) {
+            // 15:00 最終警告（損失回避・強）
             title = '🔥 あと1時間で消滅！';
-            body = '未開封のボーナスが24時間後までロックされます';
-        } else if (hour >= 21 && hour < 22) {
-            // 21:00 - ストリーク警告
-            title = '🔥 あなたのストリークが危険です';
-            body = '今日タスク未完了で全てリセット...';
+            body = '今日のモーニングボーナス\n未開封 → 24時間後まで待機';
+        } else if (hour === 15 && minute >= 15) { // cron 15:30
+            // 15:30 最強警告（損失回避・最強）
+            title = '💀 最後の30分';
+            body = 'もう通知送りません。\n開けるなら今です。';
+        } else if (hour === 21) {
+            // 21:00 ストリーク警告（サンクコスト）or 達成予告
+            if (Math.random() > 0.3) {
+                title = '🔥 あなたの15日連続ストリーク';
+                body = 'これまでの努力: 累計847💎\n今日タスク未完了で全てリセット...';
+            } else {
+                title = '🏆 あと1タスクでレベルアップ！';
+                body = 'Level 12まであとXP120。今日中に達成できそう！';
+            }
+        } else if (hour === 2) {
+            // 2:00 深夜最終（恐怖）
+            title = '😱 15日連続が消滅まで残り1時間';
+            body = 'もう1度言います。\nあなたの15日間が消えます。\n1タスク。たった1つ。';
         } else {
-            // デフォルト
+            // デフォルト（想定外の時間帯）
             title = '📈 1%成長の時間です';
             body = '昨日の自分を超えましょう';
         }
