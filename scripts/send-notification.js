@@ -66,15 +66,18 @@ async function sendNotifications() {
             body = '昨日の自分を超えましょう';
         }
 
-        const message = {
+        // firebase-admin v13対応: sendEachを使用するためにメッセージ配列を作成
+        const messages = tokens.map(token => ({
             notification: {
                 title: title,
                 body: body,
             },
-            tokens: tokens,
-        };
+            token: token,
+        }));
 
-        const response = await messaging.sendMulticast(message);
+        // sendEachで一括送信 (最大500件までだが、今回は件数少ないと仮定)
+        // 500件超える場合は分割が必要だが、個人用なので省略
+        const response = await messaging.sendEach(messages);
         console.log(`${response.successCount} messages were sent successfully`);
 
         if (response.failureCount > 0) {
@@ -82,10 +85,10 @@ async function sendNotifications() {
             response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
                     failedTokens.push(tokens[idx]);
+                    console.error(`Failure for token ${tokens[idx]}: ${resp.error}`);
                 }
             });
             console.log('List of tokens that caused failures: ' + failedTokens);
-            // 無効なトークンを削除する処理をここに入れることも可能
         }
 
     } catch (error) {
