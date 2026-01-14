@@ -3192,15 +3192,41 @@
                 return () => clearInterval(timer);
             }, [task.challengeEndTime, task.completed]);
 
-            // 中毒性MAX：新しいhandleToggle（期待の空白 + 変動比率強化）
+            // 中毒性MAX：新しいhandleToggle（二段階システム：開始→完了）
             const handleToggle = async (e) => {
                 e.stopPropagation();
-                if (task.completed || isCompleting) return onToggle(task);
+
+                // 既に完了している場合は単純にトグル（未完了に戻す）
+                if (task.completed) return onToggle(task);
+                if (isCompleting) return;
 
                 const rect = buttonRef.current ? buttonRef.current.getBoundingClientRect() : null;
                 const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
                 const centerY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
 
+                // === 1回目クリック: 開始 ===
+                if (!task.started) {
+                    // 開始状態に更新
+                    onUpdate(task.id, { started: true, startedAt: Date.now() });
+
+                    // 🎰 開始演出（期待のロック - 軽めの報酬演出）
+                    setAnimateCheckbox(true);
+
+                    // 開始音: 期待感を煽る上昇音
+                    AudioEngine.play([400, 500, 600, 700], 'sine', 0.15, 0.08);
+
+                    // 小さな紙吹雪（開始の祝福）
+                    setConfettiType('ignition');
+
+                    setTimeout(() => {
+                        setAnimateCheckbox(false);
+                        setConfettiType(null);
+                    }, 500);
+
+                    return;
+                }
+
+                // === 2回目クリック: 完了 ===
                 setIsCompleting(true);
 
                 // フェーズ1: 予兆アニメーション（期待の空白 - 0.8秒）
@@ -3308,11 +3334,14 @@
                         {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
                         <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${task.completed || isCompleting
                             ? 'bg-duo-blue border-duo-blue scale-110'
-                            : isFocusedSection
-                                ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50'
-                                : 'border-gray-300 bg-gray-200'
+                            : task.started
+                                ? 'bg-green-100 border-green-500 border-[3px]'
+                                : isFocusedSection
+                                    ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50'
+                                    : 'border-gray-300 bg-gray-200'
                             }`}>
                             {(task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
+                            {task.started && !task.completed && !isCompleting && <Icons.Play size={12} className="text-green-600" fill="currentColor" />}
                         </div>
                     </div>
                     <div className="flex-grow min-w-0 pr-2 pt-0.5">
