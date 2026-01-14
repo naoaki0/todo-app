@@ -3204,25 +3204,72 @@
                 const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
                 const centerY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
 
-                // === 1回目クリック: 開始 ===
+                // === 1回目クリック: 開始（完了時と同じフル演出） ===
                 if (!task.started) {
+                    setIsCompleting(true);
+
+                    // フェーズ1: 予兆アニメーション（期待の空白 - 0.8秒）
+                    setAnimateCheckbox(true);
+
+                    // 🎰 クリック音: 心地よいカチッ
+                    AudioEngine.play([1200, 600], 'square', 0.08, 0.02);
+
+                    // 🎰 スロットマシン風ドラムロール（0.8秒間）
+                    setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 0);
+                    setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 80);
+                    setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 160);
+                    setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 240);
+                    setTimeout(() => AudioEngine.play([650], 'square', 0.05, 0.025), 320);
+                    setTimeout(() => AudioEngine.play([420], 'square', 0.05, 0.025), 400);
+                    setTimeout(() => AudioEngine.play([700], 'square', 0.06, 0.025), 480);
+                    setTimeout(() => AudioEngine.play([450], 'square', 0.06, 0.025), 560);
+                    setTimeout(() => AudioEngine.play([800], 'square', 0.07, 0.025), 640);
+                    setTimeout(() => AudioEngine.play([500], 'square', 0.07, 0.025), 720);
+
+                    // 0.8秒の遅延
+                    await new Promise(resolve => setTimeout(resolve, 800));
+
+                    // 🎰 リール停止音
+                    AudioEngine.play([300, 200], 'square', 0.18, 0.08);
+
+                    // フェーズ2: 報酬ティア決定（開始時は50%の確率で良い演出）
+                    const isFeverMode = stats.feverEndTime > Date.now();
+                    const tier = determineRewardTier(stats.pityCounter, isFeverMode);
+
                     // 開始状態に更新
                     onUpdate(task.id, { started: true, startedAt: Date.now() });
 
-                    // 🎰 開始演出（期待のロック - 軽めの報酬演出）
-                    setAnimateCheckbox(true);
-
-                    // 開始音: 期待感を煽る上昇音
-                    AudioEngine.play([400, 500, 600, 700], 'sine', 0.15, 0.08);
-
-                    // 小さな紙吹雪（開始の祝福）
-                    setConfettiType('ignition');
-
-                    setTimeout(() => {
+                    // フェーズ3: 報酬演出の発火（開始時）
+                    const effectComplete = () => {
+                        setRewardEffect(null);
+                        setIsCompleting(false);
                         setAnimateCheckbox(false);
-                        setConfettiType(null);
-                    }, 500);
+                    };
 
+                    // 開始時も完了時と同じ演出を表示
+                    if (tier === 'whiff') {
+                        const showNearMiss = Math.random() < 0.1;
+                        setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} />);
+                    } else if (tier === 'small') {
+                        setRewardEffect(<RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                    } else if (tier === 'normal') {
+                        setRewardEffect(<RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                    } else if (tier === 'big') {
+                        setRewardEffect(<RewardBig onComplete={effectComplete} />);
+                        setToastMessage('🚀 START FEVER!! 期待が高まる！');
+                    } else if (tier === 'jackpot') {
+                        setRewardEffect(<RewardJackpot onComplete={effectComplete} />);
+                        setToastMessage('🎰 JACKPOT START!!! 完了時にさらなる報酬が！');
+                    }
+                    
+                    return;
+                }
+
+                // === 開始取り消し（Alt+クリック） ===
+                if (task.started && e.altKey) {
+                    onUpdate(task.id, { started: false, startedAt: null });
+                    AudioEngine.play([300, 250, 200], 'sine', 0.1, 0.05);
+                    setToastMessage('↩️ タスク開始を取り消しました');
                     return;
                 }
 
