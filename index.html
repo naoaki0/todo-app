@@ -4848,6 +4848,11 @@
     </script>
     <!-- Firebase Initialization -->
     <script>
+        // デバッグ用：初期状態のスタブ関数
+        window.requestNotificationPermission = () => {
+            alert('エラー: アプリの準備がまだ終わっていません（ロード中または初期化エラー）。\n少し待ってから再度お試しください。');
+        };
+
         document.addEventListener('DOMContentLoaded', async () => {
             const firebaseConfig = {
                 apiKey: "AIzaSyBzIHjUneCjIRToqkdsyYL9b1RzVKSEoxg",
@@ -4923,6 +4928,10 @@
                 });
             } catch (error) {
                 console.error('Firebase initialization error:', error);
+                // グローバルエラーハンドラ上書き
+                window.requestNotificationPermission = () => {
+                    alert('エラー: Firebaseの起動に失敗しました。\n' + error.message);
+                };
             }
         });
     </script>
