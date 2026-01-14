@@ -4893,6 +4893,7 @@
                                         userAgent: navigator.userAgent
                                     });
                                     console.log('Token saved to Firestore');
+                                    alert('【成功】設定完了しました！\nこれで通知が届きます。');
                                 } catch (dbError) {
                                     console.error('Error saving to Firestore:', dbError);
                                     alert('エラー: データ保存に失敗しました\n' + dbError.message);
