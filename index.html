@@ -4481,10 +4481,20 @@
                                     <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
                                 </div>
 
-                                {/* MVP開発リマインダー */}
+                                {/* 崇高な意味：1%成長メッセージ */}
                                 <div className="mb-3 px-2">
                                     <p className="text-xs text-gray-500">
-                                        恥ずかしいMVPを作れそうか？
+                                        {stats.streak > 0 ? (
+                                            <>
+                                                <span className="text-green-600 font-bold">📈 Day {stats.streak}:</span>
+                                                {' '}<span className="font-bold text-gray-700">{Math.pow(1.01, stats.streak).toFixed(2)}倍</span>の自分。
+                                                あと<span className="text-blue-600 font-bold">{365 - stats.streak > 0 ? 365 - stats.streak : 0}日</span>で37倍。
+                                            </>
+                                        ) : (
+                                            <>
+                                                📈 毎日1%の成長で、1年後<span className="font-bold text-green-600">37倍</span>。今日から始めよう。
+                                            </>
+                                        )}
                                     </p>
                                 </div>
 
