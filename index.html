@@ -3477,11 +3477,11 @@
                         {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
                         {/* 予告枠色オーラ（演出中のみ表示） */}
                         {currentForecast && currentForecast !== 'white' && (
-                            <div className={`absolute inset-[-4px] rounded-2xl animate-pulse ${currentForecast === 'rainbow' ? 'bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-500 animate-[spin_1s_linear_infinite]' :
+                            <div className={`absolute inset-0 rounded-xl animate-pulse ${currentForecast === 'rainbow' ? 'bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-500' :
                                 currentForecast === 'red' ? 'bg-red-500' :
                                     currentForecast === 'gold' ? 'bg-yellow-400' :
                                         'bg-green-400'
-                                }`} style={{ opacity: 0.6 }} />
+                                }`} style={{ opacity: 0.4, transform: 'scale(1.5)' }} />
                         )}
                         <div className={`relative w-6 h-6 rounded-xl flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${currentForecast && currentForecast !== 'white'
                             ? `border-4 scale-125 ${currentForecast === 'rainbow' ? 'border-purple-500 bg-gradient-to-br from-pink-200 to-yellow-200' :
