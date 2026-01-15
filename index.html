@@ -2043,11 +2043,13 @@
                 setTimeout(() => AudioEngine.play([50, 50, 100, 100], 'whiteNoise', 0.2, 0.1), 500);
 
                 // ワープ発動
+                // 即時遷移試行（ポップアップブロック回避のため）
                 setTimeout(() => {
                     window.location.href = targetUrl;
-                    // フェイルセーフ: 5秒後に復帰
-                    setTimeout(() => setIsWarping(false), 5000);
-                }, 1500);
+                }, 50);
+
+                // フェイルセーフ: 5秒後に復帰
+                setTimeout(() => setIsWarping(false), 5000);
             };
 
             const handleContextMenu = (e) => {
