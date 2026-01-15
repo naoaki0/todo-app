@@ -3213,6 +3213,7 @@
             const [animateCheckbox, setAnimateCheckbox] = useState(false);
             const [isEditingTime, setIsEditingTime] = useState(false);
             const [editTimeValue, setEditTimeValue] = useState('9.5');
+            const [currentForecast, setCurrentForecast] = useState(null); // 予告枠色
             const buttonRef = useRef(null);
 
             useEffect(() => {
@@ -3266,6 +3267,7 @@
 
                     // 🎰 2. 予告演出の表示（枠色変化）
                     setAnimateCheckbox(true);
+                    setCurrentForecast(forecast); // 枠色をUIに反映
 
                     // 予告音（枠色に応じて変化）
                     if (forecast === 'rainbow') {
@@ -3374,6 +3376,7 @@
                         setRewardEffect(null);
                         setIsStarting(false);
                         setAnimateCheckbox(false);
+                        setCurrentForecast(null); // 枠色リセット
                     };
 
                     if (tier === 'whiff') {
@@ -3416,6 +3419,7 @@
                     setRewardEffect(null);
                     setIsCompleting(false);
                     setAnimateCheckbox(false);
+                    setCurrentForecast(null); // 枠色リセット
                 };
 
                 if (tier === 'whiff') {
@@ -3471,16 +3475,35 @@
 
                     <div className="pt-0.5 pr-4 flex-shrink-0 relative" ref={buttonRef} onClick={(e) => handleToggle(e)}>
                         {(isCompleting || confettiType === 'ignition') && <Confetti type={confettiType} theme={activeTheme} />}
-                        <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${task.completed || isCompleting
-                            ? 'bg-duo-blue border-duo-blue scale-110'
-                            : (task.started || isStarting)
-                                ? 'bg-green-100 border-green-500 border-[3px]'
-                                : isFocusedSection
-                                    ? 'border-gray-300 bg-white text-white group-hover:bg-gray-50'
-                                    : 'border-gray-300 bg-gray-200'
+                        {/* 予告枠色オーラ（演出中のみ表示） */}
+                        {currentForecast && currentForecast !== 'white' && (
+                            <div className={`absolute inset-[-4px] rounded-2xl animate-pulse ${currentForecast === 'rainbow' ? 'bg-gradient-to-r from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-500 animate-[spin_1s_linear_infinite]' :
+                                currentForecast === 'red' ? 'bg-red-500' :
+                                    currentForecast === 'gold' ? 'bg-yellow-400' :
+                                        'bg-green-400'
+                                }`} style={{ opacity: 0.6 }} />
+                        )}
+                        <div className={`relative w-6 h-6 rounded-xl flex items-center justify-center transition-all ${checkboxPop} ${anticipationGlow} ${currentForecast && currentForecast !== 'white'
+                            ? `border-4 scale-125 ${currentForecast === 'rainbow' ? 'border-purple-500 bg-gradient-to-br from-pink-200 to-yellow-200' :
+                                currentForecast === 'red' ? 'border-red-500 bg-red-100' :
+                                    currentForecast === 'gold' ? 'border-yellow-500 bg-yellow-100' :
+                                        'border-green-500 bg-green-100'
+                            }`
+                            : task.completed || isCompleting
+                                ? 'bg-duo-blue border-duo-blue border-2 scale-110'
+                                : (task.started || isStarting)
+                                    ? 'bg-green-100 border-green-500 border-[3px]'
+                                    : isFocusedSection
+                                        ? 'border-gray-300 border-2 bg-white text-white group-hover:bg-gray-50'
+                                        : 'border-gray-300 border-2 bg-gray-200'
                             }`}>
-                            {(task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
-                            {(task.started || isStarting) && !task.completed && !isCompleting && <Icons.Play size={12} className="text-green-600" fill="currentColor" />}
+                            {/* 虹予告時の特殊アイコン */}
+                            {currentForecast === 'rainbow' && <span className="text-xs">🌈</span>}
+                            {currentForecast === 'red' && !task.completed && !isCompleting && <span className="text-xs">🔥</span>}
+                            {currentForecast === 'gold' && !task.completed && !isCompleting && <span className="text-xs">✨</span>}
+                            {currentForecast === 'green' && !task.completed && !isCompleting && <span className="text-xs">⚡</span>}
+                            {!currentForecast && (task.completed || isCompleting) && <Icons.Check size={16} className="text-gray-500" strokeWidth={4} />}
+                            {!currentForecast && (task.started || isStarting) && !task.completed && !isCompleting && <Icons.Play size={12} className="text-green-600" fill="currentColor" />}
                         </div>
                     </div>
                     <div className="flex-grow min-w-0 pr-2 pt-0.5">
@@ -4499,6 +4522,48 @@
                             )}
                         </div>
                     </header>
+
+                    {/* 🎰 天井・連荘ステータスバー */}
+                    {(stats.pityCounter >= 3 || stats.rensouCount > 0 || stats.feverEndTime > Date.now()) && (
+                        <div className="fixed top-16 left-0 right-0 z-[70] px-4 py-2 flex justify-center gap-3 pointer-events-none">
+                            {/* 天井カウンター（3回以上のスカで表示） */}
+                            {stats.pityCounter >= 3 && (
+                                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-2xl shadow-lg animate-pulse pointer-events-auto">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">⚡</span>
+                                        <div>
+                                            <div className="text-xs font-bold opacity-80">天井まで</div>
+                                            <div className="text-lg font-black">{8 - stats.pityCounter}回</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {/* 連荘モード表示 */}
+                            {stats.rensouCount > 0 && (
+                                <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-2xl shadow-lg animate-bounce pointer-events-auto">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">🎰</span>
+                                        <div>
+                                            <div className="text-xs font-bold opacity-80">連荘モード</div>
+                                            <div className="text-lg font-black">残り{stats.rensouCount}回</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {/* フィーバーモード表示 */}
+                            {stats.feverEndTime > Date.now() && (
+                                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-2xl shadow-lg animate-pulse pointer-events-auto">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg">🔥</span>
+                                        <div>
+                                            <div className="text-xs font-bold opacity-80">FEVER</div>
+                                            <div className="text-lg font-black">確率2倍</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Sidebar */}
                     {isMobile && isSidebarOpen && <div className="fixed inset-0 bg-black/40 z-[80] backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />}
