@@ -1954,28 +1954,43 @@
         // 🎰 ジェム吸い込み演出: 獲得時に画面右上へ軌跡
         const GemAbsorb = ({ amount, startX, startY, onComplete }) => {
             const [gems, setGems] = useState([]);
+            const [animating, setAnimating] = useState(false);
 
             useEffect(() => {
+                // 目標位置（画面右上のジェム表示付近）
+                const targetX = window.innerWidth - 80;
+                const targetY = 50;
+
                 // 複数のジェムパーティクルを生成
                 const count = Math.min(amount, 10);
                 const newGems = [];
                 for (let i = 0; i < count; i++) {
+                    const gemStartX = startX + (Math.random() - 0.5) * 100;
+                    const gemStartY = startY + (Math.random() - 0.5) * 100;
                     newGems.push({
                         id: i,
-                        x: startX + (Math.random() - 0.5) * 100,
-                        y: startY + (Math.random() - 0.5) * 100,
-                        delay: i * 50
+                        startX: gemStartX,
+                        startY: gemStartY,
+                        targetX: targetX,
+                        targetY: targetY,
+                        delay: i * 80
                     });
                 }
                 setGems(newGems);
 
+                // アニメーション開始
+                setTimeout(() => setAnimating(true), 100);
+
                 // 吸い込み音
-                setTimeout(() => AudioEngine.play([800, 1000, 1200, 1400], 'sine', 0.15, 0.05), 200);
+                setTimeout(() => AudioEngine.play([800, 1000, 1200, 1400], 'sine', 0.2, 0.08), 300);
+
+                // 到着音（チャリン）
+                setTimeout(() => AudioEngine.play([2000, 2200], 'sine', 0.15, 0.05), 900);
 
                 const timer = setTimeout(() => {
                     setGems([]);
                     if (onComplete) onComplete();
-                }, 1000);
+                }, 1200);
                 return () => clearTimeout(timer);
             }, [amount, startX, startY, onComplete]);
 
@@ -1984,13 +1999,14 @@
                     {gems.map(g => (
                         <div
                             key={g.id}
-                            className="fixed pointer-events-none z-[500] text-2xl"
+                            className="fixed pointer-events-none z-[500]"
                             style={{
-                                left: g.x,
-                                top: g.y,
-                                animation: `gem-absorb 0.8s ease-in ${g.delay}ms forwards`,
-                                '--target-x': 'calc(100vw - 100px)',
-                                '--target-y': '40px'
+                                left: animating ? g.targetX : g.startX,
+                                top: animating ? g.targetY : g.startY,
+                                fontSize: animating ? '14px' : '28px',
+                                opacity: animating ? 0 : 1,
+                                transition: `all 0.8s ease-in ${g.delay}ms`,
+                                filter: 'drop-shadow(0 0 8px rgba(100, 200, 255, 0.8))'
                             }}
                         >
                             💎
