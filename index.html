@@ -4027,10 +4027,13 @@
 
                 // 📈 成長グラフ用: 今日の日付を取得
                 const todayStr = new Date().toISOString().split('T')[0];
-                const updateHistory = (prev) => ({
-                    ...prev.dailyCompletionHistory,
-                    [todayStr]: (prev.dailyCompletionHistory[todayStr] || 0) + 1
-                });
+                const updateHistory = (prev) => {
+                    const history = prev.dailyCompletionHistory || {};
+                    return {
+                        ...history,
+                        [todayStr]: (history[todayStr] || 0) + 1
+                    };
+                };
 
                 // 🔥 コンボ判定: 3分以内の連続完了でコンボ発動
                 const now = Date.now();
