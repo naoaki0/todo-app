@@ -4284,7 +4284,14 @@
                 try {
                     const loaded = JSON.parse(localStorage.getItem(k));
                     if (!loaded) return d;
-                    // 既存データに新フィールドがない場合の対策（マージ）
+
+                    // 配列の場合（tasks）
+                    if (Array.isArray(d)) {
+                        // ロードデータも配列ならそれを返す。そうでなければデフォルト（空配列）
+                        return Array.isArray(loaded) ? loaded : d;
+                    }
+
+                    // オブジェクトの場合（stats）: 既存データに新フィールドがない場合の対策（マージ）
                     return { ...d, ...loaded, dailyCompletionHistory: loaded.dailyCompletionHistory || {} };
                 } catch {
                     return d;
