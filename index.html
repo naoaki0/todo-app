@@ -2016,6 +2016,95 @@
             );
         };
 
+        // 🔥 コンボ演出コンポーネント - 連続完了で表示
+        const ComboDisplay = ({ comboCount, onComplete }) => {
+            const [visible, setVisible] = useState(true);
+
+            useEffect(() => {
+                // コンボ数に応じたサウンド
+                const baseFreq = 600 + comboCount * 100;
+                if (comboCount >= 5) {
+                    // 5コンボ以上: 派手なファンファーレ
+                    AudioEngine.play([baseFreq, baseFreq + 200, baseFreq + 400, baseFreq + 600], 'sine', 0.35, 0.08);
+                } else if (comboCount >= 3) {
+                    // 3-4コンボ: 上昇音階
+                    AudioEngine.play([baseFreq, baseFreq + 150, baseFreq + 300], 'sine', 0.25, 0.1);
+                } else {
+                    // 2コンボ: シンプルな音
+                    AudioEngine.play([baseFreq, baseFreq + 100], 'sine', 0.2, 0.12);
+                }
+
+                const timer = setTimeout(() => {
+                    setVisible(false);
+                    if (onComplete) onComplete();
+                }, comboCount >= 5 ? 1500 : 1000);
+                return () => clearTimeout(timer);
+            }, [comboCount, onComplete]);
+
+            if (!visible) return null;
+
+            // コンボ数に応じた表示テキストとスタイル
+            let text = 'COMBO!';
+            let textClass = 'text-yellow-400';
+            let sizeClass = 'text-5xl';
+            let bgClass = '';
+
+            if (comboCount >= 5) {
+                text = `🔥 ${comboCount}x UNSTOPPABLE! 🔥`;
+                textClass = 'text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-yellow-400 to-red-500';
+                sizeClass = 'text-7xl';
+                bgClass = 'animate-pulse';
+            } else if (comboCount >= 3) {
+                text = `⚡ ${comboCount}x COMBO! ⚡`;
+                textClass = 'text-orange-500';
+                sizeClass = 'text-6xl';
+            } else {
+                text = `${comboCount}x COMBO!`;
+            }
+
+            return (
+                <>
+                    {/* 背景フラッシュ（コンボ数に応じて強化） */}
+                    {comboCount >= 3 && (
+                        <div
+                            className={`fixed inset-0 pointer-events-none z-[350] ${bgClass}`}
+                            style={{
+                                background: comboCount >= 5
+                                    ? 'radial-gradient(circle, rgba(255,100,0,0.4) 0%, rgba(255,50,0,0.2) 50%, transparent 100%)'
+                                    : 'radial-gradient(circle, rgba(255,200,0,0.3) 0%, rgba(255,150,0,0.15) 50%, transparent 100%)',
+                                animation: 'normal-flash 0.8s ease-out forwards',
+                            }}
+                        />
+                    )}
+                    {/* 5コンボ以上で画面振動 */}
+                    {comboCount >= 5 && (
+                        <div className="fixed inset-0 pointer-events-none z-[352]"
+                            style={{ animation: 'screen-shake 0.5s ease-out forwards' }}
+                        />
+                    )}
+                    {/* コンボテキスト */}
+                    <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[360]">
+                        <div className={`${sizeClass} font-black ${textClass} animate-bounce drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]`}
+                            style={{
+                                textShadow: comboCount >= 5
+                                    ? '0 0 40px rgba(255,100,0,1), 0 0 80px rgba(255,50,0,0.8)'
+                                    : comboCount >= 3
+                                        ? '0 0 30px rgba(255,150,0,0.8)'
+                                        : '0 0 20px rgba(255,200,0,0.6)',
+                            }}>
+                            {text}
+                        </div>
+                    </div>
+                    {/* 倍率表示 */}
+                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 translate-y-16 pointer-events-none z-[360]">
+                        <div className="text-2xl font-black text-white">
+                            報酬 {comboCount >= 5 ? '3' : comboCount >= 3 ? '2' : '1.5'}倍!
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
         // 🌀 Antigravity Button: 開発環境への次元跳躍
         const AntigravityButton = () => {
             const [isHovered, setIsHovered] = useState(false);
@@ -3847,27 +3936,58 @@
 
                 // WinText + 報酬演出 + ジェム吸い込み演出を同時表示
                 const gemAmounts = { whiff: 0, small: 3, normal: 5, big: 10, jackpot: 20 };
-                const gemCount = gemAmounts[tier] || 0;
+                let gemCount = gemAmounts[tier] || 0;
+
+                // 🔥 コンボ判定: 5秒以内の連続完了でコンボ発動
+                const now = Date.now();
+                const COMBO_WINDOW = 5000; // 5秒
+                const timeSinceLast = now - (stats.lastCompletionTime || 0);
+                const isCombo = timeSinceLast < COMBO_WINDOW && stats.lastCompletionTime > 0;
+
+                let newComboCount = 0;
+                let comboMultiplier = 1;
+
+                if (tier !== 'whiff') { // スカではコンボ継続しない
+                    if (isCombo) {
+                        newComboCount = stats.comboCount + 1;
+                        // コンボ倍率: 2=1.5x, 3-4=2x, 5+=3x
+                        if (newComboCount >= 5) {
+                            comboMultiplier = 3;
+                        } else if (newComboCount >= 3) {
+                            comboMultiplier = 2;
+                        } else {
+                            comboMultiplier = 1.5;
+                        }
+                        gemCount = Math.floor(gemCount * comboMultiplier);
+                    } else {
+                        newComboCount = 1; // コンボ開始
+                    }
+                }
+
+                // コンボ演出を追加（2コンボ以上で表示）
+                const showCombo = newComboCount >= 2;
 
                 if (tier === 'whiff') {
                     setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} consecutiveWhiff={newPityCounter} /></>);
-                    setStats(prev => ({ ...prev, pityCounter: newPityCounter, rensouCount: newRensouCount }));
+                    setStats(prev => ({ ...prev, pityCounter: newPityCounter, rensouCount: newRensouCount, comboCount: 0, lastCompletionTime: now }));
                 } else if (tier === 'small') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} /></>);
-                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
+                    setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
+                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now }));
+                    if (showCombo) setToastMessage(`🔥 ${newComboCount}x COMBO! +${gemCount}💎`);
                 } else if (tier === 'normal') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} /></>);
-                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
+                    setRewardEffect(<><WinText tier={tier} /><RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
+                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now }));
+                    if (showCombo) setToastMessage(`🔥 ${newComboCount}x COMBO! +${gemCount}💎`);
                 } else if (tier === 'big') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardBig onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} /></>);
+                    setRewardEffect(<><WinText tier={tier} /><RewardBig onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
-                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
-                    setToastMessage('🔥 FEVER MODE!! 3分間レア確率2倍！');
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now }));
+                    setToastMessage(showCombo ? `🔥 ${newComboCount}x COMBO! FEVER MODE!! +${gemCount}💎` : '🔥 FEVER MODE!! 3分間レア確率2倍！');
                 } else if (tier === 'jackpot') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardJackpot onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} /></>);
+                    setRewardEffect(<><WinText tier={tier} /><RewardJackpot onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
-                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
-                    setToastMessage('🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now }));
+                    setToastMessage(showCombo ? `🎰 ${newComboCount}x COMBO! JACKPOT!!! +${gemCount}💎` : '🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
                 }
             };
 
@@ -4079,6 +4199,9 @@
                 lastCloseTime: Date.now(), // 最後にアプリを閉じた時刻
                 sleepChargeCollected: false, // 今日のスリープチャージを回収済みか
                 sleepChargeCollectedDate: null, // 最後にスリープチャージを回収した日付
+                // 🔥 コンボシステム用
+                comboCount: 0, // 現在のコンボ数
+                lastCompletionTime: 0, // 最後のタスク完了時刻
             }));
 
             const SECTION_SIZE = 4;
