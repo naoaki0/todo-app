@@ -2016,7 +2016,90 @@
             );
         };
 
-        // スカ演出: 悔しさを増幅 + 連続スカで徐々に派手に
+        // 🌀 Antigravity Button: 開発環境への次元跳躍
+        const AntigravityButton = () => {
+            const [isHovered, setIsHovered] = useState(false);
+            const [isWarping, setIsWarping] = useState(false);
+
+            const handleWarp = () => {
+                if (isWarping) return;
+                setIsWarping(true);
+
+                // ワープチャージ音
+                AudioEngine.play([100, 200, 400, 800, 1600], 'sawtooth', 0.1, 0.05);
+                setTimeout(() => AudioEngine.play([50, 50, 100, 100], 'whiteNoise', 0.2, 0.1), 500);
+
+                // ワープ発動
+                setTimeout(() => {
+                    // ここにAntigravityへのURLを設定
+                    // 今回はデモとしてリロード、本来は window.location.href = 'YOUR_ANTIGRAVITY_URL';
+                    window.location.reload();
+                }, 1500);
+            };
+
+            return (
+                <>
+                    {/* ワープ演出オーバーレイ */}
+                    {isWarping && (
+                        <div className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center overflow-hidden">
+                            <div className="absolute inset-0 bg-black animate-[warp-fade-in_0.2s_ease-out_forwards]" />
+
+                            {/* 集中線 */}
+                            <div className="absolute inset-0 opacity-0 animate-[warp-lines_1.5s_ease-in_forwards]"
+                                style={{
+                                    background: 'repeating-conic-gradient(transparent 0deg, transparent 2deg, rgba(0, 255, 255, 0.5) 3deg, transparent 4deg)',
+                                    transform: 'scale(2)',
+                                }}
+                            />
+
+                            {/* 次元歪みリング */}
+                            <div className="absolute w-[200vw] h-[200vw] rounded-full border-[100px] border-purple-500 opacity-0 animate-[warp-ring_1.0s_ease-in_forwards]" />
+                            <div className="absolute w-[100vw] h-[100vw] rounded-full border-[50px] border-blue-500 opacity-0 animate-[warp-ring_1.0s_ease-in_0.2s_forwards]" />
+
+                            <div className="relative text-transparent text-9xl font-black italic tracking-tighter animate-[warp-text_0.5s_ease-in_0.8s_forwards]"
+                                style={{ WebkitTextStroke: '2px white' }}>
+                                WARP!!
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ボタン本体 */}
+                    <button
+                        className={`fixed bottom-8 right-8 z-[100] group transition-all duration-300 ease-out ${isWarping ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+                        onMouseEnter={() => {
+                            setIsHovered(true);
+                            AudioEngine.play([100, 120], 'sawtooth', 0.05, 0.1); // 重力音
+                        }}
+                        onMouseLeave={() => setIsHovered(false)}
+                        onClick={handleWarp}
+                    >
+                        {/* 外部発光（オーラ） */}
+                        <div className="absolute inset-0 rounded-full bg-blue-500 blur-xl opacity-40 animate-pulse group-hover:opacity-80 group-hover:blur-2xl transition-all duration-500" />
+
+                        {/* 内部回転リング */}
+                        <div className="absolute inset-[-4px] rounded-full border-2 border-transparent border-t-cyan-400 border-l-purple-500 animate-[spin_3s_linear_infinite] opacity-70" />
+                        <div className="absolute inset-[-8px] rounded-full border border-transparent border-r-blue-500 border-b-pink-500 animate-[spin_5s_linear_infinite_reverse] opacity-50" />
+
+                        {/* 本体 */}
+                        <div className="relative w-16 h-16 rounded-full bg-black flex items-center justify-center overflow-hidden border border-white/20 shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                            {/* 背景の宇宙 */}
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwMDAwMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEiIGZpbGw9IiNGRkZGRkYiLz48L3N2Zz4=')] opacity-50 animate-[spin_20s_linear_infinite]" />
+
+                            {/* アイコン */}
+                            <div className={`text-2xl transform transition-all duration-300 ${isHovered ? 'scale-125 rotate-180 text-cyan-300' : 'text-gray-400'}`}>
+                                🚀
+                            </div>
+                        </div>
+
+                        {/* ラベル（ホバー時のみ） */}
+                        <div className={`absolute right-full mr-4 top-1/2 -translate-y-1/2 whitespace-nowrap text-cyan-400 font-bold tracking-widest text-sm
+                            transition-all duration-300 ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}`}>
+                            ANTIGRAVITY
+                        </div>
+                    </button>
+                </>
+            );
+        };
         const RewardWhiff = ({ onComplete, showNearMiss, nearMissIntensity = 'normal', consecutiveWhiff = 0 }) => {
             const [particles, setParticles] = useState([]);
             const [showText, setShowText] = useState(false);
@@ -5433,6 +5516,16 @@
                             onPurge={purgeTask}
                         />
                     )}
+
+                    {/* 🌀 Antigravity Button */}
+                    <AntigravityButton />
+
+                    <style>{`
+                        @keyframes warp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+                        @keyframes warp-lines { from { opacity: 0; transform: scale(1); } to { opacity: 0.8; transform: scale(3); } }
+                        @keyframes warp-ring { from { opacity: 0; transform: scale(0); border-width: 100px; } to { opacity: 0.5; transform: scale(1.5); border-width: 0px; } }
+                        @keyframes warp-text { from { opacity: 0; transform: scale(3); } to { opacity: 1; transform: scale(1); } }
+                    `}</style>
                 </div>
             );
         };
