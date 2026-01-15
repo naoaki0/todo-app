@@ -269,6 +269,40 @@
             }
         }
 
+        @keyframes gem-absorb {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translate(calc((var(--target-x) - 50%) / 2), calc((var(--target-y) - 50%) / 2)) scale(1.2);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(calc(var(--target-x) - 50%), calc(var(--target-y) - 50%)) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes forecast-flash {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            30% {
+                opacity: 0.8;
+                transform: scale(1.1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1);
+            }
+        }
+
         @keyframes cracker-shoot {
             0% {
                 transform: translate(0, 0) rotate(0deg) scale(1);
@@ -1781,6 +1815,130 @@
             );
         };
 
+        // 🎰 結果テキスト演出: 画面中央に派手なテキスト
+        const WinText = ({ tier, onComplete }) => {
+            const [visible, setVisible] = useState(true);
+
+            useEffect(() => {
+                const timer = setTimeout(() => {
+                    setVisible(false);
+                    if (onComplete) onComplete();
+                }, tier === 'jackpot' ? 2000 : tier === 'big' ? 1500 : 800);
+                return () => clearTimeout(timer);
+            }, [tier, onComplete]);
+
+            const config = {
+                whiff: { text: '...', color: 'text-gray-400', size: 'text-4xl', animate: '' },
+                small: { text: 'SMALL WIN!', color: 'text-yellow-400', size: 'text-5xl', animate: 'animate-bounce' },
+                normal: { text: 'WIN!', color: 'text-green-400', size: 'text-6xl', animate: 'animate-bounce' },
+                big: { text: 'BIG WIN!!', color: 'text-orange-500', size: 'text-7xl', animate: 'animate-pulse' },
+                jackpot: { text: '🎰 JACKPOT!!! 🎰', color: 'text-red-500', size: 'text-8xl', animate: 'animate-bounce' }
+            };
+            const c = config[tier] || config.whiff;
+
+            if (!visible) return null;
+
+            return (
+                <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[400]">
+                    <div className={`${c.size} font-black ${c.color} ${c.animate} drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]`}
+                        style={{
+                            textShadow: tier === 'jackpot' ? '0 0 40px #ff0000, 0 0 80px #ff6600' :
+                                tier === 'big' ? '0 0 30px #ff8800, 0 0 60px #ffaa00' :
+                                    tier === 'normal' ? '0 0 20px #00ff00' : 'none',
+                            animation: tier === 'jackpot' ? 'jackpot-text 0.3s ease-in-out infinite' : undefined
+                        }}>
+                        {c.text}
+                    </div>
+                </div>
+            );
+        };
+
+        // 🎰 レア予告確認モーメント: 虹/赤予告時の全画面フラッシュ
+        const RareForecastFlash = ({ forecast, onComplete }) => {
+            useEffect(() => {
+                // 派手な予告音
+                if (forecast === 'rainbow') {
+                    AudioEngine.play([800, 1000, 1200, 1400, 1600], 'sine', 0.3, 0.05);
+                } else if (forecast === 'red') {
+                    AudioEngine.play([600, 800, 1000, 1200], 'sine', 0.25, 0.06);
+                }
+                const timer = setTimeout(() => {
+                    if (onComplete) onComplete();
+                }, forecast === 'rainbow' ? 800 : 600);
+                return () => clearTimeout(timer);
+            }, [forecast, onComplete]);
+
+            const bgColor = forecast === 'rainbow'
+                ? 'bg-gradient-to-br from-red-500 via-yellow-400 via-green-400 via-blue-500 to-purple-500'
+                : 'bg-gradient-to-br from-red-600 to-orange-500';
+
+            return (
+                <div className={`fixed inset-0 pointer-events-none z-[450] ${bgColor} animate-pulse`}
+                    style={{
+                        opacity: 0.7,
+                        animation: 'forecast-flash 0.3s ease-out forwards'
+                    }}>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-white text-9xl font-black animate-bounce drop-shadow-lg">
+                            {forecast === 'rainbow' ? '🌈' : '🔥'}
+                        </div>
+                        <div className="absolute text-white text-4xl font-black mt-40">
+                            {forecast === 'rainbow' ? '虹予告！！' : '激アツ予告！'}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 🎰 ジェム吸い込み演出: 獲得時に画面右上へ軌跡
+        const GemAbsorb = ({ amount, startX, startY, onComplete }) => {
+            const [gems, setGems] = useState([]);
+
+            useEffect(() => {
+                // 複数のジェムパーティクルを生成
+                const count = Math.min(amount, 10);
+                const newGems = [];
+                for (let i = 0; i < count; i++) {
+                    newGems.push({
+                        id: i,
+                        x: startX + (Math.random() - 0.5) * 100,
+                        y: startY + (Math.random() - 0.5) * 100,
+                        delay: i * 50
+                    });
+                }
+                setGems(newGems);
+
+                // 吸い込み音
+                setTimeout(() => AudioEngine.play([800, 1000, 1200, 1400], 'sine', 0.15, 0.05), 200);
+
+                const timer = setTimeout(() => {
+                    setGems([]);
+                    if (onComplete) onComplete();
+                }, 1000);
+                return () => clearTimeout(timer);
+            }, [amount, startX, startY, onComplete]);
+
+            return (
+                <>
+                    {gems.map(g => (
+                        <div
+                            key={g.id}
+                            className="fixed pointer-events-none z-[500] text-2xl"
+                            style={{
+                                left: g.x,
+                                top: g.y,
+                                animation: `gem-absorb 0.8s ease-in ${g.delay}ms forwards`,
+                                '--target-x': 'calc(100vw - 100px)',
+                                '--target-y': '40px'
+                            }}
+                        >
+                            💎
+                        </div>
+                    ))}
+                </>
+            );
+        };
+
         // スカ演出: 悔しさを増幅（nearMissIntensityで強度変化）
         const RewardWhiff = ({ onComplete, showNearMiss, nearMissIntensity = 'normal' }) => {
             const [particles, setParticles] = useState([]);
@@ -3272,7 +3430,15 @@
                     // 予告音（枠色に応じて変化）
                     if (forecast === 'rainbow') {
                         AudioEngine.play([1200, 1400, 1600, 1800], 'sine', 0.15, 0.08);
-                    } else if (forecast === 'red' || forecast === 'gold') {
+                        // 虹予告確認: 全画面フラッシュ
+                        setRewardEffect(<RareForecastFlash forecast="rainbow" onComplete={() => setRewardEffect(null)} />);
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    } else if (forecast === 'red') {
+                        AudioEngine.play([800, 1000, 1200], 'sine', 0.12, 0.06);
+                        // 赤予告確認: 全画面フラッシュ
+                        setRewardEffect(<RareForecastFlash forecast="red" onComplete={() => setRewardEffect(null)} />);
+                        await new Promise(resolve => setTimeout(resolve, 600));
+                    } else if (forecast === 'gold') {
                         AudioEngine.play([800, 1000, 1200], 'sine', 0.12, 0.06);
                     } else if (forecast === 'green') {
                         AudioEngine.play([600, 800], 'sine', 0.1, 0.05);
@@ -3379,17 +3545,18 @@
                         setCurrentForecast(null); // 枠色リセット
                     };
 
+                    // WinText + 報酬演出を同時表示
                     if (tier === 'whiff') {
-                        setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} />);
+                        setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} /></>);
                     } else if (tier === 'small') {
-                        setRewardEffect(<RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                        setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
                     } else if (tier === 'normal') {
-                        setRewardEffect(<RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                        setRewardEffect(<><WinText tier={tier} /><RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
                     } else if (tier === 'big') {
-                        setRewardEffect(<RewardBig onComplete={effectComplete} />);
+                        setRewardEffect(<><WinText tier={tier} /><RewardBig onComplete={effectComplete} /></>);
                         setToastMessage('🚀 START BIG!! 期待が高まる！');
                     } else if (tier === 'jackpot') {
-                        setRewardEffect(<RewardJackpot onComplete={effectComplete} />);
+                        setRewardEffect(<><WinText tier={tier} /><RewardJackpot onComplete={effectComplete} /></>);
                         setToastMessage('🎰 JACKPOT START!!! 完了時にさらなる報酬が！');
                     }
 
@@ -3422,22 +3589,23 @@
                     setCurrentForecast(null); // 枠色リセット
                 };
 
+                // WinText + 報酬演出を同時表示
                 if (tier === 'whiff') {
-                    setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} />);
+                    setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} /></>);
                     setStats(prev => ({ ...prev, pityCounter: newPityCounter, rensouCount: newRensouCount }));
                 } else if (tier === 'small') {
-                    setRewardEffect(<RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                    setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
                     setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
                 } else if (tier === 'normal') {
-                    setRewardEffect(<RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
+                    setRewardEffect(<><WinText tier={tier} /><RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
                     setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
                 } else if (tier === 'big') {
-                    setRewardEffect(<RewardBig onComplete={effectComplete} />);
+                    setRewardEffect(<><WinText tier={tier} /><RewardBig onComplete={effectComplete} /></>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
                     setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
                     setToastMessage('🔥 FEVER MODE!! 3分間レア確率2倍！');
                 } else if (tier === 'jackpot') {
-                    setRewardEffect(<RewardJackpot onComplete={effectComplete} />);
+                    setRewardEffect(<><WinText tier={tier} /><RewardJackpot onComplete={effectComplete} /></>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
                     setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
                     setToastMessage('🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
