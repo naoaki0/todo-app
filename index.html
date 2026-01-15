@@ -3719,23 +3719,26 @@
                     setCurrentForecast(null); // 枠色リセット
                 };
 
-                // WinText + 報酬演出を同時表示
+                // WinText + 報酬演出 + ジェム吸い込み演出を同時表示
+                const gemAmounts = { whiff: 0, small: 3, normal: 5, big: 10, jackpot: 20 };
+                const gemCount = gemAmounts[tier] || 0;
+
                 if (tier === 'whiff') {
                     setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} consecutiveWhiff={newPityCounter} /></>);
                     setStats(prev => ({ ...prev, pityCounter: newPityCounter, rensouCount: newRensouCount }));
                 } else if (tier === 'small') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
+                    setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} /></>);
                     setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
                 } else if (tier === 'normal') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
+                    setRewardEffect(<><WinText tier={tier} /><RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} /></>);
                     setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
                 } else if (tier === 'big') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardBig onComplete={effectComplete} /></>);
+                    setRewardEffect(<><WinText tier={tier} /><RewardBig onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} /></>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
                     setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
                     setToastMessage('🔥 FEVER MODE!! 3分間レア確率2倍！');
                 } else if (tier === 'jackpot') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardJackpot onComplete={effectComplete} /></>);
+                    setRewardEffect(<><WinText tier={tier} /><RewardJackpot onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} /></>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
                     setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
                     setToastMessage('🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
