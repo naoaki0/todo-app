@@ -1781,54 +1781,88 @@
             );
         };
 
-        // スカ演出（60%）: 悔しさを増幅
-        const RewardWhiff = ({ onComplete, showNearMiss }) => {
+        // スカ演出: 悔しさを増幅（nearMissIntensityで強度変化）
+        const RewardWhiff = ({ onComplete, showNearMiss, nearMissIntensity = 'normal' }) => {
             const [particles, setParticles] = useState([]);
+            const [showText, setShowText] = useState(false);
 
             useEffect(() => {
                 // 悔しい演出：暗いパーティクルが消える
+                const particleCount = showNearMiss ? (nearMissIntensity === 'extreme' ? 40 : nearMissIntensity === 'strong' ? 25 : 20) : 15;
                 const newParticles = [];
-                for (let i = 0; i < 15; i++) {
-                    const angle = (Math.PI * 2 * i) / 15;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = (Math.PI * 2 * i) / particleCount;
+                    const speed = showNearMiss ? (nearMissIntensity === 'extreme' ? 150 : 100) : 80;
                     newParticles.push({
                         id: i,
                         x: window.innerWidth / 2,
                         y: window.innerHeight / 2,
-                        vx: Math.cos(angle) * 80,
-                        vy: Math.sin(angle) * 80,
-                        color: '#888888',
-                        size: 6,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        color: showNearMiss ? (nearMissIntensity === 'extreme' ? '#ff4444' : '#ffaa00') : '#888888',
+                        size: showNearMiss ? 8 : 6,
                     });
                 }
                 setParticles(newParticles);
 
-                // 🎰 残念SE: より長く、より落胆感のある音
+                // 🎰 残念SE: 強度に応じて変化
                 if (showNearMiss) {
-                    // ニアミス: 一瞬「当たり！？」と思わせてから落とす
-                    AudioEngine.play([800, 1000], 'sine', 0.15, 0.1);
-                    setTimeout(() => AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.15, 0.2), 100);
+                    if (nearMissIntensity === 'extreme') {
+                        // 虹予告→スカ = 超悔しい！
+                        AudioEngine.play([1200, 1400, 1600], 'sine', 0.2, 0.05);
+                        setTimeout(() => AudioEngine.play([800, 600, 400, 200, 100, 50], 'sawtooth', 0.25, 0.15), 150);
+                        setShowText(true);
+                    } else if (nearMissIntensity === 'strong') {
+                        AudioEngine.play([1000, 1200], 'sine', 0.18, 0.08);
+                        setTimeout(() => AudioEngine.play([600, 500, 400, 300, 200, 100], 'sawtooth', 0.18, 0.15), 100);
+                        setShowText(true);
+                    } else {
+                        AudioEngine.play([800, 1000], 'sine', 0.15, 0.1);
+                        setTimeout(() => AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.15, 0.2), 100);
+                    }
                 } else {
                     // 通常スカ: ガッカリ音
                     AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.12, 0.18);
                 }
 
+                const duration = showNearMiss && nearMissIntensity === 'extreme' ? 1200 : 600;
                 setTimeout(() => {
                     setParticles([]);
+                    setShowText(false);
                     onComplete();
-                }, 600);
+                }, duration);
             }, [onComplete]);
 
             return (
                 <>
                     {showNearMiss && <NearMissFlash />}
-                    {/* 暗転エフェクト */}
+                    {/* 暗転エフェクト（強度で変化） */}
                     <div
-                        className="fixed inset-0 pointer-events-none z-[290]"
+                        className={`fixed inset-0 pointer-events-none z-[290] ${nearMissIntensity === 'extreme' ? 'animate-[screen-shake_0.3s_ease-in-out_3]' : ''}`}
                         style={{
-                            background: 'rgba(0, 0, 0, 0.3)',
-                            animation: 'whiff-darken 0.6s ease-out forwards',
+                            background: showNearMiss && nearMissIntensity === 'extreme'
+                                ? 'rgba(255, 0, 0, 0.3)'
+                                : showNearMiss && nearMissIntensity === 'strong'
+                                    ? 'rgba(255, 100, 0, 0.2)'
+                                    : 'rgba(0, 0, 0, 0.3)',
+                            animation: nearMissIntensity === 'extreme'
+                                ? 'whiff-darken 1.2s ease-out forwards'
+                                : 'whiff-darken 0.6s ease-out forwards',
                         }}
                     />
+                    {/* 悔しいテキスト（強いニアミス時） */}
+                    {showText && (
+                        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[300]">
+                            <div className="text-center">
+                                <div className={`text-4xl font-black ${nearMissIntensity === 'extreme' ? 'text-red-500' : 'text-yellow-500'} animate-pulse drop-shadow-lg`}>
+                                    {nearMissIntensity === 'extreme' ? '虹だったのに...！' : '惜しかった！'}
+                                </div>
+                                <div className="text-lg text-white/80 mt-2">
+                                    {nearMissIntensity === 'extreme' ? '次こそは...！' : 'あと少しだった...'}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {/* 悔しいパーティクル */}
                     {particles.map(p => (
                         <div
@@ -1843,7 +1877,7 @@
                                 borderRadius: '50%',
                                 pointerEvents: 'none',
                                 zIndex: 295,
-                                animation: 'whiff-fade 0.6s ease-out forwards',
+                                animation: `whiff-fade ${showNearMiss && nearMissIntensity === 'extreme' ? '1s' : '0.6s'} ease-out forwards`,
                                 '--vx': `${p.vx}px`,
                                 '--vy': `${p.vy}px`,
                             }}
@@ -3193,7 +3227,8 @@
                 return () => clearInterval(timer);
             }, [task.challengeEndTime, task.completed]);
 
-            // 中毒性MAX：新しいhandleToggle（二段階システム：開始→完了）
+            // 🎰 ギャンブルデザイン最大化: handleToggle
+            // 予告演出、音変化、ニアミス強化、連荘、天井可視化、The Freezeを統合
             const handleToggle = async (e) => {
                 e.stopPropagation();
 
@@ -3205,59 +3240,151 @@
                 const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
                 const centerY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
 
-                // === 1回目クリック: 開始（完了時と同じフル演出） ===
+                // --- 共通演出ロジック（開始・完了で使用） ---
+                const runGamblingSequence = async (isStartPhase) => {
+                    const isFeverMode = stats.feverEndTime > Date.now();
+                    const isRensouMode = stats.rensouCount > 0;
+
+                    // 🎰 1. 予告枠色を先に決定（結果とは独立）
+                    // 予告は結果を示唆するが、確定ではない（裏切りあり）
+                    const forecastRoll = Math.random() * 100;
+                    let forecast = 'white'; // 白=通常
+                    if (forecastRoll < 3) {
+                        forecast = 'rainbow'; // 虹=激アツ
+                    } else if (forecastRoll < 10) {
+                        forecast = 'red'; // 赤=チャンス大
+                    } else if (forecastRoll < 25) {
+                        forecast = 'gold'; // 金=チャンス
+                    } else if (forecastRoll < 45) {
+                        forecast = 'green'; // 緑=ちょいアツ
+                    }
+
+                    // 連荘中は予告が良くなりやすい
+                    if (isRensouMode && forecast === 'white' && Math.random() < 0.4) {
+                        forecast = 'green';
+                    }
+
+                    // 🎰 2. 予告演出の表示（枠色変化）
+                    setAnimateCheckbox(true);
+
+                    // 予告音（枠色に応じて変化）
+                    if (forecast === 'rainbow') {
+                        AudioEngine.play([1200, 1400, 1600, 1800], 'sine', 0.15, 0.08);
+                    } else if (forecast === 'red' || forecast === 'gold') {
+                        AudioEngine.play([800, 1000, 1200], 'sine', 0.12, 0.06);
+                    } else if (forecast === 'green') {
+                        AudioEngine.play([600, 800], 'sine', 0.1, 0.05);
+                    } else {
+                        AudioEngine.play([1200, 600], 'square', 0.08, 0.02);
+                    }
+
+                    // 🎰 3. ドラムロール（枠色と結果に応じて音程変化）
+                    // 音程が段階的に変化し、結果を予測させない
+                    const tier = determineRewardTier(stats.pityCounter, isFeverMode || isRensouMode);
+                    const isGoodResult = tier === 'big' || tier === 'jackpot';
+                    const isMediumResult = tier === 'normal' || tier === 'small';
+
+                    // ドラムロール音（途中でフェイントあり）
+                    const basePitch = 500;
+                    for (let i = 0; i < 10; i++) {
+                        const time = i * 80;
+                        const pitch = basePitch + (i * 30);
+                        // 途中で音程が下がる（フェイント）
+                        const fakeDown = (i === 5 || i === 6) && Math.random() < 0.3;
+                        const finalPitch = fakeDown ? pitch - 200 : pitch;
+                        setTimeout(() => AudioEngine.play([finalPitch], 'square', 0.05 + i * 0.005, 0.025), time);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 800));
+
+                    // 🎰 4. The Freeze（結果発表直前の静寂）
+                    // 0.3秒の完全停止 + 心音
+                    AudioEngine.play([60, 80], 'sine', 0.1, 0.15);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                    // リール停止音（結果に応じて変化）
+                    if (isGoodResult) {
+                        // 重低音 + 金属音
+                        AudioEngine.play([100, 150], 'sawtooth', 0.25, 0.1);
+                        AudioEngine.play([1500, 2000], 'sine', 0.15, 0.05);
+                    } else {
+                        AudioEngine.play([300, 200], 'square', 0.18, 0.08);
+                    }
+
+                    // 🎰 5. 天井カウンター可視化
+                    const newPityCounter = tier === 'whiff' ? stats.pityCounter + 1 : 0;
+                    if (newPityCounter >= 5) {
+                        setToastMessage(`⚡ 天井まで残り${8 - newPityCounter}回！`);
+                    }
+
+                    // 🎰 6. ニアミス判定（強化版）
+                    // 予告が良いのに結果が悪い = 強いニアミス演出
+                    let showNearMiss = false;
+                    let nearMissIntensity = 'normal';
+                    if (tier === 'whiff') {
+                        if (forecast === 'rainbow' || forecast === 'red') {
+                            showNearMiss = true;
+                            nearMissIntensity = 'extreme'; // 虹予告→スカ = 超悔しい
+                        } else if (forecast === 'gold' && Math.random() < 0.5) {
+                            showNearMiss = true;
+                            nearMissIntensity = 'strong';
+                        } else if (forecast === 'green' && Math.random() < 0.3) {
+                            showNearMiss = true;
+                        } else if (Math.random() < 0.1) {
+                            showNearMiss = true;
+                        }
+                    }
+
+                    // 🎰 7. 連荘モード処理
+                    let newRensouCount = stats.rensouCount;
+                    if (tier === 'normal' || tier === 'big' || tier === 'jackpot') {
+                        // 当たり時、20%で連荘突入/継続
+                        if (Math.random() < 0.2) {
+                            newRensouCount = isRensouMode ? stats.rensouCount + 1 : 3;
+                            if (isRensouMode) {
+                                setToastMessage(`🔥 連荘継続！残り${newRensouCount}回！`);
+                            } else {
+                                setToastMessage('🎰 連荘モード突入！次の3回、big確率2倍！');
+                            }
+                        }
+                    }
+                    if (isRensouMode && !isStartPhase) {
+                        newRensouCount = Math.max(0, stats.rensouCount - 1);
+                        if (newRensouCount === 0) {
+                            setToastMessage('💔 連荘終了...');
+                            AudioEngine.play([400, 300, 200], 'sine', 0.15, 0.1);
+                        }
+                    }
+
+                    return { tier, showNearMiss, nearMissIntensity, newPityCounter, newRensouCount, forecast };
+                };
+
+                // === 1回目クリック: 開始 ===
                 if (!task.started) {
                     setIsStarting(true);
 
-                    // フェーズ1: 予兆アニメーション（期待の空白 - 0.8秒）
-                    setAnimateCheckbox(true);
-
-                    // 🎰 クリック音: 心地よいカチッ
-                    AudioEngine.play([1200, 600], 'square', 0.08, 0.02);
-
-                    // 🎰 スロットマシン風ドラムロール（0.8秒間）
-                    setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 0);
-                    setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 80);
-                    setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 160);
-                    setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 240);
-                    setTimeout(() => AudioEngine.play([650], 'square', 0.05, 0.025), 320);
-                    setTimeout(() => AudioEngine.play([420], 'square', 0.05, 0.025), 400);
-                    setTimeout(() => AudioEngine.play([700], 'square', 0.06, 0.025), 480);
-                    setTimeout(() => AudioEngine.play([450], 'square', 0.06, 0.025), 560);
-                    setTimeout(() => AudioEngine.play([800], 'square', 0.07, 0.025), 640);
-                    setTimeout(() => AudioEngine.play([500], 'square', 0.07, 0.025), 720);
-
-                    // 0.8秒の遅延
-                    await new Promise(resolve => setTimeout(resolve, 800));
-
-                    // 🎰 リール停止音
-                    AudioEngine.play([300, 200], 'square', 0.18, 0.08);
-
-                    // フェーズ2: 報酬ティア決定（開始時は50%の確率で良い演出）
-                    const isFeverMode = stats.feverEndTime > Date.now();
-                    const tier = determineRewardTier(stats.pityCounter, isFeverMode);
+                    const result = await runGamblingSequence(true);
+                    const { tier, showNearMiss, nearMissIntensity, forecast } = result;
 
                     // 開始状態に更新
                     onUpdate(task.id, { started: true, startedAt: Date.now() });
 
-                    // フェーズ3: 報酬演出の発火（開始時）
+                    // 報酬演出の発火（開始時）
                     const effectComplete = () => {
                         setRewardEffect(null);
                         setIsStarting(false);
                         setAnimateCheckbox(false);
                     };
 
-                    // 開始時も完了時と同じ演出を表示
                     if (tier === 'whiff') {
-                        const showNearMiss = Math.random() < 0.1;
-                        setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} />);
+                        setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} />);
                     } else if (tier === 'small') {
                         setRewardEffect(<RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
                     } else if (tier === 'normal') {
                         setRewardEffect(<RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
                     } else if (tier === 'big') {
                         setRewardEffect(<RewardBig onComplete={effectComplete} />);
-                        setToastMessage('🚀 START FEVER!! 期待が高まる！');
+                        setToastMessage('🚀 START BIG!! 期待が高まる！');
                     } else if (tier === 'jackpot') {
                         setRewardEffect(<RewardJackpot onComplete={effectComplete} />);
                         setToastMessage('🎰 JACKPOT START!!! 完了時にさらなる報酬が！');
@@ -3277,44 +3404,14 @@
                 // === 2回目クリック: 完了 ===
                 setIsCompleting(true);
 
-                // フェーズ1: 予兆アニメーション（期待の空白 - 0.8秒）
-                setAnimateCheckbox(true);
+                const result = await runGamblingSequence(false);
+                const { tier, showNearMiss, nearMissIntensity, newPityCounter, newRensouCount } = result;
 
-                // 🎰 クリック音: 心地よいカチッ
-                AudioEngine.play([1200, 600], 'square', 0.08, 0.02);
-
-                // 🎰 スロットマシン風ドラムロール（0.8秒間）
-                // ティックタック...と加速していく期待感
-                setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 0);
-                setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 80);
-                setTimeout(() => AudioEngine.play([600], 'square', 0.05, 0.025), 160);
-                setTimeout(() => AudioEngine.play([400], 'square', 0.05, 0.025), 240);
-                setTimeout(() => AudioEngine.play([650], 'square', 0.05, 0.025), 320);
-                setTimeout(() => AudioEngine.play([420], 'square', 0.05, 0.025), 400);
-                setTimeout(() => AudioEngine.play([700], 'square', 0.06, 0.025), 480);
-                setTimeout(() => AudioEngine.play([450], 'square', 0.06, 0.025), 560);
-                setTimeout(() => AudioEngine.play([800], 'square', 0.07, 0.025), 640);
-                setTimeout(() => AudioEngine.play([500], 'square', 0.07, 0.025), 720);
-
-                // 0.8秒の遅延（脳に「来るか！？」と予測させる）
-                await new Promise(resolve => setTimeout(resolve, 800));
-
-                // 🎰 リール停止音: カシャン！
-                AudioEngine.play([300, 200], 'square', 0.18, 0.08);
-
-                // フェーズ2: 報酬ティア決定
-                const isFeverMode = stats.feverEndTime > Date.now();
-                const tier = determineRewardTier(stats.pityCounter, isFeverMode);
-                console.log(`Reward Tier: ${tier}, Pity: ${stats.pityCounter}, Fever: ${isFeverMode}`);
-
-                // ニアミス判定（スカの10%）
-                const showNearMiss = tier === 'whiff' && Math.random() < 0.1;
-
-                // フェーズ3: タスク完了処理
+                // タスク完了処理
                 onToggle(task);
                 onXpGain(task, rect, setConfettiType);
 
-                // フェーズ4: 報酬演出の発火
+                // 報酬演出の発火
                 const effectComplete = () => {
                     setRewardEffect(null);
                     setIsCompleting(false);
@@ -3322,29 +3419,23 @@
                 };
 
                 if (tier === 'whiff') {
-                    setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} />);
-                    // スカなので天井カウンター+1
-                    setStats(prev => ({ ...prev, pityCounter: prev.pityCounter + 1 }));
+                    setRewardEffect(<RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} />);
+                    setStats(prev => ({ ...prev, pityCounter: newPityCounter, rensouCount: newRensouCount }));
                 } else if (tier === 'small') {
-                    // 🎰 小当たり（LDWs）: 地味だが「当たった」感覚
                     setRewardEffect(<RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
-                    // 小当たりは天井カウンターリセット（プレイヤーを延命させる）
-                    setStats(prev => ({ ...prev, pityCounter: 0 }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
                 } else if (tier === 'normal') {
                     setRewardEffect(<RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} />);
-                    // ノーマルなので天井カウンターリセット
-                    setStats(prev => ({ ...prev, pityCounter: 0 }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount }));
                 } else if (tier === 'big') {
                     setRewardEffect(<RewardBig onComplete={effectComplete} />);
-                    // ビッグ！天井リセット + フィーバーモード開始（3分）
                     const feverEnd = Date.now() + 3 * 60 * 1000;
-                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
                     setToastMessage('🔥 FEVER MODE!! 3分間レア確率2倍！');
                 } else if (tier === 'jackpot') {
                     setRewardEffect(<RewardJackpot onComplete={effectComplete} />);
-                    // ジャックポット！！！天井リセット + フィーバーモード開始（3分）
                     const feverEnd = Date.now() + 3 * 60 * 1000;
-                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount }));
                     setToastMessage('🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
                 }
             };
@@ -3527,6 +3618,7 @@
                 lastWakeupChestTime: 0, // 最後にスリープ復帰宝箱を開けた時刻
                 pityCounter: 0, // 天井カウンター（スカが続くと上昇）
                 feverEndTime: 0, // フィーバーモード終了時刻
+                rensouCount: 0, // 連荘モード残り回数
                 tempGems: 0,
                 initialTempGems: 0,
                 isBurning: false,
