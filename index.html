@@ -2040,19 +2040,11 @@
 
                 // ワープチャージ音
                 AudioEngine.play([100, 200, 400, 800, 1600], 'sawtooth', 0.1, 0.05);
-                setTimeout(() => AudioEngine.play([50, 50, 100, 100], 'whiteNoise', 0.2, 0.1), 500);
 
-                // ワープ発動
-                // 即時遷移試行（アンカークリック方式）
-                setTimeout(() => {
-                    const link = document.createElement('a');
-                    link.href = targetUrl;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }, 50);
+                // 即時遷移（ユーザージェスチャー内で実行）
+                window.location.href = targetUrl;
 
-                // フェイルセーフ: 5秒後に復帰
+                // フェイルセーフ: 5秒後に復帰（遷移失敗時用）
                 setTimeout(() => setIsWarping(false), 5000);
             };
 
