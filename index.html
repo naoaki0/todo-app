@@ -303,6 +303,67 @@
             }
         }
 
+        @keyframes buildup-pulse {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes buildup-shake {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            25% {
+                transform: translate(-50%, -50%) translate(-3px, 3px) rotate(-1deg);
+            }
+
+            75% {
+                transform: translate(-50%, -50%) translate(3px, -3px) rotate(1deg);
+            }
+        }
+
+        @keyframes feint-flash {
+            0% {
+                opacity: 0;
+            }
+
+            30% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes near-miss-text {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+
+            30% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0;
+            }
+        }
+
         @keyframes cracker-shoot {
             0% {
                 transform: translate(0, 0) rotate(0deg) scale(1);
@@ -1939,34 +2000,47 @@
             );
         };
 
-        // スカ演出: 悔しさを増幅（nearMissIntensityで強度変化）
-        const RewardWhiff = ({ onComplete, showNearMiss, nearMissIntensity = 'normal' }) => {
+        // スカ演出: 悔しさを増幅 + 連続スカで徐々に派手に
+        const RewardWhiff = ({ onComplete, showNearMiss, nearMissIntensity = 'normal', consecutiveWhiff = 0 }) => {
             const [particles, setParticles] = useState([]);
             const [showText, setShowText] = useState(false);
 
             useEffect(() => {
-                // 悔しい演出：暗いパーティクルが消える
-                const particleCount = showNearMiss ? (nearMissIntensity === 'extreme' ? 40 : nearMissIntensity === 'strong' ? 25 : 20) : 15;
+                // 連続スカ回数に応じて演出強化
+                const isConsecutive = consecutiveWhiff >= 3;
+                const isLongStreak = consecutiveWhiff >= 5;
+
+                // 悔しい演出：暗いパーティクルが消える（連続で増加）
+                let particleCount = showNearMiss ? (nearMissIntensity === 'extreme' ? 40 : nearMissIntensity === 'strong' ? 25 : 20) : 15;
+                particleCount += Math.min(consecutiveWhiff * 3, 30); // 連続ボーナス
+
                 const newParticles = [];
                 for (let i = 0; i < particleCount; i++) {
                     const angle = (Math.PI * 2 * i) / particleCount;
-                    const speed = showNearMiss ? (nearMissIntensity === 'extreme' ? 150 : 100) : 80;
+                    const speed = showNearMiss ? (nearMissIntensity === 'extreme' ? 150 : 100) : 80 + consecutiveWhiff * 5;
                     newParticles.push({
                         id: i,
                         x: window.innerWidth / 2,
                         y: window.innerHeight / 2,
                         vx: Math.cos(angle) * speed,
                         vy: Math.sin(angle) * speed,
-                        color: showNearMiss ? (nearMissIntensity === 'extreme' ? '#ff4444' : '#ffaa00') : '#888888',
-                        size: showNearMiss ? 8 : 6,
+                        color: isLongStreak ? '#ff0000' : isConsecutive ? '#ff4444' : showNearMiss ? (nearMissIntensity === 'extreme' ? '#ff4444' : '#ffaa00') : '#888888',
+                        size: showNearMiss ? 8 : 6 + Math.min(consecutiveWhiff, 5),
                     });
                 }
                 setParticles(newParticles);
 
-                // 🎰 残念SE: 強度に応じて変化
-                if (showNearMiss) {
+                // 🎰 残念SE: 連続スカで音が悲惨に
+                if (isLongStreak) {
+                    // 5連続スカ以上: 悲鳴のような音
+                    AudioEngine.play([1500, 1200, 900, 600, 300, 100], 'sawtooth', 0.3, 0.1);
+                    setShowText(true);
+                } else if (isConsecutive) {
+                    // 3連続スカ: 重い落胆音
+                    AudioEngine.play([800, 600, 400, 200, 100], 'sawtooth', 0.25, 0.12);
+                    setShowText(true);
+                } else if (showNearMiss) {
                     if (nearMissIntensity === 'extreme') {
-                        // 虹予告→スカ = 超悔しい！
                         AudioEngine.play([1200, 1400, 1600], 'sine', 0.2, 0.05);
                         setTimeout(() => AudioEngine.play([800, 600, 400, 200, 100, 50], 'sawtooth', 0.25, 0.15), 150);
                         setShowText(true);
@@ -1979,11 +2053,10 @@
                         setTimeout(() => AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.15, 0.2), 100);
                     }
                 } else {
-                    // 通常スカ: ガッカリ音
                     AudioEngine.play([500, 400, 300, 200, 150, 100], 'sawtooth', 0.12, 0.18);
                 }
 
-                const duration = showNearMiss && nearMissIntensity === 'extreme' ? 1200 : 600;
+                const duration = isLongStreak ? 1500 : (showNearMiss && nearMissIntensity === 'extreme') ? 1200 : 600;
                 setTimeout(() => {
                     setParticles([]);
                     setShowText(false);
@@ -1991,32 +2064,49 @@
                 }, duration);
             }, [onComplete]);
 
+            // 連続スカテキスト
+            const getStreakText = () => {
+                if (consecutiveWhiff >= 7) return '🔥 あと1回で天井！';
+                if (consecutiveWhiff >= 5) return '😭 5連続スカ...でも天井が近い！';
+                if (consecutiveWhiff >= 3) return '💢 3連続スカ...次こそ！';
+                if (nearMissIntensity === 'extreme') return '虹だったのに...！';
+                if (nearMissIntensity === 'strong') return '惜しかった！';
+                return '';
+            };
+
+            // 連続スカで画面が赤くなる度合い
+            const redIntensity = Math.min(consecutiveWhiff * 0.05, 0.3);
+
             return (
                 <>
                     {showNearMiss && <NearMissFlash />}
-                    {/* 暗転エフェクト（強度で変化） */}
+                    {/* 暗転エフェクト（連続スカで赤くなる） */}
                     <div
-                        className={`fixed inset-0 pointer-events-none z-[290] ${nearMissIntensity === 'extreme' ? 'animate-[screen-shake_0.3s_ease-in-out_3]' : ''}`}
+                        className={`fixed inset-0 pointer-events-none z-[290] ${nearMissIntensity === 'extreme' || consecutiveWhiff >= 5 ? 'animate-[screen-shake_0.3s_ease-in-out_3]' : ''}`}
                         style={{
-                            background: showNearMiss && nearMissIntensity === 'extreme'
-                                ? 'rgba(255, 0, 0, 0.3)'
-                                : showNearMiss && nearMissIntensity === 'strong'
-                                    ? 'rgba(255, 100, 0, 0.2)'
-                                    : 'rgba(0, 0, 0, 0.3)',
-                            animation: nearMissIntensity === 'extreme'
-                                ? 'whiff-darken 1.2s ease-out forwards'
+                            background: consecutiveWhiff >= 5
+                                ? `rgba(255, 0, 0, ${0.3 + redIntensity})`
+                                : consecutiveWhiff >= 3
+                                    ? `rgba(255, 50, 0, ${0.2 + redIntensity})`
+                                    : showNearMiss && nearMissIntensity === 'extreme'
+                                        ? 'rgba(255, 0, 0, 0.3)'
+                                        : showNearMiss && nearMissIntensity === 'strong'
+                                            ? 'rgba(255, 100, 0, 0.2)'
+                                            : 'rgba(0, 0, 0, 0.3)',
+                            animation: consecutiveWhiff >= 5 || nearMissIntensity === 'extreme'
+                                ? 'whiff-darken 1.5s ease-out forwards'
                                 : 'whiff-darken 0.6s ease-out forwards',
                         }}
                     />
-                    {/* 悔しいテキスト（強いニアミス時） */}
+                    {/* 悔しいテキスト（連続スカ or 強いニアミス時） */}
                     {showText && (
                         <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[300]">
                             <div className="text-center">
-                                <div className={`text-4xl font-black ${nearMissIntensity === 'extreme' ? 'text-red-500' : 'text-yellow-500'} animate-pulse drop-shadow-lg`}>
-                                    {nearMissIntensity === 'extreme' ? '虹だったのに...！' : '惜しかった！'}
+                                <div className={`text-4xl font-black ${consecutiveWhiff >= 5 ? 'text-red-600' : consecutiveWhiff >= 3 ? 'text-red-500' : nearMissIntensity === 'extreme' ? 'text-red-500' : 'text-yellow-500'} animate-pulse drop-shadow-lg`}>
+                                    {getStreakText()}
                                 </div>
                                 <div className="text-lg text-white/80 mt-2">
-                                    {nearMissIntensity === 'extreme' ? '次こそは...！' : 'あと少しだった...'}
+                                    {consecutiveWhiff >= 7 ? '天井まであと1回！' : consecutiveWhiff >= 3 ? '天井が近づいている...' : 'あと少しだった...'}
                                 </div>
                             </div>
                         </div>
@@ -2045,63 +2135,87 @@
             );
         };
 
-        // 🎰 小当たり演出（40%）: LDWs - 地味だが「当たった」という感触
+        // 🎰 小当たり演出（40%）: LDWs + ニアミスフェイント
         const RewardSmallWin = ({ onComplete, centerX, centerY }) => {
             const [particles, setParticles] = useState([]);
+            const [phase, setPhase] = useState('feint'); // feint → reveal
 
             useEffect(() => {
-                // 控えめな金色パーティクル（30個）
-                const goldShades = ['#FFD700', '#FFC700', '#FFB700'];
-                const newParticles = [];
-                for (let i = 0; i < 30; i++) {
-                    const fromLeft = i % 2 === 0;
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
+                // === フェイントフェーズ: 一瞬「BIG!?」と思わせる ===
+                // 派手なフラッシュ音
+                AudioEngine.play([400, 600, 800], 'sawtooth', 0.2, 0.05);
 
-                    // 狭い範囲に集中（中央±200px）
-                    const spreadX = (Math.random() - 0.5) * 200;
-                    const spreadY = (Math.random() - 0.5) * 200;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
+                // 0.4秒後に実際の結果へ
+                setTimeout(() => {
+                    setPhase('reveal');
 
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: goldShades[i % goldShades.length],
-                        delay: Math.random() * 0.2,
-                        duration: 0.7 + Math.random() * 0.3,
-                        size: 6 + Math.random() * 4,
-                    });
-                }
-                setParticles(newParticles);
+                    // 落胆音（ガッカリ音程下降）
+                    AudioEngine.play([600, 400, 300], 'sine', 0.15, 0.08);
 
-                // 🎰 小当たりSE: 控えめなチリン音（1回だけ）
-                AudioEngine.play([1047], 'sine', 0.15, 0.08);
-                setTimeout(() => AudioEngine.play([1319], 'triangle', 0.12, 0.06), 100);
+                    // 控えめな金色パーティクル（30個）
+                    const goldShades = ['#FFD700', '#FFC700', '#FFB700'];
+                    const newParticles = [];
+                    for (let i = 0; i < 30; i++) {
+                        const fromLeft = i % 2 === 0;
+                        const startX = fromLeft ? '5%' : '95%';
+                        const startY = '5%';
+                        const spreadX = (Math.random() - 0.5) * 200;
+                        const spreadY = (Math.random() - 0.5) * 200;
+                        newParticles.push({
+                            id: i, startX, startY,
+                            targetX: `${centerX + spreadX}px`, targetY: `${centerY + spreadY}px`,
+                            color: goldShades[i % goldShades.length],
+                            delay: Math.random() * 0.2, duration: 0.7 + Math.random() * 0.3,
+                            size: 6 + Math.random() * 4,
+                        });
+                    }
+                    setParticles(newParticles);
+
+                    // 控えめなチリン音
+                    setTimeout(() => AudioEngine.play([1047], 'sine', 0.12, 0.06), 200);
+                }, 400);
 
                 setTimeout(() => {
                     setParticles([]);
                     onComplete();
-                }, 1200);
+                }, 1600);
             }, [centerX, centerY, onComplete]);
 
             return (
                 <>
-                    {/* 控えめな光フラッシュ */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[280]"
-                        style={{
-                            background: 'radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 50%)',
-                            animation: 'normal-flash 0.5s ease-out forwards',
-                        }}
-                    />
-                    {/* 小当たりクラッカーパーティクル */}
-                    {particles.map(p => (
-                        <CrackerConfettiParticle key={p.id} {...p} />
-                    ))}
+                    {/* フェイントフェーズ: 一瞬BIGかと思わせる */}
+                    {phase === 'feint' && (
+                        <>
+                            <div className="fixed inset-0 pointer-events-none z-[280]"
+                                style={{
+                                    background: 'radial-gradient(circle, rgba(255,140,0,0.4) 0%, rgba(255,100,0,0.3) 50%, transparent 100%)',
+                                    animation: 'feint-flash 0.4s ease-out forwards',
+                                }}
+                            />
+                            <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[290]">
+                                <div className="text-5xl font-black text-orange-500 animate-pulse">BIG...!?</div>
+                            </div>
+                        </>
+                    )}
+                    {/* 実際の結果フェーズ */}
+                    {phase === 'reveal' && (
+                        <>
+                            <div className="fixed inset-0 pointer-events-none z-[280]"
+                                style={{
+                                    background: 'radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 50%)',
+                                    animation: 'normal-flash 0.5s ease-out forwards',
+                                }}
+                            />
+                            {/* 「惜しい！」テキスト */}
+                            <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[290]"
+                                style={{ animation: 'near-miss-text 1s ease-out forwards' }}>
+                                <div className="text-2xl font-black text-yellow-500">惜しい！あと少しでBIG...</div>
+                            </div>
+                            {particles.map(p => (
+                                <CrackerConfettiParticle key={p.id} {...p} />
+                            ))}
+                        </>
+                    )}
                 </>
             );
         };
@@ -2200,97 +2314,113 @@
             );
         };
 
-        // ビッグ演出（10%）: 圧倒的レインボー爆発
+        // ビッグ演出（10%）: 圧倒的レインボー爆発 - 段階的盛り上がり
         const RewardBig = ({ onComplete }) => {
             const [particles, setParticles] = useState([]);
             const [explosions, setExplosions] = useState([]);
             const [lightBeams, setLightBeams] = useState([]);
+            const [phase, setPhase] = useState('buildup'); // buildup → explode
 
             useEffect(() => {
-                // 連続爆発エフェクト
-                setExplosions([
-                    { id: 1, delay: 0, x: '30%', y: '30%' },
-                    { id: 2, delay: 0.15, x: '70%', y: '40%' },
-                    { id: 3, delay: 0.3, x: '50%', y: '60%' },
-                    { id: 4, delay: 0.45, x: '20%', y: '70%' },
-                    { id: 5, delay: 0.6, x: '80%', y: '20%' },
-                ]);
-
-                // 光線エフェクト
-                setLightBeams([
-                    { id: 1, angle: 0 },
-                    { id: 2, angle: 60 },
-                    { id: 3, angle: 120 },
-                    { id: 4, angle: 180 },
-                    { id: 5, angle: 240 },
-                    { id: 6, angle: 300 },
-                ]);
-
-                // レインボークラッカー大量（300個）
-                const rainbowColors = ['#FF0080', '#FF8C00', '#FFD700', '#00FF00', '#00CED1', '#4169E1', '#9370DB'];
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                const newParticles = [];
-                for (let i = 0; i < 300; i++) {
-                    const fromLeft = i % 2 === 0;
-                    const startX = fromLeft ? '5%' : '95%';
-                    const startY = '5%';
-
-                    // 中央付近への着地点（広範囲）
-                    const spreadX = (Math.random() - 0.5) * 700;
-                    const spreadY = (Math.random() - 0.5) * 700;
-                    const targetX = `${centerX + spreadX}px`;
-                    const targetY = `${centerY + spreadY}px`;
-
-                    newParticles.push({
-                        id: i,
-                        startX,
-                        startY,
-                        targetX,
-                        targetY,
-                        color: rainbowColors[i % rainbowColors.length],
-                        delay: Math.random() * 0.5,
-                        duration: 1 + Math.random() * 0.6,
-                        size: 14 + Math.random() * 10,
-                    });
+                // === フェーズ1: ビルドアップ（ドドドド...） ===
+                // 画面が徐々に明るく、振動が増す
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(() => {
+                        AudioEngine.play([100 + i * 30], 'sawtooth', 0.15 + i * 0.02, 0.03);
+                    }, i * 100);
                 }
-                setParticles(newParticles);
 
-                // 🎰 BIG当たりSE: ドラムロール → ファンファーレ → ベル連打
-                // ドラムロール風（連続音）
-                AudioEngine.play([200, 210, 220, 230], 'sawtooth', 0.2, 0.05);
-                setTimeout(() => AudioEngine.play([210, 220, 230, 240], 'sawtooth', 0.22, 0.05), 60);
-                setTimeout(() => AudioEngine.play([220, 230, 240, 250], 'sawtooth', 0.24, 0.05), 120);
-                setTimeout(() => AudioEngine.play([230, 240, 250, 260], 'sawtooth', 0.26, 0.05), 180);
+                // 1秒後に爆発フェーズへ
+                setTimeout(() => {
+                    setPhase('explode');
 
-                // ファンファーレ（豪華な上昇音階）
-                setTimeout(() => AudioEngine.play([523, 659, 784, 1047, 1319, 1568], 'triangle', 0.32, 0.2), 300);
-                setTimeout(() => AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.3, 0.18), 500);
+                    // === フェーズ2: 爆発（ドン！） ===
+                    // 重低音 + 高音の衝撃
+                    AudioEngine.play([60, 80, 100], 'sawtooth', 0.4, 0.15);
+                    AudioEngine.play([1500, 2000, 2500], 'sine', 0.3, 0.1);
 
-                // ベル連打（チーンチーンチーン！）
-                setTimeout(() => AudioEngine.play([2093], 'sine', 0.28, 0.08), 800);
-                setTimeout(() => AudioEngine.play([2349], 'sine', 0.3, 0.08), 950);
-                setTimeout(() => AudioEngine.play([2637], 'sine', 0.32, 0.08), 1100);
-                setTimeout(() => AudioEngine.play([2093, 2349, 2637], 'sine', 0.35, 0.12), 1250);
+                    // 連続爆発エフェクト
+                    setExplosions([
+                        { id: 1, delay: 0, x: '30%', y: '30%' },
+                        { id: 2, delay: 0.1, x: '70%', y: '40%' },
+                        { id: 3, delay: 0.2, x: '50%', y: '60%' },
+                        { id: 4, delay: 0.3, x: '20%', y: '70%' },
+                        { id: 5, delay: 0.4, x: '80%', y: '20%' },
+                    ]);
+
+                    // 光線エフェクト
+                    setLightBeams([
+                        { id: 1, angle: 0 }, { id: 2, angle: 60 }, { id: 3, angle: 120 },
+                        { id: 4, angle: 180 }, { id: 5, angle: 240 }, { id: 6, angle: 300 },
+                    ]);
+
+                    // レインボークラッカー大量（300個）
+                    const rainbowColors = ['#FF0080', '#FF8C00', '#FFD700', '#00FF00', '#00CED1', '#4169E1', '#9370DB'];
+                    const centerX = window.innerWidth / 2;
+                    const centerY = window.innerHeight / 2;
+                    const newParticles = [];
+                    for (let i = 0; i < 300; i++) {
+                        const fromLeft = i % 2 === 0;
+                        const startX = fromLeft ? '5%' : '95%';
+                        const startY = '5%';
+                        const spreadX = (Math.random() - 0.5) * 700;
+                        const spreadY = (Math.random() - 0.5) * 700;
+                        newParticles.push({
+                            id: i, startX, startY,
+                            targetX: `${centerX + spreadX}px`, targetY: `${centerY + spreadY}px`,
+                            color: rainbowColors[i % rainbowColors.length],
+                            delay: Math.random() * 0.5, duration: 1 + Math.random() * 0.6,
+                            size: 14 + Math.random() * 10,
+                        });
+                    }
+                    setParticles(newParticles);
+
+                    // ファンファーレ
+                    setTimeout(() => AudioEngine.play([523, 659, 784, 1047, 1319, 1568], 'triangle', 0.32, 0.2), 200);
+                    setTimeout(() => AudioEngine.play([659, 784, 1047, 1319, 1568, 2093], 'sine', 0.3, 0.18), 400);
+
+                    // ベル連打
+                    setTimeout(() => AudioEngine.play([2093], 'sine', 0.28, 0.08), 700);
+                    setTimeout(() => AudioEngine.play([2349], 'sine', 0.3, 0.08), 850);
+                    setTimeout(() => AudioEngine.play([2637], 'sine', 0.32, 0.08), 1000);
+                    setTimeout(() => AudioEngine.play([2093, 2349, 2637], 'sine', 0.35, 0.12), 1150);
+                }, 800);
 
                 setTimeout(() => {
                     setParticles([]);
                     setExplosions([]);
                     setLightBeams([]);
                     onComplete();
-                }, 4000);
+                }, 4500);
             }, [onComplete]);
 
             return (
                 <>
-                    {/* レインボーフラッシュ */}
-                    <div
-                        className="fixed inset-0 pointer-events-none z-[280]"
-                        style={{
-                            background: 'radial-gradient(circle, rgba(255,0,128,0.5) 0%, rgba(255,215,0,0.4) 30%, rgba(0,206,209,0.3) 60%, transparent 100%)',
-                            animation: 'big-rainbow-flash 1.5s ease-out forwards',
-                        }}
-                    />
+                    {/* ビルドアップフェーズ: 画面オレンジ + 振動 */}
+                    {phase === 'buildup' && (
+                        <>
+                            <div className="fixed inset-0 pointer-events-none z-[275]"
+                                style={{
+                                    background: 'radial-gradient(circle, rgba(255,140,0,0.3) 0%, rgba(255,100,0,0.2) 50%, transparent 100%)',
+                                    animation: 'buildup-pulse 0.1s ease-in-out infinite',
+                                }}
+                            />
+                            <div className="fixed top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[290]"
+                                style={{ animation: 'buildup-shake 0.1s ease-in-out infinite' }}>
+                                <div className="text-6xl font-black text-orange-400 opacity-80">BIG...?</div>
+                            </div>
+                        </>
+                    )}
+                    {/* 爆発フェーズ: レインボーフラッシュ */}
+                    {phase === 'explode' && (
+                        <div
+                            className="fixed inset-0 pointer-events-none z-[280]"
+                            style={{
+                                background: 'radial-gradient(circle, rgba(255,0,128,0.5) 0%, rgba(255,215,0,0.4) 30%, rgba(0,206,209,0.3) 60%, transparent 100%)',
+                                animation: 'big-rainbow-flash 1.5s ease-out forwards',
+                            }}
+                        />
+                    )}
                     {/* 光線 */}
                     {lightBeams.map(b => (
                         <div
@@ -3547,7 +3677,7 @@
 
                     // WinText + 報酬演出を同時表示
                     if (tier === 'whiff') {
-                        setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} /></>);
+                        setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} consecutiveWhiff={stats.pityCounter} /></>);
                     } else if (tier === 'small') {
                         setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
                     } else if (tier === 'normal') {
@@ -3591,7 +3721,7 @@
 
                 // WinText + 報酬演出を同時表示
                 if (tier === 'whiff') {
-                    setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} /></>);
+                    setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} consecutiveWhiff={newPityCounter} /></>);
                     setStats(prev => ({ ...prev, pityCounter: newPityCounter, rensouCount: newRensouCount }));
                 } else if (tier === 'small') {
                     setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /></>);
