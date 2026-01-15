@@ -4276,6 +4276,14 @@
                     return d;
                 }
             };
+
+            // 📅 内部用ヘルパー: 確実に利用可能な日付取得関数（外部定義に依存しないようシャドーイング）
+            const getAdjustedToday = () => {
+                const now = new Date();
+                if (now.getHours() < 3) now.setDate(now.getDate() - 1);
+                return now.toISOString().split('T')[0];
+            };
+
             const [tasks, setTasks] = useState(() => load('duo_v18_tasks', []));
             const [stats, setStats] = useState(() => load('duo_v18_stats', {
                 xp: 0, level: 1, gems: 100, streak: 0, lastDate: null, streakFreeze: 0,
