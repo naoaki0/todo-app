@@ -2017,7 +2017,7 @@
         };
 
         // 📈 成長グラフコンポーネント - 過去7日間の完了タスク推移
-        const GrowthGraph = ({ history, onClose }) => {
+        const GrowthGraph = ({ history = {}, onClose }) => {
             // 過去7日間のデータを取得
             const getLast7Days = () => {
                 const days = [];
@@ -4266,7 +4266,16 @@
 
         // --- メインアプリ ---
         const App = () => {
-            const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
+            const load = (k, d) => {
+                try {
+                    const loaded = JSON.parse(localStorage.getItem(k));
+                    if (!loaded) return d;
+                    // 既存データに新フィールドがない場合の対策（マージ）
+                    return { ...d, ...loaded, dailyCompletionHistory: loaded.dailyCompletionHistory || {} };
+                } catch {
+                    return d;
+                }
+            };
             const [tasks, setTasks] = useState(() => load('duo_v18_tasks', []));
             const [stats, setStats] = useState(() => load('duo_v18_stats', {
                 xp: 0, level: 1, gems: 100, streak: 0, lastDate: null, streakFreeze: 0,
