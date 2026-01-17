@@ -5170,7 +5170,10 @@
 
                         {/* Right: Reward Units (Streak & Gem) */}
                         <div className="flex items-center gap-2 z-20">
-
+                            {/* 📈 成長グラフボタン */}
+                            <button onClick={() => setShowGrowthGraph(true)} className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors text-gray-400 hover:text-blue-500 font-bold text-xl">
+                                📈
+                            </button>
 
                             {/* Streak Unit */}
                             <div className="relative">
@@ -5811,7 +5814,13 @@
                     {/* 🌀 Antigravity Button */}
                     <AntigravityButton />
 
-
+                    {/* 📈 成長グラフモーダル */}
+                    {showGrowthGraph && (
+                        <GrowthGraph
+                            history={stats.dailyCompletionHistory || {}}
+                            onClose={() => setShowGrowthGraph(false)}
+                        />
+                    )}
 
                     <style>{`
                         @keyframes warp-fade-in { from { opacity: 0; } to { opacity: 1; } }
