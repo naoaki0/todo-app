@@ -2132,7 +2132,7 @@
                 const timer = setTimeout(() => {
                     setVisible(false);
                     if (onComplete) onComplete();
-                }, 2000);
+                }, 1000); // 1秒で消える（報酬確認に十分、次のアクションを阻害しない）
                 return () => clearTimeout(timer);
             }, [onComplete]);
 
