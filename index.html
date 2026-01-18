@@ -2117,41 +2117,6 @@
             );
         };
 
-        // 📈 成長ポップアップ - タスク完了時に表示
-        const GrowthPopup = ({ streakDays, onComplete }) => {
-            const [visible, setVisible] = useState(true);
-
-            // 成長率計算: 1日1%複利
-            const growthPercent = 1; // 1タスク = 1%成長
-            const totalGrowth = Math.pow(1.01, streakDays);
-
-            useEffect(() => {
-                // 成長音: 上昇する音階
-                AudioEngine.play([400, 500, 600, 700], 'sine', 0.15, 0.08);
-
-                const timer = setTimeout(() => {
-                    setVisible(false);
-                    if (onComplete) onComplete();
-                }, 1000); // 1秒で消える（報酬確認に十分、次のアクションを阻害しない）
-                return () => clearTimeout(timer);
-            }, [onComplete]);
-
-            if (!visible) return null;
-
-            return (
-                <div className="fixed bottom-32 left-1/2 transform -translate-x-1/2 z-[380] animate-bounce">
-                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-2xl shadow-2xl border-b-4 border-green-700">
-                        <div className="text-center">
-                            <div className="text-2xl font-black">📈 +{growthPercent}% 成長！</div>
-                            <div className="text-sm font-bold text-green-100">
-                                Day {streakDays}: {totalGrowth.toFixed(2)}倍の自分
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
         // 🔥 コンボ演出コンポーネント - 連続完了で表示
         const ComboDisplay = ({ comboCount, onComplete }) => {
             const [visible, setVisible] = useState(true);
@@ -3844,7 +3809,7 @@
         };
 
 
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false, setRewardEffect, stats, setStats, setToastMessage, setShowGrowthPopup }) => {
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false, setRewardEffect, stats, setStats, setToastMessage }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [isStarting, setIsStarting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
@@ -4135,11 +4100,6 @@
                     setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
                     setToastMessage(showCombo ? `🎰 ${newComboCount}x COMBO! JACKPOT!!! +${gemCount}💎` : '🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
                 }
-
-                // 📈 成長ポップアップ表示（whiff以外、報酬演出の後に表示）
-                if (tier !== 'whiff' && setShowGrowthPopup) {
-                    setTimeout(() => setShowGrowthPopup(true), 1500);
-                }
             };
 
             const springClass = isCompleting ? "animate-spring" : "";
@@ -4409,8 +4369,6 @@
             const [showStreakWarning, setShowStreakWarning] = useState(false);
             // 📈 成長グラフ用state
             const [showGrowthGraph, setShowGrowthGraph] = useState(false);
-            // 📈 成長ポップアップ用state
-            const [showGrowthPopup, setShowGrowthPopup] = useState(false);
 
             // 🔔 通知許可状態（granted/denied/default）
             const [notificationPermission, setNotificationPermission] = useState(
@@ -5702,7 +5660,6 @@
                                                             stats={stats}
                                                             setStats={setStats}
                                                             setToastMessage={setToastMessage}
-                                                            setShowGrowthPopup={setShowGrowthPopup}
                                                         />
                                                     </div>
                                                 </React.Fragment>
@@ -5734,7 +5691,6 @@
                                                     stats={stats}
                                                     setStats={setStats}
                                                     setToastMessage={setToastMessage}
-                                                    setShowGrowthPopup={setShowGrowthPopup}
                                                 />
                                             </div>
                                         );
@@ -5863,14 +5819,6 @@
                         <GrowthGraph
                             history={stats.dailyCompletionHistory || {}}
                             onClose={() => setShowGrowthGraph(false)}
-                        />
-                    )}
-
-                    {/* 📈 成長ポップアップ（タスク完了時） */}
-                    {showGrowthPopup && (
-                        <GrowthPopup
-                            streakDays={stats.streak || 1}
-                            onComplete={() => setShowGrowthPopup(false)}
                         />
                     )}
 
