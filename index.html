@@ -5599,20 +5599,30 @@
                                                         )}
                                                     </div>
 
-                                                    {/* 📊 セクション進捗バー - Section 1のみ */}
-                                                    {sectionNum === 1 && (() => {
-                                                        // 🎯 セクション1内のタスクのみで進捗を計算
-                                                        // tasks配列から最初のセクションのタスク（完了/未完了問わず）を抽出
-                                                        let section1AllTasks = [];
+                                                    {/* 📊 セクション進捗バー - 現在のセクション */}
+                                                    {(() => {
+                                                        // 🎯 現在のセクション内のタスクで進捗を計算
+                                                        // このセクション（sectionNum）に属するタスクを抽出
+                                                        let currentSectionCount = 0;
+                                                        let currentSectionTasks = [];
                                                         for (let task of tasks) {
-                                                            if (section1AllTasks.length > 0 && task.isSectionHead) break;
-                                                            section1AllTasks.push(task);
+                                                            if (task.isSectionHead || currentSectionTasks.length === 0) {
+                                                                currentSectionCount++;
+                                                            }
+                                                            if (currentSectionCount === sectionNum) {
+                                                                currentSectionTasks.push(task);
+                                                            } else if (currentSectionCount > sectionNum) {
+                                                                break;
+                                                            }
                                                         }
 
-                                                        const section1Completed = section1AllTasks.filter(t => t.completed).length;
-                                                        const section1Total = section1AllTasks.length;
-                                                        const remaining = section1Total - section1Completed;
-                                                        const progressPercent = section1Total > 0 ? (section1Completed / section1Total) * 100 : 0;
+                                                        const sectionCompleted = currentSectionTasks.filter(t => t.completed).length;
+                                                        const sectionTotal = currentSectionTasks.length;
+                                                        const remaining = sectionTotal - sectionCompleted;
+                                                        const progressPercent = sectionTotal > 0 ? (sectionCompleted / sectionTotal) * 100 : 0;
+
+                                                        // セクション完了時は表示しない（次のセクションに進むため）
+                                                        if (remaining === 0 && sectionTotal > 0) return null;
 
                                                         return (
                                                             <div className="px-4 pb-2">
@@ -5625,8 +5635,6 @@
                                                                 <div className="text-center text-xs text-gray-600 font-bold mt-1">
                                                                     {remaining === 1 ? (
                                                                         <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
-                                                                    ) : remaining === 0 ? (
-                                                                        <span className="text-green-600">✨ セクション完了！</span>
                                                                     ) : (
                                                                         <span>あと{remaining}タスクで50💎</span>
                                                                     )}
