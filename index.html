@@ -3975,7 +3975,8 @@
                 };
 
                 // === 1回目クリック: 開始 ===
-                if (!task.started) {
+                // 🛑 ワンクリック動作モード（ここを false にすると即完了、元に戻すには && false を削除）
+                if (!task.started && false) {
                     setIsStarting(true);
 
                     const result = await runGamblingSequence(true);
