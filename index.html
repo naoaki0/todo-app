@@ -5601,38 +5601,30 @@
 
                                                     {/* 📊 セクション進捗バー - 現在のセクション */}
                                                     {(() => {
-                                                        // 🎯 現在のセクション内のタスクで進捗を計算
-                                                        // このセクション（sectionNum）に属するタスクを抽出
-                                                        let currentSectionCount = 0;
-                                                        let currentSectionTasks = [];
-                                                        for (let task of tasks) {
-                                                            if (task.isSectionHead || currentSectionTasks.length === 0) {
-                                                                currentSectionCount++;
+                                                        // 🎯 現在のセクション（sectionNum）に属する「未完了」タスクを抽出
+                                                        // incomplete配列の先頭からセクション区切りまでを取得
+                                                        let currentSectionIncomplete = [];
+                                                        let currentSection = 1;
+                                                        for (let i = 0; i < incomplete.length; i++) {
+                                                            const task = incomplete[i];
+                                                            if (i > 0 && task.isSectionHead) {
+                                                                currentSection++;
                                                             }
-                                                            if (currentSectionCount === sectionNum) {
-                                                                currentSectionTasks.push(task);
-                                                            } else if (currentSectionCount > sectionNum) {
+                                                            if (currentSection === sectionNum) {
+                                                                currentSectionIncomplete.push(task);
+                                                            } else if (currentSection > sectionNum) {
                                                                 break;
                                                             }
                                                         }
 
-                                                        const sectionCompleted = currentSectionTasks.filter(t => t.completed).length;
-                                                        const sectionTotal = currentSectionTasks.length;
-                                                        const remaining = sectionTotal - sectionCompleted;
-                                                        const progressPercent = sectionTotal > 0 ? (sectionCompleted / sectionTotal) * 100 : 0;
+                                                        const remaining = currentSectionIncomplete.length;
 
                                                         // セクション完了時は表示しない（次のセクションに進むため）
-                                                        if (remaining === 0 && sectionTotal > 0) return null;
+                                                        if (remaining === 0) return null;
 
                                                         return (
                                                             <div className="px-4 pb-2">
-                                                                <div className="bg-gray-200 rounded-full h-2 overflow-hidden shadow-inner">
-                                                                    <div
-                                                                        className="h-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500"
-                                                                        style={{ width: `${progressPercent}%` }}
-                                                                    />
-                                                                </div>
-                                                                <div className="text-center text-xs text-gray-600 font-bold mt-1">
+                                                                <div className="text-center text-xs text-gray-600 font-bold">
                                                                     {remaining === 1 ? (
                                                                         <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
                                                                     ) : (
