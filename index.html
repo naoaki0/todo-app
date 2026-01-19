@@ -5119,25 +5119,7 @@
 
             const totalTasks = tasks.length;
             const completedTasksCount = tasks.filter(t => t.completed).length;
-
-            // 🎯 セクションごとの進捗率計算（フォーカス中のセクションのみ）
-            // 未完了タスクの最初のセクションを取得
-            let focusSectionTasks = [];
-            let foundSection = false;
-            for (let t of tasks) {
-                if (!t.completed) {
-                    if (foundSection && t.isSectionHead) break; // 次のセクションに到達したら終了
-                    foundSection = true;
-                    focusSectionTasks.push(t);
-                } else if (foundSection) {
-                    // セクション内の完了済みタスクも含める
-                    focusSectionTasks.push(t);
-                }
-            }
-            // セクションの開始から終了までの完了率
-            const focusSectionCompleted = focusSectionTasks.filter(t => t.completed).length;
-            const focusSectionTotal = focusSectionTasks.length;
-            const completionRate = focusSectionTotal === 0 ? 0 : Math.round((focusSectionCompleted / focusSectionTotal) * 100);
+            const completionRate = totalTasks === 0 ? 0 : Math.round((completedTasksCount / totalTasks) * 100);
 
             // Calculate Section 1 completion for Rocket Pulse
             let section1Tasks = [];
