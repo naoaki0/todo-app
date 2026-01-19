@@ -2072,47 +2072,55 @@
                 : thisWeekTotal > 0 ? 100 : 0;
 
             return (
-                <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center backdrop-blur-sm animate-scale-in" onClick={onClose}>
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-black text-gray-800">📈 成長グラフ</h2>
-                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">×</button>
-                        </div>
+                <div className="max-w-2xl mx-auto pt-8">
+                    {/* 戻るボタン */}
+                    <button
+                        onClick={onClose}
+                        className="flex items-center gap-2 mb-6 text-gray-500 hover:text-gray-700 font-bold transition-colors"
+                    >
+                        <Icons.ChevronLeft size={20} />
+                        <span>タスクに戻る</span>
+                    </button>
 
-                        {/* 成長メッセージ */}
-                        <div className={`text-center py-3 px-4 rounded-xl mb-4 ${growthPercent > 0 ? 'bg-green-100 text-green-700' :
-                            growthPercent < 0 ? 'bg-red-100 text-red-700' :
-                                'bg-gray-100 text-gray-600'
-                            }`}>
-                            <span className="font-black text-lg">
-                                {growthPercent > 0 ? `🔥 先週より${growthPercent}%UP!` :
-                                    growthPercent < 0 ? `📉 先週より${Math.abs(growthPercent)}%ダウン` :
-                                        '📊 先週と同じペース'}
-                            </span>
-                        </div>
+                    <h1 className="text-2xl font-black text-gray-800 mb-6">📈 成長グラフ</h1>
 
-                        {/* 棒グラフ */}
-                        <div className="flex items-end justify-between gap-2 h-40 mb-4">
+                    {/* 成長メッセージ */}
+                    <div className={`text-center py-4 px-6 rounded-2xl mb-6 ${growthPercent > 0 ? 'bg-green-100 text-green-700' :
+                        growthPercent < 0 ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-600'
+                        }`}>
+                        <span className="font-black text-xl">
+                            {growthPercent > 0 ? `🔥 先週より${growthPercent}%UP!` :
+                                growthPercent < 0 ? `📉 先週より${Math.abs(growthPercent)}%ダウン` :
+                                    '📊 先週と同じペース'}
+                        </span>
+                    </div>
+
+                    {/* 棒グラフ（大きく表示） */}
+                    <div className="bg-white rounded-3xl p-6 shadow-lg border-2 border-gray-100 mb-6">
+                        <div className="flex items-end justify-between gap-3 h-56">
                             {days.map((day, i) => (
                                 <div key={day.date} className="flex-1 flex flex-col items-center">
-                                    <div className="text-xs font-bold text-gray-600 mb-1">{day.count}</div>
+                                    <div className="text-sm font-black text-gray-700 mb-2">{day.count}</div>
                                     <div
-                                        className={`w-full rounded-t-lg transition-all ${i === 6 ? 'bg-gradient-to-t from-blue-500 to-blue-400' : 'bg-gray-300'
+                                        className={`w-full rounded-t-xl transition-all ${i === 6 ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
                                             }`}
                                         style={{
                                             height: `${Math.max(10, (day.count / maxCount) * 100)}%`,
                                             minHeight: '10px'
                                         }}
                                     />
-                                    <div className="text-[10px] font-bold text-gray-500 mt-1">{day.label}</div>
+                                    <div className={`text-xs font-bold mt-2 ${i === 6 ? 'text-blue-500' : 'text-gray-500'}`}>{day.label}</div>
                                 </div>
                             ))}
                         </div>
+                    </div>
 
-                        {/* 合計 */}
-                        <div className="text-center text-gray-600 font-bold">
-                            今週の合計: <span className="text-2xl text-blue-500">{thisWeekTotal}</span> タスク
-                        </div>
+                    {/* 合計 */}
+                    <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-100">
+                        <div className="text-gray-600 font-bold mb-2">今週の合計</div>
+                        <div className="text-4xl font-black text-blue-500">{thisWeekTotal}</div>
+                        <div className="text-gray-500 font-bold">タスク完了</div>
                     </div>
                 </div>
             );
@@ -4369,8 +4377,7 @@
             const [showSleepChargeModal, setShowSleepChargeModal] = useState(false);
             // 🔥 ストリーク警告用state
             const [showStreakWarning, setShowStreakWarning] = useState(false);
-            // 📈 成長グラフ用state
-            const [showGrowthGraph, setShowGrowthGraph] = useState(false);
+            // 📈 成長グラフ用state（削除：activeListIdで管理）
 
             // 🔔 通知許可状態（granted/denied/default）
             const [notificationPermission, setNotificationPermission] = useState(
@@ -5173,7 +5180,7 @@
                         {/* Right: Reward Units (Streak & Gem) */}
                         <div className="flex items-center gap-2 z-20">
                             {/* 📈 成長グラフボタン */}
-                            <button onClick={() => setShowGrowthGraph(true)} className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors text-gray-400 hover:text-blue-500 font-bold text-xl">
+                            <button onClick={() => { setActiveListId('growthGraph'); if (isMobile) setIsSidebarOpen(false); }} className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors font-bold text-xl ${activeListId === 'growthGraph' ? 'bg-blue-100 text-blue-500' : 'bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-blue-500'}`}>
                                 📈
                             </button>
 
@@ -5307,6 +5314,7 @@
                                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Lists</h3>
                                 <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'default' ? 'bg-duo-blue/10 text-duo-blue border-duo-blue/20' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('default'); if (isMobile) setIsSidebarOpen(false); }}><Icons.Check size={24} />マイタスク</button>
                                 <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'deadline' ? 'bg-duo-pink/10 text-duo-pink border-duo-pink/20' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('deadline'); if (isMobile) setIsSidebarOpen(false); }}><Icons.Calendar size={24} />締切リスト</button>
+                                <button className={`w-full p-4 flex items-center gap-4 rounded-2xl font-black ${btn3DClass} ${activeListId === 'growthGraph' ? 'bg-green-100 text-green-600 border-green-200' : 'bg-white border-gray-200 hover:bg-gray-50 text-gray-500'}`} onClick={() => { setActiveListId('growthGraph'); if (isMobile) setIsSidebarOpen(false); }}>📈 成長グラフ</button>
                             </div>
 
                             {/* MVP Stats */}
@@ -5416,318 +5424,326 @@
                     {/* Main Area */}
                     <main className={`flex-1 pt-20 transition-all duration-300 ${isSidebarOpen && !isMobile ? 'pl-72' : 'pl-0'}`}>
                         <div className="h-full overflow-y-auto px-6 md:px-20 lg:px-32 pb-40">
-                            <div className="max-w-2xl mx-auto pt-8">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
-                                    {notificationPermission !== 'granted' && (
-                                        <button
-                                            onClick={async () => {
-                                                if (window.requestNotificationPermission) {
-                                                    await window.requestNotificationPermission();
-                                                    // 許可状態を更新
-                                                    if (typeof Notification !== 'undefined') {
-                                                        setNotificationPermission(Notification.permission);
+                            {/* 📈 成長グラフページ */}
+                            {activeListId === 'growthGraph' ? (
+                                <GrowthGraph
+                                    history={stats.dailyCompletionHistory || {}}
+                                    onClose={() => setActiveListId('default')}
+                                />
+                            ) : (
+                                <div className="max-w-2xl mx-auto pt-8">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
+                                        {notificationPermission !== 'granted' && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (window.requestNotificationPermission) {
+                                                        await window.requestNotificationPermission();
+                                                        // 許可状態を更新
+                                                        if (typeof Notification !== 'undefined') {
+                                                            setNotificationPermission(Notification.permission);
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            className="ml-auto p-2 bg-blue-50 text-blue-500 rounded-full hover:bg-blue-100 transition-colors"
-                                            title="通知を許可"
-                                        >
-                                            <Icons.Bell size={18} />
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* 崇高な意味：1%成長メッセージ */}
-                                <div className="mb-3 px-2">
-                                    <p className="text-xs text-gray-500">
-                                        {stats.streak > 0 ? (
-                                            <>
-                                                <span className="text-green-600 font-bold">📈 Day {stats.streak}:</span>
-                                                {' '}<span className="font-bold text-gray-700">{Math.pow(1.01, stats.streak).toFixed(2)}倍</span>の自分。
-                                                あと<span className="text-blue-600 font-bold">{365 - stats.streak > 0 ? 365 - stats.streak : 0}日</span>で37倍。
-                                            </>
-                                        ) : (
-                                            <>
-                                                📈 毎日1%の成長で、1年後<span className="font-bold text-green-600">37倍</span>。今日から始めよう。
-                                            </>
+                                                }}
+                                                className="ml-auto p-2 bg-blue-50 text-blue-500 rounded-full hover:bg-blue-100 transition-colors"
+                                                title="通知を許可"
+                                            >
+                                                <Icons.Bell size={18} />
+                                            </button>
                                         )}
-                                    </p>
-                                </div>
-
-                                {/* タスク入力エリア */}
-                                <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
-                                    <div className="w-full h-full flex items-center px-3 py-2 gap-2">
-                                        <Icons.Plus className="text-gray-400 opacity-80" size={20} />
-                                        <textarea
-                                            className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400 resize-none min-h-[32px] max-h-[200px]"
-                                            placeholder="MVP必須機能のみを追加"
-                                            rows="1"
-                                            onInput={(e) => {
-                                                e.target.style.height = 'auto';
-                                                e.target.style.height = e.target.scrollHeight + 'px';
-                                            }}
-                                            onKeyDown={(e) => {
-                                                // Ctrl+Enter or Cmd+Enter to submit
-                                                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    const value = e.target.value.trim();
-                                                    if (!value) return;
-
-                                                    // Split by newlines and semicolons
-                                                    const taskTitles = value
-                                                        .split(/[\n;]/)
-                                                        .map(t => t.trim())
-                                                        .filter(t => t);
-
-                                                    if (taskTitles.length === 0) return;
-
-                                                    // Section 1のタスク数をカウント
-                                                    let section1Count = 0;
-                                                    for (let t of tasks) {
-                                                        if (!t.completed && section1Count > 0 && t.isSectionHead) break;
-                                                        if (!t.completed) section1Count++;
-                                                    }
-
-                                                    // Section 1が5つ以上の場合は警告
-                                                    if (section1Count + taskTitles.length > 5) {
-                                                        setToastMessage("⚠️ MVP開発はシンプルに！タスクを減らすと集中力UP");
-                                                        AudioEngine.play([200, 150], 'sawtooth', 0.1, 0.1);
-                                                    }
-
-                                                    // Create multiple tasks
-                                                    const newTasks = taskTitles.map((title, index) => ({
-                                                        id: (Date.now() + index).toString(),
-                                                        title: title,
-                                                        completed: false,
-                                                        listId: activeListId,
-                                                        createdAt: Date.now() + index,
-                                                        isSectionHead: tasks.length === 0 && index === 0
-                                                    }));
-
-                                                    setTasks([...tasks, ...newTasks]);
-                                                    setStats(s => ({ ...s, tasksCreated: s.tasksCreated + newTasks.length }));
-
-                                                    if (newTasks.length > 1) {
-                                                        setToastMessage(`✨ ${newTasks.length} tasks added`);
-                                                    }
-
-                                                    e.target.value = '';
-                                                    e.target.style.height = 'auto';
-                                                }
-                                            }}
-                                        />
                                     </div>
-                                </div>
 
-                                {/* 🔥 Morning Burn Fuse Bar - タスク入力の下に配置 */}
-                                {stats.isBurning && stats.tempGems > 0 && (() => {
-                                    const remainingPercent = (stats.tempGems / stats.initialTempGems) * 100;
+                                    {/* 崇高な意味：1%成長メッセージ */}
+                                    <div className="mb-3 px-2">
+                                        <p className="text-xs text-gray-500">
+                                            {stats.streak > 0 ? (
+                                                <>
+                                                    <span className="text-green-600 font-bold">📈 Day {stats.streak}:</span>
+                                                    {' '}<span className="font-bold text-gray-700">{Math.pow(1.01, stats.streak).toFixed(2)}倍</span>の自分。
+                                                    あと<span className="text-blue-600 font-bold">{365 - stats.streak > 0 ? 365 - stats.streak : 0}日</span>で37倍。
+                                                </>
+                                            ) : (
+                                                <>
+                                                    📈 毎日1%の成長で、1年後<span className="font-bold text-green-600">37倍</span>。今日から始めよう。
+                                                </>
+                                            )}
+                                        </p>
+                                    </div>
 
-                                    // 段階的メッセージ（心理学的損失回避を最大化）
-                                    let burnMessage = '🔥 導火線燃焼中 - 今すぐタスクを着手せよ！';
-                                    let messageClass = 'text-red-600';
+                                    {/* タスク入力エリア */}
+                                    <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
+                                        <div className="w-full h-full flex items-center px-3 py-2 gap-2">
+                                            <Icons.Plus className="text-gray-400 opacity-80" size={20} />
+                                            <textarea
+                                                className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400 resize-none min-h-[32px] max-h-[200px]"
+                                                placeholder="MVP必須機能のみを追加"
+                                                rows="1"
+                                                onInput={(e) => {
+                                                    e.target.style.height = 'auto';
+                                                    e.target.style.height = e.target.scrollHeight + 'px';
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    // Ctrl+Enter or Cmd+Enter to submit
+                                                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const value = e.target.value.trim();
+                                                        if (!value) return;
 
-                                    if (remainingPercent <= 5) {
-                                        burnMessage = '🔴 もう間に合わない...？';
-                                        messageClass = 'text-red-800 animate-pulse';
-                                    } else if (remainingPercent <= 10) {
-                                        burnMessage = '‼️ 消滅間近 ‼️';
-                                        messageClass = 'text-red-700 font-black';
-                                    } else if (remainingPercent <= 25) {
-                                        burnMessage = '💀 残りわずか...消えるぞ';
-                                        messageClass = 'text-red-700';
-                                    } else if (remainingPercent <= 50) {
-                                        burnMessage = '⚠️ 半分消滅！急げ！';
-                                        messageClass = 'text-orange-600';
-                                    } else if (remainingPercent <= 75) {
-                                        burnMessage = '🔥 導火線燃焼中 - 今すぐタスクを着手せよ！';
-                                    }
+                                                        // Split by newlines and semicolons
+                                                        const taskTitles = value
+                                                            .split(/[\n;]/)
+                                                            .map(t => t.trim())
+                                                            .filter(t => t);
 
-                                    // 10%以下で点滅、5%以下で画面揺れ
-                                    const barFlash = remainingPercent <= 10;
-                                    const screenShake = remainingPercent <= 5;
+                                                        if (taskTitles.length === 0) return;
 
-                                    return (
-                                        <div className={`mb-4 px-2 ${screenShake ? 'animate-[screen-shake_0.3s_ease-in-out_infinite]' : ''}`}>
-                                            <div className={`bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner ${barFlash ? 'ring-2 ring-red-500 ring-opacity-75' : ''}`}>
-                                                <div
-                                                    className={`h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative ${barFlash ? 'animate-pulse' : ''}`}
-                                                    style={{ width: `${remainingPercent}%` }}
-                                                >
-                                                    <div className={`absolute inset-0 bg-white/20 ${barFlash ? 'animate-ping' : 'animate-pulse'}`}></div>
-                                                </div>
-                                            </div>
-                                            <div className={`text-center text-xs font-bold mt-1 ${messageClass} ${barFlash ? 'text-sm' : ''}`}>
-                                                {burnMessage}
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-
-                                <div className="space-y-3 relative">
-                                    {incomplete.map((t, index) => {
-                                        const isFirst = index === 0;
-                                        const showSectionHeader = isFirst || t.isSectionHead;
-
-                                        if (showSectionHeader) {
-                                            sectionCounter++;
-                                            const sectionNum = sectionCounter;
-                                            const isLast = isLastTaskInSection(index);
-
-                                            return (
-                                                <React.Fragment key={t.id}>
-                                                    <div className="py-4 flex items-center justify-center gap-2" data-section={sectionNum}>
-                                                        <div
-                                                            className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest cursor-pointer hover:scale-105 transition-transform ${sectionNum === 1 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-gray-200 text-gray-500'}`}
-                                                            onContextMenu={(e) => {
-                                                                e.preventDefault();
-                                                                const newName = prompt('セクション名を入力してください:', t.sectionName || `Section ${sectionNum}`);
-                                                                if (newName !== null && newName.trim()) {
-                                                                    updateTask(t.id, { sectionName: newName.trim() });
-                                                                }
-                                                            }}
-                                                            title="右クリックで名前を変更"
-                                                        >
-                                                            {t.sectionName || `Section ${sectionNum}`}
-                                                        </div>
-                                                        {sectionNum === 1 && (
-                                                            <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
-                                                                <span className="text-lg">🚀</span>
-                                                                <span className="text-[10px] font-black text-yellow-700 uppercase tracking-wider">MVP Focus</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* 📊 セクション進捗バー - 現在のセクション */}
-                                                    {(() => {
-                                                        // 🎯 現在のセクション（sectionNum）に属する「未完了」タスクを抽出
-                                                        // incomplete配列の先頭からセクション区切りまでを取得
-                                                        let currentSectionIncomplete = [];
-                                                        let currentSection = 1;
-                                                        for (let i = 0; i < incomplete.length; i++) {
-                                                            const task = incomplete[i];
-                                                            if (i > 0 && task.isSectionHead) {
-                                                                currentSection++;
-                                                            }
-                                                            if (currentSection === sectionNum) {
-                                                                currentSectionIncomplete.push(task);
-                                                            } else if (currentSection > sectionNum) {
-                                                                break;
-                                                            }
+                                                        // Section 1のタスク数をカウント
+                                                        let section1Count = 0;
+                                                        for (let t of tasks) {
+                                                            if (!t.completed && section1Count > 0 && t.isSectionHead) break;
+                                                            if (!t.completed) section1Count++;
                                                         }
 
-                                                        const remaining = currentSectionIncomplete.length;
+                                                        // Section 1が5つ以上の場合は警告
+                                                        if (section1Count + taskTitles.length > 5) {
+                                                            setToastMessage("⚠️ MVP開発はシンプルに！タスクを減らすと集中力UP");
+                                                            AudioEngine.play([200, 150], 'sawtooth', 0.1, 0.1);
+                                                        }
 
-                                                        // セクション完了時は表示しない（次のセクションに進むため）
-                                                        if (remaining === 0) return null;
+                                                        // Create multiple tasks
+                                                        const newTasks = taskTitles.map((title, index) => ({
+                                                            id: (Date.now() + index).toString(),
+                                                            title: title,
+                                                            completed: false,
+                                                            listId: activeListId,
+                                                            createdAt: Date.now() + index,
+                                                            isSectionHead: tasks.length === 0 && index === 0
+                                                        }));
 
-                                                        return (
-                                                            <div className="px-4 pb-2">
-                                                                <div className="text-center text-xs text-gray-600 font-bold">
-                                                                    {remaining === 1 ? (
-                                                                        <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
-                                                                    ) : (
-                                                                        <span>あと{remaining}タスクで50💎</span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })()}
+                                                        setTasks([...tasks, ...newTasks]);
+                                                        setStats(s => ({ ...s, tasksCreated: s.tasksCreated + newTasks.length }));
 
-                                                    <div
-                                                        onDragOver={(e) => handleDragOver(e, t)}
-                                                        onDrop={(e) => handleDrop(e, t)}
-                                                    >
-                                                        <TaskItem
-                                                            task={t}
-                                                            isMobile={isMobile}
-                                                            onXpGain={handleXpGain}
-                                                            onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
-                                                            onUpdate={updateTask}
-                                                            onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
-                                                            onDragStart={handleDragStart}
-                                                            isDragging={draggedTaskId === t.id}
-                                                            isDeadlineView={activeListId === 'deadline'}
-                                                            activeTheme={stats.currentTheme}
-                                                            onContextMenu={handleContextMenu}
-                                                            isFocusedSection={sectionNum === 1}
-                                                            isLastInSection={isLast}
-                                                            setRewardEffect={setRewardEffect}
-                                                            stats={stats}
-                                                            setStats={setStats}
-                                                            setToastMessage={setToastMessage}
-                                                        />
-                                                    </div>
-                                                </React.Fragment>
-                                            );
+                                                        if (newTasks.length > 1) {
+                                                            setToastMessage(`✨ ${newTasks.length} tasks added`);
+                                                        }
+
+                                                        e.target.value = '';
+                                                        e.target.style.height = 'auto';
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* 🔥 Morning Burn Fuse Bar - タスク入力の下に配置 */}
+                                    {stats.isBurning && stats.tempGems > 0 && (() => {
+                                        const remainingPercent = (stats.tempGems / stats.initialTempGems) * 100;
+
+                                        // 段階的メッセージ（心理学的損失回避を最大化）
+                                        let burnMessage = '🔥 導火線燃焼中 - 今すぐタスクを着手せよ！';
+                                        let messageClass = 'text-red-600';
+
+                                        if (remainingPercent <= 5) {
+                                            burnMessage = '🔴 もう間に合わない...？';
+                                            messageClass = 'text-red-800 animate-pulse';
+                                        } else if (remainingPercent <= 10) {
+                                            burnMessage = '‼️ 消滅間近 ‼️';
+                                            messageClass = 'text-red-700 font-black';
+                                        } else if (remainingPercent <= 25) {
+                                            burnMessage = '💀 残りわずか...消えるぞ';
+                                            messageClass = 'text-red-700';
+                                        } else if (remainingPercent <= 50) {
+                                            burnMessage = '⚠️ 半分消滅！急げ！';
+                                            messageClass = 'text-orange-600';
+                                        } else if (remainingPercent <= 75) {
+                                            burnMessage = '🔥 導火線燃焼中 - 今すぐタスクを着手せよ！';
                                         }
 
-                                        const isLast = isLastTaskInSection(index);
+                                        // 10%以下で点滅、5%以下で画面揺れ
+                                        const barFlash = remainingPercent <= 10;
+                                        const screenShake = remainingPercent <= 5;
+
                                         return (
-                                            <div
-                                                key={t.id}
-                                                onDragOver={(e) => handleDragOver(e, t)}
-                                                onDrop={(e) => handleDrop(e, t)}
-                                            >
-                                                <TaskItem
-                                                    task={t}
-                                                    isMobile={isMobile}
-                                                    onXpGain={handleXpGain}
-                                                    onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
-                                                    onUpdate={updateTask}
-                                                    onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
-                                                    onDragStart={handleDragStart}
-                                                    isDragging={draggedTaskId === t.id}
-                                                    isDeadlineView={activeListId === 'deadline'}
-                                                    activeTheme={stats.currentTheme}
-                                                    onContextMenu={handleContextMenu}
-                                                    isFocusedSection={sectionCounter === 1}
-                                                    isLastInSection={isLast}
-                                                    setRewardEffect={setRewardEffect}
-                                                    stats={stats}
-                                                    setStats={setStats}
-                                                    setToastMessage={setToastMessage}
-                                                />
+                                            <div className={`mb-4 px-2 ${screenShake ? 'animate-[screen-shake_0.3s_ease-in-out_infinite]' : ''}`}>
+                                                <div className={`bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner ${barFlash ? 'ring-2 ring-red-500 ring-opacity-75' : ''}`}>
+                                                    <div
+                                                        className={`h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all duration-300 relative ${barFlash ? 'animate-pulse' : ''}`}
+                                                        style={{ width: `${remainingPercent}%` }}
+                                                    >
+                                                        <div className={`absolute inset-0 bg-white/20 ${barFlash ? 'animate-ping' : 'animate-pulse'}`}></div>
+                                                    </div>
+                                                </div>
+                                                <div className={`text-center text-xs font-bold mt-1 ${messageClass} ${barFlash ? 'text-sm' : ''}`}>
+                                                    {burnMessage}
+                                                </div>
                                             </div>
                                         );
-                                    })}
-                                </div>
+                                    })()}
 
-                                {/* 完了タスクセクション */}
-                                {completed.length > 0 && (
-                                    <div className="mt-16 mb-20">
-                                        <button onClick={() => setIsCompletedOpen(!isCompletedOpen)} className={`flex items-center gap-2 text-sm font-black text-gray-400 hover:text-gray-600 px-4 py-3 rounded-xl transition-colors bg-gray-50 border-2 border-transparent hover:border-gray-200 ${juicyBtnClass}`}>
-                                            {isCompletedOpen ? <Icons.ChevronDown size={18} /> : <Icons.ChevronRight size={18} />}
-                                            完了済み ({completed.length})
-                                        </button>
+                                    <div className="space-y-3 relative">
+                                        {incomplete.map((t, index) => {
+                                            const isFirst = index === 0;
+                                            const showSectionHeader = isFirst || t.isSectionHead;
 
-                                        {isCompletedOpen && (
-                                            <div className="mt-4 space-y-2 opacity-75">
-                                                {completed.map(t => (
+                                            if (showSectionHeader) {
+                                                sectionCounter++;
+                                                const sectionNum = sectionCounter;
+                                                const isLast = isLastTaskInSection(index);
+
+                                                return (
+                                                    <React.Fragment key={t.id}>
+                                                        <div className="py-4 flex items-center justify-center gap-2" data-section={sectionNum}>
+                                                            <div
+                                                                className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest cursor-pointer hover:scale-105 transition-transform ${sectionNum === 1 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-gray-200 text-gray-500'}`}
+                                                                onContextMenu={(e) => {
+                                                                    e.preventDefault();
+                                                                    const newName = prompt('セクション名を入力してください:', t.sectionName || `Section ${sectionNum}`);
+                                                                    if (newName !== null && newName.trim()) {
+                                                                        updateTask(t.id, { sectionName: newName.trim() });
+                                                                    }
+                                                                }}
+                                                                title="右クリックで名前を変更"
+                                                            >
+                                                                {t.sectionName || `Section ${sectionNum}`}
+                                                            </div>
+                                                            {sectionNum === 1 && (
+                                                                <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
+                                                                    <span className="text-lg">🚀</span>
+                                                                    <span className="text-[10px] font-black text-yellow-700 uppercase tracking-wider">MVP Focus</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* 📊 セクション進捗バー - 現在のセクション */}
+                                                        {(() => {
+                                                            // 🎯 現在のセクション（sectionNum）に属する「未完了」タスクを抽出
+                                                            // incomplete配列の先頭からセクション区切りまでを取得
+                                                            let currentSectionIncomplete = [];
+                                                            let currentSection = 1;
+                                                            for (let i = 0; i < incomplete.length; i++) {
+                                                                const task = incomplete[i];
+                                                                if (i > 0 && task.isSectionHead) {
+                                                                    currentSection++;
+                                                                }
+                                                                if (currentSection === sectionNum) {
+                                                                    currentSectionIncomplete.push(task);
+                                                                } else if (currentSection > sectionNum) {
+                                                                    break;
+                                                                }
+                                                            }
+
+                                                            const remaining = currentSectionIncomplete.length;
+
+                                                            // セクション完了時は表示しない（次のセクションに進むため）
+                                                            if (remaining === 0) return null;
+
+                                                            return (
+                                                                <div className="px-4 pb-2">
+                                                                    <div className="text-center text-xs text-gray-600 font-bold">
+                                                                        {remaining === 1 ? (
+                                                                            <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
+                                                                        ) : (
+                                                                            <span>あと{remaining}タスクで50💎</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
+
+                                                        <div
+                                                            onDragOver={(e) => handleDragOver(e, t)}
+                                                            onDrop={(e) => handleDrop(e, t)}
+                                                        >
+                                                            <TaskItem
+                                                                task={t}
+                                                                isMobile={isMobile}
+                                                                onXpGain={handleXpGain}
+                                                                onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
+                                                                onUpdate={updateTask}
+                                                                onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
+                                                                onDragStart={handleDragStart}
+                                                                isDragging={draggedTaskId === t.id}
+                                                                isDeadlineView={activeListId === 'deadline'}
+                                                                activeTheme={stats.currentTheme}
+                                                                onContextMenu={handleContextMenu}
+                                                                isFocusedSection={sectionNum === 1}
+                                                                isLastInSection={isLast}
+                                                                setRewardEffect={setRewardEffect}
+                                                                stats={stats}
+                                                                setStats={setStats}
+                                                                setToastMessage={setToastMessage}
+                                                            />
+                                                        </div>
+                                                    </React.Fragment>
+                                                );
+                                            }
+
+                                            const isLast = isLastTaskInSection(index);
+                                            return (
+                                                <div
+                                                    key={t.id}
+                                                    onDragOver={(e) => handleDragOver(e, t)}
+                                                    onDrop={(e) => handleDrop(e, t)}
+                                                >
                                                     <TaskItem
-                                                        key={t.id}
                                                         task={t}
                                                         isMobile={isMobile}
                                                         onXpGain={handleXpGain}
-                                                        onToggle={() => updateTask(t.id, { completed: false })}
+                                                        onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
                                                         onUpdate={updateTask}
                                                         onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
-                                                        onDragStart={null}
-                                                        isDragging={false}
+                                                        onDragStart={handleDragStart}
+                                                        isDragging={draggedTaskId === t.id}
                                                         isDeadlineView={activeListId === 'deadline'}
                                                         activeTheme={stats.currentTheme}
+                                                        onContextMenu={handleContextMenu}
+                                                        isFocusedSection={sectionCounter === 1}
+                                                        isLastInSection={isLast}
                                                         setRewardEffect={setRewardEffect}
                                                         stats={stats}
                                                         setStats={setStats}
                                                         setToastMessage={setToastMessage}
                                                     />
-                                                ))}
-                                            </div>
-                                        )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                )}
-                            </div>
+
+                                    {/* 完了タスクセクション */}
+                                    {completed.length > 0 && (
+                                        <div className="mt-16 mb-20">
+                                            <button onClick={() => setIsCompletedOpen(!isCompletedOpen)} className={`flex items-center gap-2 text-sm font-black text-gray-400 hover:text-gray-600 px-4 py-3 rounded-xl transition-colors bg-gray-50 border-2 border-transparent hover:border-gray-200 ${juicyBtnClass}`}>
+                                                {isCompletedOpen ? <Icons.ChevronDown size={18} /> : <Icons.ChevronRight size={18} />}
+                                                完了済み ({completed.length})
+                                            </button>
+
+                                            {isCompletedOpen && (
+                                                <div className="mt-4 space-y-2 opacity-75">
+                                                    {completed.map(t => (
+                                                        <TaskItem
+                                                            key={t.id}
+                                                            task={t}
+                                                            isMobile={isMobile}
+                                                            onXpGain={handleXpGain}
+                                                            onToggle={() => updateTask(t.id, { completed: false })}
+                                                            onUpdate={updateTask}
+                                                            onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
+                                                            onDragStart={null}
+                                                            isDragging={false}
+                                                            isDeadlineView={activeListId === 'deadline'}
+                                                            activeTheme={stats.currentTheme}
+                                                            setRewardEffect={setRewardEffect}
+                                                            stats={stats}
+                                                            setStats={setStats}
+                                                            setToastMessage={setToastMessage}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </main>
 
@@ -5811,13 +5827,7 @@
                     {/* 🌀 Antigravity Button */}
                     <AntigravityButton />
 
-                    {/* 📈 成長グラフモーダル */}
-                    {showGrowthGraph && (
-                        <GrowthGraph
-                            history={stats.dailyCompletionHistory || {}}
-                            onClose={() => setShowGrowthGraph(false)}
-                        />
-                    )}
+                    {/* 📈 成長グラフモーダル - 削除：ページに移行 */}
 
                     <style>{`
                         @keyframes warp-fade-in { from { opacity: 0; } to { opacity: 1; } }
