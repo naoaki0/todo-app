@@ -5619,23 +5619,18 @@
 
                                                     {/* 📊 セクション進捗バー - Section 1のみ */}
                                                     {sectionNum === 1 && (() => {
-                                                        // セクション1の未完了タスク数を計算
-                                                        let section1Incomplete = [];
-                                                        for (let i = 0; i < incomplete.length; i++) {
-                                                            if (i > 0 && incomplete[i].isSectionHead) break;
-                                                            section1Incomplete.push(incomplete[i]);
+                                                        // 🎯 セクション1内のタスクのみで進捗を計算
+                                                        // tasks配列から最初のセクションのタスク（完了/未完了問わず）を抽出
+                                                        let section1AllTasks = [];
+                                                        for (let task of tasks) {
+                                                            if (section1AllTasks.length > 0 && task.isSectionHead) break;
+                                                            section1AllTasks.push(task);
                                                         }
 
-                                                        // 今日完了したタスク数を計算
-                                                        const today = getAdjustedToday();
-                                                        const section1Completed = completed.filter(task => {
-                                                            const completedDate = task.completedAt ? new Date(task.completedAt).toISOString().split('T')[0] : null;
-                                                            return completedDate === today;
-                                                        }).length;
-
-                                                        const remaining = section1Incomplete.length;
-                                                        const totalTasks = remaining + section1Completed;
-                                                        const progressPercent = totalTasks > 0 ? (section1Completed / totalTasks) * 100 : 0;
+                                                        const section1Completed = section1AllTasks.filter(t => t.completed).length;
+                                                        const section1Total = section1AllTasks.length;
+                                                        const remaining = section1Total - section1Completed;
+                                                        const progressPercent = section1Total > 0 ? (section1Completed / section1Total) * 100 : 0;
 
                                                         return (
                                                             <div className="px-4 pb-2">
