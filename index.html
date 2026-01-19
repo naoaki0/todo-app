@@ -4480,7 +4480,7 @@
                     // タブがアクティブな時のみ監視
                     if (document.visibilityState === 'visible') {
                         lastCheckTime = Date.now();
-                        console.log('[Sleep Detection] Monitoring started at', new Date().toLocaleTimeString());
+                        // console.log('[Sleep Detection] Monitoring started at', new Date().toLocaleTimeString());
 
                         intervalId = setInterval(() => {
                             const now = Date.now();
@@ -4488,23 +4488,23 @@
 
                             // デバッグログ（10秒ごと）
                             if (Math.floor(now / 10000) !== Math.floor(lastCheckTime / 10000)) {
-                                console.log('[Sleep Detection] Still monitoring... Last check was', timeSinceLastCheck, 'ms ago');
+                                // console.log('[Sleep Detection] Still monitoring... Last check was', timeSinceLastCheck, 'ms ago');
                             }
 
-                            // 1秒以上の遅延 = PCスリープと判定
+                            // 3秒以上の遅延 = PCスリープと判定（誤検知防止のため閾値を緩和）
                             // （タブがアクティブなので、タブ切り替えではない）
-                            if (timeSinceLastCheck > 1000) {
+                            if (timeSinceLastCheck > 3000) {
                                 const timeSinceLastWakeup = now - lastWakeupShownTime;
-                                console.log('[Sleep Detection] Sleep detected!', timeSinceLastCheck, 'ms gap. Last wakeup chest:', timeSinceLastWakeup, 'ms ago');
+                                // console.log('[Sleep Detection] Sleep detected!', timeSinceLastCheck, 'ms gap. Last wakeup chest:', timeSinceLastWakeup, 'ms ago');
 
                                 // クールダウン：前回から30分以上経過している場合のみ表示
                                 if (timeSinceLastWakeup > 1800000) {
-                                    console.log('[Sleep Detection] Showing wakeup chest!');
+                                    // console.log('[Sleep Detection] Showing wakeup chest!');
                                     setShowChestModal({ show: true, isWakeup: true });
                                     lastWakeupShownTime = now;
                                 } else {
                                     const remainingMinutes = Math.ceil((1800000 - timeSinceLastWakeup) / 60000);
-                                    console.log('[Sleep Detection] Cooldown active, not showing chest. Need', remainingMinutes, 'more minutes');
+                                    // console.log('[Sleep Detection] Cooldown active, not showing chest. Need', remainingMinutes, 'more minutes');
                                 }
                             }
 
@@ -4515,7 +4515,7 @@
 
                 const stopMonitoring = () => {
                     if (intervalId) {
-                        console.log('[Sleep Detection] Monitoring stopped');
+                        // console.log('[Sleep Detection] Monitoring stopped');
                         clearInterval(intervalId);
                         intervalId = null;
                     }
@@ -5634,6 +5634,9 @@
                                                             }
 
                                                             const remaining = currentSectionIncomplete.length;
+
+                                                            // Debug logging for section progress
+                                                            // console.log(`Section ${sectionNum}: remaining=${remaining}`, currentSectionIncomplete);
 
                                                             // セクション完了時は表示しない（次のセクションに進むため）
                                                             if (remaining === 0) return null;
