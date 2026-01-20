@@ -5641,56 +5641,18 @@
                                                             // セクション完了時、またはSection 1以外は表示しない
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
-                                                            return (() => {
-                                                                // 🎯 tasks配列から直接セクション1のタスクを抽出
-                                                                // セクション1 = 最初のisSectionHeadまで（または最初のタスクから）
-                                                                let section1AllTasks = [];
-                                                                let foundFirstSection = false;
-                                                                for (let i = 0; i < tasks.length; i++) {
-                                                                    const task = tasks[i];
-                                                                    // 最初のタスクはセクション1に属する
-                                                                    if (!foundFirstSection) {
-                                                                        foundFirstSection = true;
-                                                                        section1AllTasks.push(task);
-                                                                        continue;
-                                                                    }
-                                                                    // セクションヘッダーが来たらセクション1終了
-                                                                    if (task.isSectionHead) break;
-                                                                    section1AllTasks.push(task);
-                                                                }
-
-                                                                // セクション1内の完了/未完了をカウント
-                                                                const section1Completed = section1AllTasks.filter(t => t.completed).length;
-                                                                const section1Incomplete = section1AllTasks.filter(t => !t.completed).length;
-                                                                const sectionTotal = section1AllTasks.length;
-                                                                const progressPercent = sectionTotal > 0 ? Math.round((section1Completed / sectionTotal) * 100) : 0;
-
-                                                                console.log(`[Section Bar] tasks.length=${tasks.length}, section1AllTasks=${sectionTotal}, incomplete=${section1Incomplete}, completed=${section1Completed}, percent=${progressPercent}`);
-
-                                                                return (
-                                                                    <div className="px-4 pb-3">
-                                                                        {/* 進捗バー */}
-                                                                        <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
-                                                                            <div
-                                                                                className={`h-full transition-all duration-500 ${progressPercent >= 80 ? 'bg-gradient-to-r from-green-400 to-green-500' : progressPercent >= 50 ? 'bg-gradient-to-r from-blue-400 to-blue-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`}
-                                                                                style={{ width: `${progressPercent}%` }}
-                                                                            >
-                                                                                <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                                                                            </div>
-                                                                        </div>
-                                                                        {/* テキストメッセージ - Section 1のみ */}
-                                                                        {sectionNum === 1 && (
-                                                                            <div className="text-center text-xs text-gray-600 font-bold">
-                                                                                {remaining === 1 ? (
-                                                                                    <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
-                                                                                ) : (
-                                                                                    <span>あと{remaining}タスクで50💎 ({progressPercent}%完了)</span>
-                                                                                )}
-                                                                            </div>
+                                                            // 🎯 シンプルに残りタスク数のみ表示（進捗率計算は削除）
+                                                            return (
+                                                                <div className="px-4 pb-2">
+                                                                    <div className="text-center text-xs text-gray-600 font-bold">
+                                                                        {remaining === 1 ? (
+                                                                            <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
+                                                                        ) : (
+                                                                            <span>あと{remaining}タスクで50💎</span>
                                                                         )}
                                                                     </div>
-                                                                );
-                                                            })();
+                                                                </div>
+                                                            );
                                                         })()}
 
                                                         <div
