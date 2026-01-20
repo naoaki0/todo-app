@@ -5642,13 +5642,22 @@
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
                                                             return (() => {
-                                                                // 進捗を「残りタスク数」から計算
-                                                                // SECTION_SIZE（4タスク）を基準に完了率を算出
-                                                                const sectionSize = 4; // 1セクションの標準タスク数
-                                                                const completed = Math.max(0, sectionSize - remaining);
-                                                                const progressPercent = Math.round((completed / sectionSize) * 100);
+                                                                // Section 1の未完了タスク数 = remaining（既に計算済み）
+                                                                const section1Incomplete = remaining;
 
-                                                                console.log(`[Section Bar] remaining=${remaining}, completed=${completed}, percent=${progressPercent}`);
+                                                                // Section 1の完了タスク数を計算（completedリストから）
+                                                                let section1Completed = 0;
+                                                                for (let i = 0; i < completed.length; i++) {
+                                                                    const task = completed[i];
+                                                                    // 最初のタスク以外でセクションヘッダーが来たら終了
+                                                                    if (i > 0 && task.isSectionHead) break;
+                                                                    section1Completed++;
+                                                                }
+
+                                                                const sectionTotal = section1Incomplete + section1Completed;
+                                                                const progressPercent = sectionTotal > 0 ? Math.round((section1Completed / sectionTotal) * 100) : 0;
+
+                                                                console.log(`[Section Bar] incomplete=${section1Incomplete}, completed=${section1Completed}, total=${sectionTotal}, percent=${progressPercent}`);
 
                                                                 return (
                                                                     <div className="px-4 pb-3">
