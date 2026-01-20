@@ -5511,6 +5511,12 @@
                                                             AudioEngine.play([200, 150], 'sawtooth', 0.1, 0.1);
                                                         }
 
+                                                        // 現在のセクション数を計算（isSectionHeadの数 + 1）
+                                                        let currentSectionCount = 1;
+                                                        for (let t of tasks) {
+                                                            if (t.isSectionHead) currentSectionCount++;
+                                                        }
+
                                                         // Create multiple tasks
                                                         const newTasks = taskTitles.map((title, index) => ({
                                                             id: (Date.now() + index).toString(),
@@ -5519,7 +5525,7 @@
                                                             listId: activeListId,
                                                             createdAt: Date.now() + index,
                                                             isSectionHead: tasks.length === 0 && index === 0,
-                                                            sectionId: 1 // 新しいタスクは現在のフォーカスセクション（セクション1）に追加
+                                                            sectionId: currentSectionCount // 最後のセクションに追加
                                                         }));
 
                                                         setTasks([...tasks, ...newTasks]);
