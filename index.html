@@ -5671,14 +5671,16 @@
                                                                                 <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                                                             </div>
                                                                         </div>
-                                                                        {/* テキストメッセージ */}
-                                                                        <div className="text-center text-xs text-gray-600 font-bold">
-                                                                            {remaining === 1 ? (
-                                                                                <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
-                                                                            ) : (
-                                                                                <span>あと{remaining}タスクで50💎 ({progressPercent}%完了)</span>
-                                                                            )}
-                                                                        </div>
+                                                                        {/* テキストメッセージ - Section 1のみ */}
+                                                                        {sectionNum === 1 && (
+                                                                            <div className="text-center text-xs text-gray-600 font-bold">
+                                                                                {remaining === 1 ? (
+                                                                                    <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
+                                                                                ) : (
+                                                                                    <span>あと{remaining}タスクで50💎 ({progressPercent}%完了)</span>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 );
                                                             })();
