@@ -5635,8 +5635,8 @@
 
                                                             const remaining = currentSectionIncomplete.length;
 
-                                                            // Debug logging for section progress
-                                                            // console.log(`Section ${sectionNum}: remaining=${remaining}`, currentSectionIncomplete);
+                                                            // Debug logging for section progress - ACTIVE
+                                                            console.log(`[Section Progress] Section ${sectionNum}: remaining=${remaining}, incomplete.length=${incomplete.length}`, currentSectionIncomplete.map(t => t.title));
 
                                                             // セクション完了時は表示しない（次のセクションに進むため）
                                                             if (remaining === 0) return null;
