@@ -5642,19 +5642,18 @@
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
                                                             return (() => {
-                                                                // Section 1の未完了タスク数 = remaining（既に計算済み）
-                                                                const section1Incomplete = remaining;
-
-                                                                // Section 1の完了タスク数を計算（completedリストから）
-                                                                let section1Completed = 0;
-                                                                for (let i = 0; i < completed.length; i++) {
-                                                                    const task = completed[i];
-                                                                    // 最初のタスク以外でセクションヘッダーが来たら終了
-                                                                    if (i > 0 && task.isSectionHead) break;
-                                                                    section1Completed++;
+                                                                // 🎯 tasksリスト（元の順序）からセクション1のタスクを抽出
+                                                                let section1Tasks = [];
+                                                                for (let i = 0; i < tasks.length; i++) {
+                                                                    const task = tasks[i];
+                                                                    if (i > 0 && task.isSectionHead) break; // 次のセクションに到達したら終了
+                                                                    section1Tasks.push(task);
                                                                 }
 
-                                                                const sectionTotal = section1Incomplete + section1Completed;
+                                                                // セクション1内の完了/未完了をカウント
+                                                                const section1Completed = section1Tasks.filter(t => t.completed).length;
+                                                                const section1Incomplete = section1Tasks.filter(t => !t.completed).length;
+                                                                const sectionTotal = section1Tasks.length;
                                                                 const progressPercent = sectionTotal > 0 ? Math.round((section1Completed / sectionTotal) * 100) : 0;
 
                                                                 console.log(`[Section Bar] incomplete=${section1Incomplete}, completed=${section1Completed}, total=${sectionTotal}, percent=${progressPercent}`);
