@@ -5642,23 +5642,19 @@
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
                                                             return (() => {
-                                                                // セクション内の完了タスク数を計算
-                                                                let sectionCompleted = 0;
-                                                                let sectionTotal = 0;
-                                                                let inSection = false;
-                                                                let currentSec = 0;
-                                                                for (const task of tasks) {
-                                                                    if (task.isSectionHead || sectionTotal === 0) {
-                                                                        currentSec++;
-                                                                        if (currentSec === sectionNum) inSection = true;
-                                                                        else if (currentSec > sectionNum) break;
-                                                                    }
-                                                                    if (inSection) {
-                                                                        sectionTotal++;
-                                                                        if (task.completed) sectionCompleted++;
-                                                                    }
+                                                                // Section 1のタスク（最初から次のセクションヘッダーまで）を取得
+                                                                let section1Tasks = [];
+                                                                for (let i = 0; i < tasks.length; i++) {
+                                                                    const task = tasks[i];
+                                                                    // 最初のタスク以外でセクションヘッダーが来たら終了
+                                                                    if (i > 0 && task.isSectionHead) break;
+                                                                    section1Tasks.push(task);
                                                                 }
+                                                                const sectionTotal = section1Tasks.length;
+                                                                const sectionCompleted = section1Tasks.filter(t => t.completed).length;
                                                                 const progressPercent = sectionTotal > 0 ? Math.round((sectionCompleted / sectionTotal) * 100) : 0;
+
+                                                                console.log(`[Section Bar] total=${sectionTotal}, completed=${sectionCompleted}, percent=${progressPercent}`);
 
                                                                 return (
                                                                     <div className="px-4 pb-3">
