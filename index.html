@@ -5641,17 +5641,47 @@
                                                             // セクション完了時は表示しない（次のセクションに進むため）
                                                             if (remaining === 0) return null;
 
-                                                            return (
-                                                                <div className="px-4 pb-2">
-                                                                    <div className="text-center text-xs text-gray-600 font-bold">
-                                                                        {remaining === 1 ? (
-                                                                            <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
-                                                                        ) : (
-                                                                            <span>あと{remaining}タスクで50💎</span>
-                                                                        )}
+                                                            return (() => {
+                                                                // セクション内の完了タスク数を計算
+                                                                let sectionCompleted = 0;
+                                                                let sectionTotal = 0;
+                                                                let inSection = false;
+                                                                let currentSec = 0;
+                                                                for (const task of tasks) {
+                                                                    if (task.isSectionHead || sectionTotal === 0) {
+                                                                        currentSec++;
+                                                                        if (currentSec === sectionNum) inSection = true;
+                                                                        else if (currentSec > sectionNum) break;
+                                                                    }
+                                                                    if (inSection) {
+                                                                        sectionTotal++;
+                                                                        if (task.completed) sectionCompleted++;
+                                                                    }
+                                                                }
+                                                                const progressPercent = sectionTotal > 0 ? Math.round((sectionCompleted / sectionTotal) * 100) : 0;
+
+                                                                return (
+                                                                    <div className="px-4 pb-3">
+                                                                        {/* 進捗バー */}
+                                                                        <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
+                                                                            <div
+                                                                                className={`h-full transition-all duration-500 ${progressPercent >= 80 ? 'bg-gradient-to-r from-green-400 to-green-500' : progressPercent >= 50 ? 'bg-gradient-to-r from-blue-400 to-blue-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'}`}
+                                                                                style={{ width: `${progressPercent}%` }}
+                                                                            >
+                                                                                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                                                                            </div>
+                                                                        </div>
+                                                                        {/* テキストメッセージ */}
+                                                                        <div className="text-center text-xs text-gray-600 font-bold">
+                                                                            {remaining === 1 ? (
+                                                                                <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
+                                                                            ) : (
+                                                                                <span>あと{remaining}タスクで50💎 ({progressPercent}%完了)</span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            );
+                                                                );
+                                                            })();
                                                         })()}
 
                                                         <div
