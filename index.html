@@ -4783,9 +4783,10 @@
                     idx === currentIndex + 1 ? { ...t, isSectionHead: !isHead } : t
                 );
 
-                // sectionIdを再計算
+                // sectionIdを再計算（完了済みタスクは変更しない）
                 let sectionId = 1;
                 const tasksWithSectionId = updatedTasks.map((t, idx) => {
+                    if (t.completed) return t; // 完了済みはそのまま
                     if (idx > 0 && t.isSectionHead) sectionId++;
                     return { ...t, sectionId };
                 });
@@ -5121,9 +5122,10 @@
                 const [draggedTask] = newTasks.splice(draggedIndex, 1);
                 newTasks.splice(dropIndex, 0, draggedTask);
 
-                // ドラッグ&ドロップ後にsectionIdを再計算
+                // ドラッグ&ドロップ後にsectionIdを再計算（完了済みタスクは変更しない）
                 let sectionId = 1;
                 const tasksWithSectionId = newTasks.map((t, idx) => {
+                    if (t.completed) return t; // 完了済みはそのまま
                     if (idx > 0 && t.isSectionHead) sectionId++;
                     return { ...t, sectionId };
                 });
