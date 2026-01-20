@@ -5638,8 +5638,8 @@
                                                             // Debug logging for section progress - ACTIVE
                                                             console.log(`[Section Progress] Section ${sectionNum}: remaining=${remaining}, incomplete.length=${incomplete.length}`, currentSectionIncomplete.map(t => t.title));
 
-                                                            // セクション完了時は表示しない（次のセクションに進むため）
-                                                            if (remaining === 0) return null;
+                                                            // セクション完了時、またはSection 1以外は表示しない
+                                                            if (remaining === 0 || sectionNum !== 1) return null;
 
                                                             return (() => {
                                                                 // セクション内の完了タスク数を計算
