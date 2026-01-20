@@ -5643,9 +5643,10 @@
 
                                                             return (() => {
                                                                 // Section 1のタスク（最初から次のセクションヘッダーまで）を取得
+                                                                // visibleTasksを使用（現在表示中のリストのみ）
                                                                 let section1Tasks = [];
-                                                                for (let i = 0; i < tasks.length; i++) {
-                                                                    const task = tasks[i];
+                                                                for (let i = 0; i < visibleTasks.length; i++) {
+                                                                    const task = visibleTasks[i];
                                                                     // 最初のタスク以外でセクションヘッダーが来たら終了
                                                                     if (i > 0 && task.isSectionHead) break;
                                                                     section1Tasks.push(task);
