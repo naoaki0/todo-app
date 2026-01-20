@@ -4778,9 +4778,19 @@
                 const nextTask = tasks[currentIndex + 1];
                 const isHead = nextTask.isSectionHead;
 
-                setTasks(tasks.map((t, idx) =>
+                // セクション区切りを設定/解除し、全タスクのsectionIdを再計算
+                const updatedTasks = tasks.map((t, idx) =>
                     idx === currentIndex + 1 ? { ...t, isSectionHead: !isHead } : t
-                ));
+                );
+
+                // sectionIdを再計算
+                let sectionId = 1;
+                const tasksWithSectionId = updatedTasks.map((t, idx) => {
+                    if (idx > 0 && t.isSectionHead) sectionId++;
+                    return { ...t, sectionId };
+                });
+
+                setTasks(tasksWithSectionId);
                 setContextMenu(null);
             };
 
@@ -5111,7 +5121,14 @@
                 const [draggedTask] = newTasks.splice(draggedIndex, 1);
                 newTasks.splice(dropIndex, 0, draggedTask);
 
-                setTasks(newTasks);
+                // ドラッグ&ドロップ後にsectionIdを再計算
+                let sectionId = 1;
+                const tasksWithSectionId = newTasks.map((t, idx) => {
+                    if (idx > 0 && t.isSectionHead) sectionId++;
+                    return { ...t, sectionId };
+                });
+
+                setTasks(tasksWithSectionId);
                 setDraggedTaskId(null);
                 setDragOverTaskId(null);
             };
