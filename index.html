@@ -5518,7 +5518,8 @@
                                                             completed: false,
                                                             listId: activeListId,
                                                             createdAt: Date.now() + index,
-                                                            isSectionHead: tasks.length === 0 && index === 0
+                                                            isSectionHead: tasks.length === 0 && index === 0,
+                                                            sectionId: 1 // 新しいタスクは現在のフォーカスセクション（セクション1）に追加
                                                         }));
 
                                                         setTasks([...tasks, ...newTasks]);
@@ -5638,17 +5639,12 @@
                                                             // セクション完了時、またはSection 1以外は表示しない
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
-                                                            // 進捗バー復活: 初期タスク数を推定して進捗率を計算
-                                                            // 完了したタスク数 = 初期数 - 残り数（初期数は保存されていないので、現在の残り+完了済みから推定）
-                                                            const section1CompletedCount = completed.filter((t, i) => {
-                                                                // 最初のセクションの完了タスクをカウント（セクションヘッダーが来るまで）
-                                                                if (i > 0 && t.isSectionHead) return false;
-                                                                for (let j = 0; j < i; j++) {
-                                                                    if (completed[j].isSectionHead) return false;
-                                                                }
-                                                                return true;
-                                                            }).length;
-                                                            const sectionTotal = remaining + section1CompletedCount;
+                                                            // 🎯 sectionIdを使用して正確に計算
+                                                            // sectionId === 1 のタスクのみをカウント
+                                                            const section1AllTasks = tasks.filter(t => t.sectionId === 1);
+                                                            const section1CompletedCount = section1AllTasks.filter(t => t.completed).length;
+                                                            const section1IncompleteCount = section1AllTasks.filter(t => !t.completed).length;
+                                                            const sectionTotal = section1AllTasks.length;
                                                             const progressPercent = sectionTotal > 0 ? Math.round((section1CompletedCount / sectionTotal) * 100) : 0;
 
                                                             return (
