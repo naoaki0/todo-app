@@ -5642,20 +5642,13 @@
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
                                                             return (() => {
-                                                                // Section 1のタスク（最初から次のセクションヘッダーまで）を取得
-                                                                // visibleTasksを使用（現在表示中のリストのみ）
-                                                                let section1Tasks = [];
-                                                                for (let i = 0; i < visibleTasks.length; i++) {
-                                                                    const task = visibleTasks[i];
-                                                                    // 最初のタスク以外でセクションヘッダーが来たら終了
-                                                                    if (i > 0 && task.isSectionHead) break;
-                                                                    section1Tasks.push(task);
-                                                                }
-                                                                const sectionTotal = section1Tasks.length;
-                                                                const sectionCompleted = section1Tasks.filter(t => t.completed).length;
-                                                                const progressPercent = sectionTotal > 0 ? Math.round((sectionCompleted / sectionTotal) * 100) : 0;
+                                                                // 進捗を「残りタスク数」から計算
+                                                                // SECTION_SIZE（4タスク）を基準に完了率を算出
+                                                                const sectionSize = 4; // 1セクションの標準タスク数
+                                                                const completed = Math.max(0, sectionSize - remaining);
+                                                                const progressPercent = Math.round((completed / sectionSize) * 100);
 
-                                                                console.log(`[Section Bar] total=${sectionTotal}, completed=${sectionCompleted}, percent=${progressPercent}`);
+                                                                console.log(`[Section Bar] remaining=${remaining}, completed=${completed}, percent=${progressPercent}`);
 
                                                                 return (
                                                                     <div className="px-4 pb-3">
