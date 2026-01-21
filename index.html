@@ -5672,7 +5672,15 @@
                                                             const sectionTotal = section1AllTasks.length;
                                                             const progressPercent = sectionTotal > 0 ? Math.round((section1CompletedCount / sectionTotal) * 100) : 0;
 
+                                                            // 詳細なデバッグログ
+                                                            const sectionIdDistribution = {};
+                                                            tasks.forEach(t => {
+                                                                const sid = t.sectionId === undefined ? 'undefined' : t.sectionId;
+                                                                sectionIdDistribution[sid] = (sectionIdDistribution[sid] || 0) + 1;
+                                                            });
                                                             console.log(`[Progress Bar] section1AllTasks=${sectionTotal}, completed=${section1CompletedCount}, incomplete=${section1IncompleteCount}, percent=${progressPercent}`);
+                                                            console.log(`[Progress Bar] sectionId分布:`, sectionIdDistribution);
+                                                            console.log(`[Progress Bar] 未完了タスク:`, tasks.filter(t => !t.completed).map(t => ({ title: t.title, sectionId: t.sectionId })));
 
                                                             return (
                                                                 <div className="px-4 pb-3">
