@@ -5665,12 +5665,14 @@
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
                                                             // 🎯 sectionIdを使用して正確に計算
-                                                            // sectionId === 1 のタスクのみをカウント
-                                                            const section1AllTasks = tasks.filter(t => t.sectionId === 1);
+                                                            // sectionId === 1 または sectionIdが未定義のタスクをセクション1としてカウント
+                                                            const section1AllTasks = tasks.filter(t => t.sectionId === 1 || t.sectionId === undefined);
                                                             const section1CompletedCount = section1AllTasks.filter(t => t.completed).length;
                                                             const section1IncompleteCount = section1AllTasks.filter(t => !t.completed).length;
                                                             const sectionTotal = section1AllTasks.length;
                                                             const progressPercent = sectionTotal > 0 ? Math.round((section1CompletedCount / sectionTotal) * 100) : 0;
+
+                                                            console.log(`[Progress Bar] section1AllTasks=${sectionTotal}, completed=${section1CompletedCount}, incomplete=${section1IncompleteCount}, percent=${progressPercent}`);
 
                                                             return (
                                                                 <div className="px-4 pb-3">
