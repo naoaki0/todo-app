@@ -5664,23 +5664,18 @@
                                                             // セクション完了時、またはSection 1以外は表示しない
                                                             if (remaining === 0 || sectionNum !== 1) return null;
 
-                                                            // 🎯 sectionIdを使用して正確に計算
-                                                            // sectionId === 1 または sectionIdが未定義のタスクをセクション1としてカウント
-                                                            const section1AllTasks = tasks.filter(t => t.sectionId === 1 || t.sectionId === undefined);
-                                                            const section1CompletedCount = section1AllTasks.filter(t => t.completed).length;
-                                                            const section1IncompleteCount = section1AllTasks.filter(t => !t.completed).length;
-                                                            const sectionTotal = section1AllTasks.length;
-                                                            const progressPercent = sectionTotal > 0 ? Math.round((section1CompletedCount / sectionTotal) * 100) : 0;
+                                                            // 🎯 現在表示されているセクション1のsectionIdを取得
+                                                            // （未完了タスクの最初のセクション）
+                                                            const currentSectionId = currentSectionIncomplete[0]?.sectionId;
 
-                                                            // 詳細なデバッグログ
-                                                            const sectionIdDistribution = {};
-                                                            tasks.forEach(t => {
-                                                                const sid = t.sectionId === undefined ? 'undefined' : t.sectionId;
-                                                                sectionIdDistribution[sid] = (sectionIdDistribution[sid] || 0) + 1;
-                                                            });
-                                                            console.log(`[Progress Bar] section1AllTasks=${sectionTotal}, completed=${section1CompletedCount}, incomplete=${section1IncompleteCount}, percent=${progressPercent}`);
-                                                            console.log(`[Progress Bar] sectionId分布:`, sectionIdDistribution);
-                                                            console.log(`[Progress Bar] 未完了タスク:`, tasks.filter(t => !t.completed).map(t => ({ title: t.title, sectionId: t.sectionId })));
+                                                            // そのsectionIdに属するすべてのタスク（完了+未完了）を取得
+                                                            const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId);
+                                                            const completedCount = currentSectionAllTasks.filter(t => t.completed).length;
+                                                            const incompleteCount = currentSectionAllTasks.filter(t => !t.completed).length;
+                                                            const sectionTotal = currentSectionAllTasks.length;
+                                                            const progressPercent = sectionTotal > 0 ? Math.round((completedCount / sectionTotal) * 100) : 0;
+
+                                                            console.log(`[Progress Bar] currentSectionId=${currentSectionId}, total=${sectionTotal}, completed=${completedCount}, incomplete=${incompleteCount}, percent=${progressPercent}`);
 
                                                             return (
                                                                 <div className="px-4 pb-3">
