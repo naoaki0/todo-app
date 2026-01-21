@@ -5200,7 +5200,7 @@
                         {/* Right: Reward Units (Streak & Gem) */}
                         <div className="flex items-center gap-2 z-20">
                             {/* 📈 成長グラフボタン */}
-                            <button onClick={() => { setActiveListId('growthGraph'); if (isMobile) setIsSidebarOpen(false); }} className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors font-bold text-xl ${activeListId === 'growthGraph' ? 'bg-blue-100 text-blue-500' : 'bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-blue-500'}`}>
+                            <button onClick={() => { setActiveListId(activeListId === 'growthGraph' ? 'default' : 'growthGraph'); if (isMobile) setIsSidebarOpen(false); }} className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors font-bold text-xl ${activeListId === 'growthGraph' ? 'bg-blue-100 text-blue-500' : 'bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-blue-500'}`}>
                                 📈
                             </button>
 
