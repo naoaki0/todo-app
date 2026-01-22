@@ -2034,95 +2034,9 @@
 
         // 📈 成長グラフコンポーネント - 過去7日間の完了タスク推移
         const GrowthGraph = ({ history = {}, onClose }) => {
-            // 過去7日間のデータを取得
-            const getLast7Days = () => {
-                const days = [];
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dateStr = date.toISOString().split('T')[0];
-                    days.push({
-                        date: dateStr,
-                        label: i === 0 ? '今日' : i === 1 ? '昨日' : `${date.getMonth() + 1}/${date.getDate()}`,
-                        count: history[dateStr] || 0
-                    });
-                }
-                return days;
-            };
-
-            // 先週のデータを取得（比較用）
-            const getLastWeekTotal = () => {
-                let total = 0;
-                for (let i = 7; i <= 13; i++) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dateStr = date.toISOString().split('T')[0];
-                    total += history[dateStr] || 0;
-                }
-                return total;
-            };
-
-            const days = getLast7Days();
-            const thisWeekTotal = days.reduce((sum, d) => sum + d.count, 0);
-            const lastWeekTotal = getLastWeekTotal();
-            const maxCount = Math.max(...days.map(d => d.count), 1);
-
-            // 成長率計算
-            const growthPercent = lastWeekTotal > 0
-                ? Math.round(((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100)
-                : thisWeekTotal > 0 ? 100 : 0;
-
             return (
                 <div className="max-w-2xl mx-auto pt-8">
-                    {/* 戻るボタン */}
-                    <button
-                        onClick={onClose}
-                        className="flex items-center gap-2 mb-6 text-gray-500 hover:text-gray-700 font-bold transition-colors"
-                    >
-                        <Icons.ChevronLeft size={20} />
-                        <span>タスクに戻る</span>
-                    </button>
-
                     <h1 className="text-2xl font-black text-gray-800 mb-6">📈 成長グラフ</h1>
-
-                    {/* 成長メッセージ */}
-                    <div className={`text-center py-4 px-6 rounded-2xl mb-6 ${growthPercent > 0 ? 'bg-green-100 text-green-700' :
-                        growthPercent < 0 ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-600'
-                        }`}>
-                        <span className="font-black text-xl">
-                            {growthPercent > 0 ? `🔥 先週より${growthPercent}%UP!` :
-                                growthPercent < 0 ? `📉 先週より${Math.abs(growthPercent)}%ダウン` :
-                                    '📊 先週と同じペース'}
-                        </span>
-                    </div>
-
-                    {/* 棒グラフ（大きく表示） */}
-                    <div className="bg-white rounded-3xl p-6 shadow-lg border-2 border-gray-100 mb-6">
-                        <div className="flex items-end justify-between gap-3 h-56">
-                            {days.map((day, i) => (
-                                <div key={day.date} className="flex-1 flex flex-col items-center">
-                                    <div className="text-sm font-black text-gray-700 mb-2">{day.count}</div>
-                                    <div
-                                        className={`w-full rounded-t-xl transition-all ${i === 6 ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
-                                            }`}
-                                        style={{
-                                            height: `${Math.max(10, (day.count / maxCount) * 100)}%`,
-                                            minHeight: '10px'
-                                        }}
-                                    />
-                                    <div className={`text-xs font-bold mt-2 ${i === 6 ? 'text-blue-500' : 'text-gray-500'}`}>{day.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* 合計 */}
-                    <div className="text-center bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-100">
-                        <div className="text-gray-600 font-bold mb-2">今週の合計</div>
-                        <div className="text-4xl font-black text-blue-500">{thisWeekTotal}</div>
-                        <div className="text-gray-500 font-bold">タスク完了</div>
-                    </div>
                 </div>
             );
         };
