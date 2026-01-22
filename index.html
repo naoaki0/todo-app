@@ -2032,11 +2032,62 @@
             );
         };
 
-        // 📈 成長グラフコンポーネント - 過去7日間の完了タスク推移
-        const GrowthGraph = ({ history = {}, onClose }) => {
+        // 📈 成長グラフコンポーネント
+        const GrowthGraph = ({ history = {}, onClose, goal, onSetGoal, onDeleteGoal }) => {
+            const [inputGoal, setInputGoal] = useState('');
+
+            const handleSetGoal = () => {
+                if (inputGoal.trim()) {
+                    onSetGoal(inputGoal.trim());
+                    setInputGoal('');
+                }
+            };
+
             return (
                 <div className="max-w-2xl mx-auto pt-8">
                     <h1 className="text-2xl font-black text-gray-800 mb-6">📈 成長グラフ</h1>
+
+                    {/* 目標表示/入力エリア */}
+                    {goal ? (
+                        // 目標が設定されている場合
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200 mb-6">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                    <div className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">🎯 目標</div>
+                                    <div className="text-lg font-bold text-gray-800">{goal}</div>
+                                </div>
+                                <button
+                                    onClick={onDeleteGoal}
+                                    className="text-gray-400 hover:text-red-500 transition-colors p-2 text-xl font-bold"
+                                    title="目標を削除"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        // 目標が設定されていない場合
+                        <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 mb-6">
+                            <div className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">🎯 目標を設定</div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={inputGoal}
+                                    onChange={(e) => setInputGoal(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSetGoal()}
+                                    placeholder="例: 毎日3つのタスクを完了する"
+                                    className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-400 focus:outline-none font-bold"
+                                />
+                                <button
+                                    onClick={handleSetGoal}
+                                    disabled={!inputGoal.trim()}
+                                    className="px-6 py-2 bg-blue-500 text-white font-black rounded-xl hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    設定
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -4264,6 +4315,7 @@
                 lastCompletionTime: 0, // 最後のタスク完了時刻
                 // 📈 成長グラフ用
                 dailyCompletionHistory: {}, // { '2026-01-16': 5, '2026-01-15': 3, ... }
+                goal: null, // ユーザーの目標
             }));
 
             const SECTION_SIZE = 4;
@@ -5363,6 +5415,9 @@
                                 <GrowthGraph
                                     history={stats.dailyCompletionHistory || {}}
                                     onClose={() => setActiveListId('default')}
+                                    goal={stats.goal}
+                                    onSetGoal={(newGoal) => setStats(prev => ({ ...prev, goal: newGoal }))}
+                                    onDeleteGoal={() => setStats(prev => ({ ...prev, goal: null }))}
                                 />
                             ) : (
                                 <div className="max-w-2xl mx-auto pt-8">
