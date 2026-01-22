@@ -5681,10 +5681,13 @@
                                                                 <div className="px-4 pb-3">
                                                                     {/* 進捗バー */}
                                                                     <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
-                                                                        {/* 現在の進捗（実線・緑色） */}
+                                                                        {/* 現在の進捗（実線・青色） */}
                                                                         <div
-                                                                            className="h-full transition-all duration-500 bg-gradient-to-r from-green-400 to-green-500"
-                                                                            style={{ width: `${progressPercent}%` }}
+                                                                            className="h-full bg-gradient-to-r from-blue-400 to-blue-500"
+                                                                            style={{
+                                                                                width: `${progressPercent}%`,
+                                                                                transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                                                                            }}
                                                                         >
                                                                             <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                                                         </div>
@@ -5692,11 +5695,12 @@
                                                                         {/* 次のタスク完了時の進捗予告（金色ストライプ・脈動） */}
                                                                         {incompleteCount > 0 && (
                                                                             <div
-                                                                                className="absolute top-0 h-full transition-all duration-500"
+                                                                                className="absolute top-0 h-full"
                                                                                 style={{
                                                                                     left: `${progressPercent}%`,
                                                                                     width: `${progressDelta}%`,
                                                                                     background: 'repeating-linear-gradient(45deg, rgba(251, 191, 36, 0.7), rgba(251, 191, 36, 0.7) 8px, rgba(245, 158, 11, 0.7) 8px, rgba(245, 158, 11, 0.7) 16px)',
+                                                                                    transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, width 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
                                                                                     animation: nextProgressPercent >= 90 ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                                                                                 }}
                                                                             />
