@@ -2092,8 +2092,8 @@
                     <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-gray-200 mb-6">
                         <div className="flex items-end justify-between gap-3 h-56">
                             {days.map((day, i) => {
-                                // 親の高さ224px（h-56）に対するピクセル値で計算
-                                const maxHeight = 224;
+                                // 親の高さ224px（h-56）の80%を最大に（テキスト表示分を考慮）
+                                const maxHeight = 224 * 0.8; // 約179px
                                 const heightPx = day.count === 0 ? 2 : Math.max(8, (day.count / maxCount) * maxHeight);
                                 return (
                                     <div key={day.date} className="flex-1 flex flex-col items-center">
