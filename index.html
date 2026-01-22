@@ -5673,22 +5673,42 @@
                                                             const sectionTotal = currentSectionAllTasks.length;
                                                             const progressPercent = sectionTotal > 0 ? Math.round((completedCount / sectionTotal) * 100) : 0;
 
+                                                            // 次のタスクを完了した場合の進捗を計算
+                                                            const nextProgressPercent = sectionTotal > 0 ? Math.round(((completedCount + 1) / sectionTotal) * 100) : 0;
+                                                            const progressDelta = nextProgressPercent - progressPercent;
+
                                                             return (
                                                                 <div className="px-4 pb-3">
                                                                     {/* 進捗バー */}
                                                                     <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
+                                                                        {/* 現在の進捗（実線） */}
                                                                         <div
                                                                             className={`h-full transition-all duration-500 ${progressPercent >= 80 ? 'bg-gradient-to-r from-green-400 to-green-500' : progressPercent >= 50 ? 'bg-gradient-to-r from-blue-400 to-blue-500' : 'bg-gradient-to-r from-yellow-400 to-yellow-500'}`}
                                                                             style={{ width: `${progressPercent}%` }}
                                                                         >
                                                                             <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                                                         </div>
+
+                                                                        {/* 次のタスク完了時の進捗予告（半透明・脈動） */}
+                                                                        {incompleteCount > 0 && (
+                                                                            <div
+                                                                                className={`absolute top-0 h-full transition-all duration-500 ${nextProgressPercent >= 100 ? 'bg-gradient-to-r from-green-300 to-green-400' : nextProgressPercent >= 80 ? 'bg-gradient-to-r from-green-300 to-green-400' : nextProgressPercent >= 50 ? 'bg-gradient-to-r from-blue-300 to-blue-400' : 'bg-gradient-to-r from-yellow-300 to-yellow-400'}`}
+                                                                                style={{
+                                                                                    left: `${progressPercent}%`,
+                                                                                    width: `${progressDelta}%`,
+                                                                                    opacity: 0.5,
+                                                                                    animation: nextProgressPercent >= 90 ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                                                                                }}
+                                                                            />
+                                                                        )}
                                                                     </div>
                                                                     <div className="text-center text-xs text-gray-600 font-bold">
                                                                         {remaining === 1 ? (
                                                                             <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
+                                                                        ) : nextProgressPercent >= 90 ? (
+                                                                            <span className="text-orange-600">⚡ 次のタスクで<span className="text-lg">{nextProgressPercent}%</span>！ラストスパート！</span>
                                                                         ) : (
-                                                                            <span>あと{remaining}タスクで50💎 ({progressPercent}%完了)</span>
+                                                                            <span>あと{remaining}タスクで50💎 ({progressPercent}% <span className="text-blue-600">→ 次で{nextProgressPercent}%</span>)</span>
                                                                         )}
                                                                     </div>
                                                                 </div>
