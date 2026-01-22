@@ -2036,6 +2036,8 @@
         const GrowthGraph = ({ history = {}, onClose, goal, onSetGoal, onDeleteGoal }) => {
             const [inputGoal, setInputGoal] = useState('');
 
+            const btn3DClass = "transition-all active:translate-y-[4px] active:border-b-0 border-b-[4px] hover:scale-105 active:scale-95 duration-150";
+
             const handleSetGoal = () => {
                 if (inputGoal.trim()) {
                     onSetGoal(inputGoal.trim());
@@ -2050,10 +2052,10 @@
                     {/* 目標表示/入力エリア */}
                     {goal ? (
                         // 目標が設定されている場合
-                        <div className="group bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border-2 border-blue-200 mb-6">
+                        <div className="group bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200 mb-6 shadow-sm">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
-                                    <div className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">🎯 目標</div>
+                                    <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">🎯 目標</div>
                                     <div className="text-lg font-bold text-gray-800">{goal}</div>
                                 </div>
                                 <button
@@ -2067,8 +2069,8 @@
                         </div>
                     ) : (
                         // 目標が設定されていない場合
-                        <div className="bg-white rounded-2xl p-6 border-2 border-gray-200 mb-6">
-                            <div className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">🎯 目標を設定</div>
+                        <div className="bg-white rounded-xl p-4 border-2 border-gray-200 mb-6 shadow-sm">
+                            <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">🎯 目標を設定</div>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
@@ -2076,12 +2078,12 @@
                                     onChange={(e) => setInputGoal(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSetGoal()}
                                     placeholder="例: 毎日3つのタスクを完了する"
-                                    className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-400 focus:outline-none font-bold"
+                                    className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-400 focus:outline-none font-bold text-gray-700 placeholder-gray-400"
                                 />
                                 <button
                                     onClick={handleSetGoal}
                                     disabled={!inputGoal.trim()}
-                                    className="px-6 py-2 bg-blue-500 text-white font-black rounded-xl hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                                    className={`px-6 py-2 bg-duo-blue text-white font-black rounded-xl border-duo-blue hover:bg-duo-blue/90 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:border-gray-300 ${!inputGoal.trim() ? '' : btn3DClass}`}
                                 >
                                     設定
                                 </button>
