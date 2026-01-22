@@ -2092,7 +2092,9 @@
                     <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-gray-200 mb-6">
                         <div className="flex items-end justify-between gap-3 h-56">
                             {days.map((day, i) => {
-                                const heightPercent = day.count === 0 ? 0 : (day.count / maxCount) * 100;
+                                // 親の高さ224px（h-56）に対するピクセル値で計算
+                                const maxHeight = 224;
+                                const heightPx = day.count === 0 ? 2 : Math.max(8, (day.count / maxCount) * maxHeight);
                                 return (
                                     <div key={day.date} className="flex-1 flex flex-col items-center">
                                         <div className="text-sm font-black text-gray-700 mb-2">{day.count}</div>
@@ -2100,7 +2102,7 @@
                                             className={`w-full rounded-t-xl transition-all ${i === 6 ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
                                                 }`}
                                             style={{
-                                                height: day.count === 0 ? '2px' : `${heightPercent}%`
+                                                height: `${heightPx}px`
                                             }}
                                         />
                                         <div className={`text-xs font-bold mt-2 ${i === 6 ? 'text-blue-500' : 'text-gray-500'}`}>{day.label}</div>
