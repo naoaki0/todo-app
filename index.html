@@ -2151,8 +2151,8 @@
                                         className={`w-full rounded-t-xl transition-all ${i === 6 ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
                                             }`}
                                         style={{
-                                            height: `${Math.max(10, (day.count / maxCount) * 100)}%`,
-                                            minHeight: '10px'
+                                            height: day.count === 0 ? '4px' : `${(day.count / maxCount) * 100}%`,
+                                            minHeight: day.count === 0 ? '4px' : '8px'
                                         }}
                                     />
                                     <div className={`text-xs font-bold mt-2 ${i === 6 ? 'text-blue-500' : 'text-gray-500'}`}>{day.label}</div>
