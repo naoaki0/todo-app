@@ -5689,14 +5689,20 @@
                                                                             <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                                                         </div>
 
-                                                                        {/* 次のタスク完了時の進捗予告（半透明・脈動） */}
+                                                                        {/* 次のタスク完了時の進捗予告（ストライプ柄・脈動） */}
                                                                         {incompleteCount > 0 && (
                                                                             <div
-                                                                                className={`absolute top-0 h-full transition-all duration-500 ${nextProgressPercent >= 100 ? 'bg-gradient-to-r from-green-300 to-green-400' : nextProgressPercent >= 80 ? 'bg-gradient-to-r from-green-300 to-green-400' : nextProgressPercent >= 50 ? 'bg-gradient-to-r from-blue-300 to-blue-400' : 'bg-gradient-to-r from-yellow-300 to-yellow-400'}`}
+                                                                                className="absolute top-0 h-full transition-all duration-500"
                                                                                 style={{
                                                                                     left: `${progressPercent}%`,
                                                                                     width: `${progressDelta}%`,
-                                                                                    opacity: 0.5,
+                                                                                    background: nextProgressPercent >= 100
+                                                                                        ? 'repeating-linear-gradient(45deg, rgba(74, 222, 128, 0.6), rgba(74, 222, 128, 0.6) 10px, rgba(34, 197, 94, 0.6) 10px, rgba(34, 197, 94, 0.6) 20px)'
+                                                                                        : nextProgressPercent >= 80
+                                                                                            ? 'repeating-linear-gradient(45deg, rgba(74, 222, 128, 0.6), rgba(74, 222, 128, 0.6) 10px, rgba(34, 197, 94, 0.6) 10px, rgba(34, 197, 94, 0.6) 20px)'
+                                                                                            : nextProgressPercent >= 50
+                                                                                                ? 'repeating-linear-gradient(45deg, rgba(96, 165, 250, 0.6), rgba(96, 165, 250, 0.6) 10px, rgba(59, 130, 246, 0.6) 10px, rgba(59, 130, 246, 0.6) 20px)'
+                                                                                                : 'repeating-linear-gradient(45deg, rgba(250, 204, 21, 0.6), rgba(250, 204, 21, 0.6) 10px, rgba(234, 179, 8, 0.6) 10px, rgba(234, 179, 8, 0.6) 20px)',
                                                                                     animation: nextProgressPercent >= 90 ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                                                                                 }}
                                                                             />
@@ -5708,7 +5714,7 @@
                                                                         ) : nextProgressPercent >= 90 ? (
                                                                             <span className="text-orange-600">⚡ 次のタスクで<span className="text-lg">{nextProgressPercent}%</span>！ラストスパート！</span>
                                                                         ) : (
-                                                                            <span>あと{remaining}タスクで50💎 ({progressPercent}% <span className="text-blue-600">→ 次で{nextProgressPercent}%</span>)</span>
+                                                                            <span>あと{remaining}タスクで50💎</span>
                                                                         )}
                                                                     </div>
                                                                 </div>
