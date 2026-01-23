@@ -5168,34 +5168,34 @@
                         {/* Center: Project Progress Bar (MVP Progress) */}
                         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] px-4 hidden md:block">
                             <div className={`relative h-8 bg-gray-100 rounded-full overflow-hidden border-2 border-gray-200 shadow-inner ${levelGlow ? 'animate-pulse' : ''}`}>
-                                {/* 現在の進捗（青色） */}
-                                <div className={`h-full bg-gradient-to-r from-blue-400 to-blue-500 relative ${levelGlow ? 'progress-glow brightness-125' : ''}`} style={{
+                                {/* 現在の進捗（グレー系・控えめ） */}
+                                <div className={`h-full bg-gradient-to-r from-slate-300 to-slate-400 relative ${levelGlow ? 'progress-glow brightness-125' : ''}`} style={{
                                     width: `${completionRate}%`,
                                     transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}>
-                                    <div className="absolute inset-0 bg-white/20 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+                                    <div className="absolute inset-0 bg-white/10" style={{ backgroundSize: '200% 100%' }} />
                                 </div>
 
-                                {/* 次タスク完了時の進捗予告（金色ストライプ） */}
+                                {/* 次タスク完了時の進捗予告（控えめなストライプ） */}
                                 {incomplete.length > 0 && (
                                     <div
                                         className="absolute top-0 h-full"
                                         style={{
                                             left: `${completionRate}%`,
                                             width: `${progressDelta}%`,
-                                            background: 'repeating-linear-gradient(45deg, rgba(251, 191, 36, 0.7), rgba(251, 191, 36, 0.7) 8px, rgba(245, 158, 11, 0.7) 8px, rgba(245, 158, 11, 0.7) 16px)',
+                                            background: 'repeating-linear-gradient(45deg, rgba(148, 163, 184, 0.5), rgba(148, 163, 184, 0.5) 8px, rgba(100, 116, 139, 0.5) 8px, rgba(100, 116, 139, 0.5) 16px)',
                                             transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, width 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
-                                            animation: completionRate >= 90 ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                                            animation: completionRate >= 90 ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
                                         }}
                                     />
                                 )}
 
                                 <div className={`absolute inset-0 flex items-center justify-center gap-2 z-10 transition-transform ${progressBounce ? 'scale-110' : ''}`}>
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-40" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.8)' }}>MVP Progress</span>
-                                    <span className={`text-xs font-black ${progressBounce ? 'text-blue-600' : 'text-slate-600'}`} style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>
+                                    <span className={`text-xs font-black ${progressBounce ? 'text-slate-700' : 'text-slate-600'}`} style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>
                                         {completionRate >= 70 ? `残り${100 - completionRate}%` : `${completionRate}%`}
                                         {incomplete.length > 0 && (
-                                            <span className="text-amber-600 ml-1">→ {nextCompletionRate}%</span>
+                                            <span className="text-slate-500 ml-1">→ {nextCompletionRate}%</span>
                                         )}
                                     </span>
                                 </div>
@@ -5693,9 +5693,9 @@
                                                                 <div className="px-4 pb-3">
                                                                     {/* 進捗バー */}
                                                                     <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
-                                                                        {/* 現在の進捗（実線・青色） */}
+                                                                        {/* 現在の進捗（実線・オレンジ→赤） */}
                                                                         <div
-                                                                            className="h-full bg-gradient-to-r from-blue-400 to-blue-500"
+                                                                            className="h-full bg-gradient-to-r from-orange-400 to-red-500"
                                                                             style={{
                                                                                 width: `${progressPercent}%`,
                                                                                 transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
