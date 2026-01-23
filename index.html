@@ -5194,9 +5194,6 @@
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-40" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.8)' }}>MVP Progress</span>
                                     <span className={`text-xs font-black ${progressBounce ? 'text-slate-700' : 'text-slate-600'}`} style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>
                                         {completionRate >= 70 ? `残り${100 - completionRate}%` : `${completionRate}%`}
-                                        {incomplete.length > 0 && (
-                                            <span className="text-slate-500 ml-1">→ {nextCompletionRate}%</span>
-                                        )}
                                     </span>
                                 </div>
                                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-lg z-20" style={{ animation: section1Rate > 0 && section1Rate < 1 ? `pulse ${pulseDuration} cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none', color: section1Rate > 0.8 ? '#ef4444' : 'currentColor', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))' }}>🚀</div>
@@ -5693,9 +5690,9 @@
                                                                 <div className="px-4 pb-3">
                                                                     {/* 進捗バー */}
                                                                     <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
-                                                                        {/* 現在の進捗（実線・オレンジ→赤） */}
+                                                                        {/* 現在の進捗（実線・青色） */}
                                                                         <div
-                                                                            className="h-full bg-gradient-to-r from-orange-400 to-red-500"
+                                                                            className="h-full bg-gradient-to-r from-blue-400 to-blue-500"
                                                                             style={{
                                                                                 width: `${progressPercent}%`,
                                                                                 transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
