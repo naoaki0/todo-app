@@ -3,6 +3,7 @@ name: Send Notifications
 on:
   schedule:
     - cron: '0 23 * * *'  # 08:00 JST (朝の第一タスク通知)
+    - cron: '0 9 * * *'   # 18:00 JST (未完了タスク通知)
     - cron: '0 13 * * *'  # 22:00 JST (ストリーク危機通知)
   workflow_dispatch: # 手動実行用
 
