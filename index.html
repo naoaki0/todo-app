@@ -5142,6 +5142,9 @@
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
 
+            // ヘッダーMVP進捗バー用（全タスクベース）
+            const allIncompleteTasks = tasks.filter(t => !t.completed);
+
             const totalTasks = tasks.length;
             const completedTasksCount = tasks.filter(t => t.completed).length;
             const completionRate = totalTasks === 0 ? 0 : Math.round((completedTasksCount / totalTasks) * 100);
@@ -5195,7 +5198,7 @@
                                 </div>
 
                                 {/* 次タスク完了時の進捗予告（控えめなストライプ） */}
-                                {incomplete.length > 0 && (
+                                {allIncompleteTasks.length > 0 && (
                                     <div
                                         className="absolute top-0 h-full"
                                         style={{
