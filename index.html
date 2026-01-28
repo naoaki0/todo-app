@@ -6094,16 +6094,22 @@
                                         <div className="w-full h-full flex items-center px-3 py-2 gap-2">
                                             <Icons.Plus className="text-gray-400 opacity-80" size={20} />
                                             <textarea
+                                                ref={(el) => { window._taskInputRef = el; }}
                                                 className="bg-transparent outline-none flex-1 font-medium text-base text-gray-700 placeholder-gray-400 resize-none min-h-[32px] max-h-[200px]"
-                                                placeholder="MVP必須機能のみを追加"
+                                                placeholder={isMobile ? "タスクを入力してEnter" : "MVP必須機能のみを追加（Ctrl+Enter）"}
                                                 rows="1"
                                                 onInput={(e) => {
                                                     e.target.style.height = 'auto';
                                                     e.target.style.height = e.target.scrollHeight + 'px';
                                                 }}
                                                 onKeyDown={(e) => {
-                                                    // Ctrl+Enter or Cmd+Enter to submit
-                                                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                                    // 📱 モバイル: Enterで送信、Shift+Enterで改行
+                                                    // 💻 PC: Ctrl+Enterで送信、Enterで改行
+                                                    const shouldSubmit = isMobile
+                                                        ? (e.key === 'Enter' && !e.shiftKey)
+                                                        : ((e.ctrlKey || e.metaKey) && e.key === 'Enter');
+
+                                                    if (shouldSubmit) {
                                                         e.preventDefault();
                                                         const value = e.target.value.trim();
                                                         if (!value) return;
@@ -6158,6 +6164,65 @@
                                                     }
                                                 }}
                                             />
+                                            {/* 📱 送信ボタン（特にモバイル向け） */}
+                                            <button
+                                                onClick={() => {
+                                                    const input = window._taskInputRef;
+                                                    if (!input) return;
+
+                                                    const value = input.value.trim();
+                                                    if (!value) return;
+
+                                                    // タスク追加ロジック（上記と同じ）
+                                                    const taskTitles = value
+                                                        .split(/[\n;]/)
+                                                        .map(t => t.trim())
+                                                        .filter(t => t);
+
+                                                    if (taskTitles.length === 0) return;
+
+                                                    let section1Count = 0;
+                                                    for (let t of tasks) {
+                                                        if (!t.completed && section1Count > 0 && t.isSectionHead) break;
+                                                        if (!t.completed) section1Count++;
+                                                    }
+
+                                                    if (section1Count + taskTitles.length > 5) {
+                                                        setToastMessage("⚠️ MVP開発はシンプルに！タスクを減らすと集中力UP");
+                                                        AudioEngine.play([200, 150], 'sawtooth', 0.1, 0.1);
+                                                    }
+
+                                                    let currentSectionCount = 1;
+                                                    for (let t of tasks) {
+                                                        if (t.isSectionHead) currentSectionCount++;
+                                                    }
+
+                                                    const newTasks = taskTitles.map((title, index) => ({
+                                                        id: (Date.now() + index).toString(),
+                                                        title: title,
+                                                        completed: false,
+                                                        listId: activeListId,
+                                                        createdAt: Date.now() + index,
+                                                        isSectionHead: tasks.length === 0 && index === 0,
+                                                        sectionId: currentSectionCount
+                                                    }));
+
+                                                    setTasks([...tasks, ...newTasks]);
+                                                    setStats(s => ({ ...s, tasksCreated: s.tasksCreated + newTasks.length }));
+
+                                                    if (newTasks.length > 1) {
+                                                        setToastMessage(`✨ ${newTasks.length} tasks added`);
+                                                    }
+
+                                                    input.value = '';
+                                                    input.style.height = 'auto';
+                                                }}
+                                                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-duo-blue hover:bg-duo-blueBorder text-white transition-colors"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M2 8L14 2L8 14L6.5 9.5L2 8Z" fill="currentColor"/>
+                                                </svg>
+                                            </button>
                                         </div>
                                     </div>
 
