@@ -11,6 +11,7 @@
         rel="stylesheet">
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -4504,6 +4505,85 @@
             );
         };
 
+        // --- ログインモーダル ---
+        const AuthModal = ({ onClose, onGoogleLogin, onEmailLogin }) => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+
+            const handleEmailSubmit = (e) => {
+                e.preventDefault();
+                if (email && password) {
+                    onEmailLogin(email, password);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200]" onClick={onClose}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-floating" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-black text-duo-text">🔐 ログイン</h2>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Googleログイン */}
+                            <button
+                                onClick={onGoogleLogin}
+                                className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-xl transition-colors"
+                            >
+                                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                </svg>
+                                Googleでログイン
+                            </button>
+
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-gray-300"></div>
+                                </div>
+                                <div className="relative flex justify-center text-sm">
+                                    <span className="px-2 bg-white text-gray-500">または</span>
+                                </div>
+                            </div>
+
+                            {/* メールログイン */}
+                            <form onSubmit={handleEmailSubmit} className="space-y-3">
+                                <input
+                                    type="email"
+                                    placeholder="メールアドレス"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-duo-blue"
+                                    required
+                                />
+                                <input
+                                    type="password"
+                                    placeholder="パスワード"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-duo-blue"
+                                    required
+                                />
+                                <button
+                                    type="submit"
+                                    className="w-full bg-duo-blue hover:bg-duo-blueBorder text-white font-bold py-3 px-4 rounded-xl transition-colors border-b-4 border-duo-blueBorder"
+                                >
+                                    ログイン / 新規登録
+                                </button>
+                            </form>
+
+                            <p className="text-xs text-gray-500 text-center mt-4">
+                                ※ ログインすると、スマホとPCでデータが自動同期されます
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // --- メインアプリ ---
         const App = () => {
             const load = (k, d) => {
@@ -4610,6 +4690,12 @@
             const [draggedTaskId, setDraggedTaskId] = useState(null);
             const [dragOverTaskId, setDragOverTaskId] = useState(null);
 
+            // 🔐 認証状態
+            const [user, setUser] = useState(null);
+            const [authLoading, setAuthLoading] = useState(true);
+            const [showAuthModal, setShowAuthModal] = useState(false);
+            const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
+
             const closeToast = useCallback(() => {
                 setToastMessage(null);
             }, []);
@@ -4686,6 +4772,112 @@
                 return () => window.removeEventListener('keydown', handleDebugKeys);
             }, []);
 
+            // 🔐 認証状態の監視とFirestoreからのデータ読み込み
+            useEffect(() => {
+                if (!window.firebaseAuth) {
+                    setAuthLoading(false);
+                    return;
+                }
+
+                const unsubscribe = window.firebaseAuth.onAuthStateChanged(async (currentUser) => {
+                    console.log('[Auth] Auth state changed:', currentUser?.email || 'Not logged in');
+                    setUser(currentUser);
+
+                    if (currentUser) {
+                        // ログイン済み：Firestoreからデータを読み込む
+                        try {
+                            setSyncStatus('syncing');
+                            const userDocRef = window.firebaseDB.collection('users').doc(currentUser.uid);
+                            const docSnap = await userDocRef.get();
+
+                            if (docSnap.exists) {
+                                const cloudData = docSnap.data();
+                                console.log('[Sync] Loaded data from Firestore');
+
+                                // ローカルデータとクラウドデータの最終更新時刻を比較
+                                const localTimestamp = localStorage.getItem('duo_v18_lastSync') || 0;
+                                const cloudTimestamp = cloudData.lastSync || 0;
+
+                                if (cloudTimestamp > localTimestamp) {
+                                    // クラウドのデータが新しい場合は上書き
+                                    console.log('[Sync] Cloud data is newer, overwriting local data');
+                                    if (cloudData.tasks) setTasks(cloudData.tasks);
+                                    if (cloudData.stats) setStats(cloudData.stats);
+                                    localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                                } else {
+                                    // ローカルが新しい場合はローカルデータをアップロード
+                                    console.log('[Sync] Local data is newer, uploading to Firestore');
+                                    await userDocRef.set({
+                                        tasks,
+                                        stats,
+                                        lastSync: Date.now(),
+                                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                    }, { merge: true });
+                                }
+                            } else {
+                                // 初回ログイン：ローカルデータをアップロード
+                                console.log('[Sync] First login, uploading local data to Firestore');
+                                await userDocRef.set({
+                                    tasks,
+                                    stats,
+                                    lastSync: Date.now(),
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                                localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+                            }
+
+                            setSyncStatus('synced');
+                        } catch (error) {
+                            console.error('[Sync] Error loading from Firestore:', error);
+                            setSyncStatus('error');
+                        }
+                    } else {
+                        // ログアウト状態：ローカルデータのみ使用
+                        console.log('[Auth] Not logged in, using local data only');
+                    }
+
+                    setAuthLoading(false);
+                });
+
+                return () => unsubscribe();
+            }, []); // 初回のみ実行
+
+            // 🔄 リアルタイム同期：他のデバイスからの変更を検知
+            useEffect(() => {
+                if (!user || !window.firebaseDB) return;
+
+                console.log('[Realtime] Setting up realtime sync listener');
+                const userDocRef = window.firebaseDB.collection('users').doc(user.uid);
+
+                const unsubscribe = userDocRef.onSnapshot((docSnap) => {
+                    if (!docSnap.exists) return;
+
+                    const cloudData = docSnap.data();
+                    const cloudTimestamp = cloudData.lastSync || 0;
+                    const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
+
+                    // クラウドのデータが新しい場合のみ更新（自分自身の変更は無視）
+                    if (cloudTimestamp > localTimestamp) {
+                        console.log('[Realtime] Received update from another device');
+                        if (cloudData.tasks) setTasks(cloudData.tasks);
+                        if (cloudData.stats) setStats(cloudData.stats);
+                        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+
+                        // トースト通知
+                        setToastMessage('🔄 他のデバイスから同期されました');
+                    }
+                }, (error) => {
+                    console.error('[Realtime] Error in realtime listener:', error);
+                    setSyncStatus('error');
+                });
+
+                return () => {
+                    console.log('[Realtime] Cleaning up realtime sync listener');
+                    unsubscribe();
+                };
+            }, [user]);
+
             // スリープ検知：タブがアクティブな状態でPCスリープを検知
             useEffect(() => {
                 let lastCheckTime = Date.now();
@@ -4756,10 +4948,41 @@
                 };
             }, []);
 
+            // 💾 ローカルストレージとFirestoreへの保存
             useEffect(() => {
+                // ローカルストレージに保存
                 localStorage.setItem('duo_v18_tasks', JSON.stringify(tasks));
                 localStorage.setItem('duo_v18_stats', JSON.stringify(stats));
-            }, [tasks, stats]);
+
+                // ログイン済みの場合はFirestoreにも保存
+                if (user && window.firebaseDB && !authLoading) {
+                    const saveToFirestore = async () => {
+                        try {
+                            setSyncStatus('syncing');
+                            const userDocRef = window.firebaseDB.collection('users').doc(user.uid);
+                            const timestamp = Date.now();
+
+                            await userDocRef.set({
+                                tasks,
+                                stats,
+                                lastSync: timestamp,
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true });
+
+                            localStorage.setItem('duo_v18_lastSync', timestamp.toString());
+                            setSyncStatus('synced');
+                            console.log('[Sync] Saved to Firestore');
+                        } catch (error) {
+                            console.error('[Sync] Error saving to Firestore:', error);
+                            setSyncStatus('error');
+                        }
+                    };
+
+                    // デバウンス処理（連続した変更を1秒後にまとめて保存）
+                    const timeoutId = setTimeout(saveToFirestore, 1000);
+                    return () => clearTimeout(timeoutId);
+                }
+            }, [tasks, stats, user, authLoading]);
 
             // 🌅 モーニングボーナス宝箱チェック（アプリ起動時）
             useEffect(() => {
@@ -4948,6 +5171,52 @@
 
             const resetBreakTimer = () => {
                 setTimerState({ active: false, mode: 'break', time: 10 * 60 });
+            };
+
+            // 🔐 認証関数
+            const handleGoogleLogin = async () => {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await window.firebaseAuth.signInWithPopup(provider);
+                    setShowAuthModal(false);
+                    setToastMessage('✅ ログインしました');
+                } catch (error) {
+                    console.error('[Auth] Google login error:', error);
+                    setToastMessage('❌ ログインに失敗しました');
+                }
+            };
+
+            const handleEmailLogin = async (email, password) => {
+                try {
+                    await window.firebaseAuth.signInWithEmailAndPassword(email, password);
+                    setShowAuthModal(false);
+                    setToastMessage('✅ ログインしました');
+                } catch (error) {
+                    console.error('[Auth] Email login error:', error);
+                    if (error.code === 'auth/user-not-found') {
+                        // ユーザーが存在しない場合は新規作成
+                        try {
+                            await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
+                            setShowAuthModal(false);
+                            setToastMessage('✅ アカウントを作成しました');
+                        } catch (createError) {
+                            console.error('[Auth] Email signup error:', createError);
+                            setToastMessage('❌ アカウント作成に失敗しました');
+                        }
+                    } else {
+                        setToastMessage('❌ ログインに失敗しました');
+                    }
+                }
+            };
+
+            const handleLogout = async () => {
+                try {
+                    await window.firebaseAuth.signOut();
+                    setToastMessage('✅ ログアウトしました');
+                } catch (error) {
+                    console.error('[Auth] Logout error:', error);
+                    setToastMessage('❌ ログアウトに失敗しました');
+                }
             };
 
             const resurrectStreak = () => {
@@ -5467,6 +5736,40 @@
                                     <span className="text-lg font-black">{stats.tempGems}💎</span>
                                     <span className="text-xs font-bold">燃焼中</span>
                                 </div>
+                            )}
+
+                            {/* 🔐 認証・同期ボタン */}
+                            {!authLoading && (
+                                user ? (
+                                    <div className="flex items-center gap-2">
+                                        {/* 同期状態インジケーター */}
+                                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs ${
+                                            syncStatus === 'synced' ? 'bg-green-50 text-green-600' :
+                                            syncStatus === 'syncing' ? 'bg-blue-50 text-blue-600' :
+                                            'bg-red-50 text-red-600'
+                                        }`}>
+                                            {syncStatus === 'synced' && '✓'}
+                                            {syncStatus === 'syncing' && '⟳'}
+                                            {syncStatus === 'error' && '!'}
+                                        </div>
+                                        {/* ログアウトボタン */}
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-600 transition-colors"
+                                            title={user.email}
+                                        >
+                                            <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
+                                            🚪
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowAuthModal(true)}
+                                        className="flex items-center gap-1 px-3 py-1.5 bg-duo-blue hover:bg-duo-blueBorder text-white rounded-lg text-xs font-bold transition-colors border-b-2 border-duo-blueBorder"
+                                    >
+                                        🔐 ログイン
+                                    </button>
+                                )
                             )}
                         </div>
                     </header>
@@ -6142,6 +6445,15 @@
 
                     {/* 📈 成長グラフモーダル - 削除：ページに移行 */}
 
+                    {/* 🔐 ログインモーダル */}
+                    {showAuthModal && (
+                        <AuthModal
+                            onClose={() => setShowAuthModal(false)}
+                            onGoogleLogin={handleGoogleLogin}
+                            onEmailLogin={handleEmailLogin}
+                        />
+                    )}
+
                     <style>{`
                         @keyframes warp-fade-in { from { opacity: 0; } to { opacity: 1; } }
                         @keyframes warp-lines { from { opacity: 0; transform: scale(1); } to { opacity: 0.8; transform: scale(3); } }
@@ -6175,7 +6487,13 @@
 
             try {
                 firebase.initializeApp(firebaseConfig);
+                const auth = firebase.auth();
+                const db = firebase.firestore();
                 const messaging = firebase.messaging();
+
+                // グローバルに公開（Reactから利用）
+                window.firebaseAuth = auth;
+                window.firebaseDB = db;
 
                 // グローバル関数として公開（Reactから呼ぶため）
                 window.requestNotificationPermission = async () => {
