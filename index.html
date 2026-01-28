@@ -4899,15 +4899,40 @@
                     const cloudTimestamp = cloudData.lastSync || 0;
                     const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
 
+                    // 🛡️ データ保護：タスク数で比較
+                    const cloudTasks = cloudData.tasks || [];
+                    const localTaskCount = tasks.length;
+                    const cloudTaskCount = cloudTasks.length;
+
+                    console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}, Cloud time: ${cloudTimestamp}, Local time: ${localTimestamp}`);
+
                     // クラウドのデータが新しい場合のみ更新（自分自身の変更は無視）
                     if (cloudTimestamp > localTimestamp) {
-                        console.log('[Realtime] Received update from another device');
-                        if (cloudData.tasks) setTasks(cloudData.tasks);
-                        if (cloudData.stats) setStats(cloudData.stats);
-                        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                        // 🛡️ ただし、タスク数が少ない方では多い方を上書きしない
+                        if (cloudTaskCount === 0 && localTaskCount > 0) {
+                            console.log('[Realtime] Ignoring empty cloud data (local has tasks)');
+                            // 空のクラウドデータは無視し、ローカルをアップロード
+                            userDocRef.set({
+                                tasks: tasks,
+                                stats: stats,
+                                lastSync: Date.now(),
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true }).catch(err => console.error('[Realtime] Upload error:', err));
+                        } else if (cloudTaskCount >= localTaskCount) {
+                            // クラウドの方が多いか同じ場合は採用
+                            console.log('[Realtime] Received update from another device');
+                            setTasks(cloudTasks);
+                            if (cloudData.stats) setStats(cloudData.stats);
+                            localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
 
-                        // トースト通知
-                        setToastMessage('🔄 他のデバイスから同期されました');
+                            // トースト通知
+                            if (cloudTaskCount > localTaskCount) {
+                                setToastMessage('🔄 他のデバイスから同期されました');
+                            }
+                        } else {
+                            // ローカルの方が多い場合は無視
+                            console.log('[Realtime] Ignoring cloud data (local has more tasks)');
+                        }
                     }
                 }, (error) => {
                     console.error('[Realtime] Error in realtime listener:', error);
@@ -4918,7 +4943,7 @@
                     console.log('[Realtime] Cleaning up realtime sync listener');
                     unsubscribe();
                 };
-            }, [user]);
+            }, [user, tasks, stats]);
 
             // スリープ検知：タブがアクティブな状態でPCスリープを検知
             useEffect(() => {
