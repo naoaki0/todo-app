@@ -1447,6 +1447,24 @@
                 filter: brightness(1.8) contrast(1.4) saturate(2.5) hue-rotate(30deg);
             }
         }
+
+        @keyframes gold-glitter {
+            0% {
+                background-position: -200% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        @keyframes gold-shine {
+            0%, 100% {
+                filter: brightness(1) saturate(1);
+            }
+            50% {
+                filter: brightness(1.4) saturate(1.3);
+            }
+        }
     </style>
 </head>
 
@@ -1520,6 +1538,7 @@
             Zap: (p) => <SvgIcon {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></SvgIcon>,
             Trash: (p) => <SvgIcon {...p}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></SvgIcon>,
             Bell: (p) => <SvgIcon {...p}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></SvgIcon>,
+            RotateCcw: (p) => <SvgIcon {...p}><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></SvgIcon>,
         };
 
         // --- 共通UI部品 ---
@@ -2032,11 +2051,293 @@
             );
         };
 
-        // 📈 成長グラフコンポーネント - 過去7日間の完了タスク推移
+        // 📈 成長グラフコンポーネント
         const GrowthGraph = ({ history = {}, onClose }) => {
+            const [period, setPeriod] = useState('week'); // 'week', 'month', 'all'
+
+            // 過去7日間のデータを取得
+            const getLast7Days = () => {
+                const days = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    days.push({
+                        date: dateStr,
+                        label: i === 0 ? '今日' : i === 1 ? '昨日' : `${date.getMonth() + 1}/${date.getDate()}`,
+                        count: history[dateStr] || 0
+                    });
+                }
+                return days;
+            };
+
+            // 過去30日間のデータを取得
+            const getLast30Days = () => {
+                const days = [];
+                for (let i = 29; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    days.push({
+                        date: dateStr,
+                        label: i === 0 ? '今日' : `${date.getMonth() + 1}/${date.getDate()}`,
+                        count: history[dateStr] || 0
+                    });
+                }
+                return days;
+            };
+
+            // 全期間のデータを取得（週単位で集計）
+            const getAllTimeData = () => {
+                const dates = Object.keys(history).sort();
+                if (dates.length === 0) return [];
+
+                const weeks = [];
+                const firstDate = new Date(dates[0]);
+                const today = new Date();
+
+                // 週の開始日（日曜日）を取得
+                const getWeekStart = (date) => {
+                    const d = new Date(date);
+                    const day = d.getDay();
+                    d.setDate(d.getDate() - day);
+                    return d.toISOString().split('T')[0];
+                };
+
+                let currentWeekStart = getWeekStart(firstDate);
+                const todayWeekStart = getWeekStart(today);
+
+                while (currentWeekStart <= todayWeekStart) {
+                    let weekTotal = 0;
+                    for (let i = 0; i < 7; i++) {
+                        const d = new Date(currentWeekStart);
+                        d.setDate(d.getDate() + i);
+                        const dateStr = d.toISOString().split('T')[0];
+                        weekTotal += history[dateStr] || 0;
+                    }
+
+                    const weekDate = new Date(currentWeekStart);
+                    weeks.push({
+                        date: currentWeekStart,
+                        label: `${weekDate.getMonth() + 1}/${weekDate.getDate()}`,
+                        count: weekTotal
+                    });
+
+                    // 次の週へ
+                    const nextWeek = new Date(currentWeekStart);
+                    nextWeek.setDate(nextWeek.getDate() + 7);
+                    currentWeekStart = nextWeek.toISOString().split('T')[0];
+                }
+
+                return weeks;
+            };
+
+            // 期間に応じたデータ取得
+            const getData = () => {
+                if (period === 'week') return getLast7Days();
+                if (period === 'month') return getLast30Days();
+                return getAllTimeData();
+            };
+
+            // ランク判定関数
+            const getRank = (count, periodType) => {
+                // 期間に応じて基準を調整
+                const thresholds = {
+                    week: { S: 20, A: 15, B: 10 },
+                    month: { S: 80, A: 60, B: 40 },
+                    all: { S: 100, A: 70, B: 40 }
+                };
+                const t = thresholds[periodType];
+
+                if (count >= t.S) return {
+                    rank: 'S',
+                    color: 'from-yellow-300 to-yellow-500',
+                    textColor: 'text-yellow-600',
+                    bgColor: 'bg-yellow-50',
+                    borderColor: 'border-yellow-300',
+                    icon: '🏆',
+                    stars: '★★★',
+                    label: 'EXCELLENT PERFORMANCE',
+                    nextThreshold: null
+                };
+                if (count >= t.A) return {
+                    rank: 'A',
+                    color: 'from-gray-300 to-gray-400',
+                    textColor: 'text-gray-600',
+                    bgColor: 'bg-gray-50',
+                    borderColor: 'border-gray-300',
+                    icon: '🥈',
+                    stars: '★★',
+                    label: 'GREAT WORK',
+                    nextThreshold: t.S
+                };
+                if (count >= t.B) return {
+                    rank: 'B',
+                    color: 'from-orange-300 to-orange-500',
+                    textColor: 'text-orange-600',
+                    bgColor: 'bg-orange-50',
+                    borderColor: 'border-orange-300',
+                    icon: '🥉',
+                    stars: '★',
+                    label: 'GOOD JOB',
+                    nextThreshold: t.A
+                };
+                return {
+                    rank: 'C',
+                    color: 'from-gray-200 to-gray-300',
+                    textColor: 'text-gray-500',
+                    bgColor: 'bg-gray-50',
+                    borderColor: 'border-gray-300',
+                    icon: '📊',
+                    stars: '',
+                    label: 'KEEP GOING',
+                    nextThreshold: t.B
+                };
+            };
+
+            // 個人ベスト計算
+            const getPersonalBest = () => {
+                const allWeeks = getAllTimeData();
+                if (allWeeks.length === 0) return { count: 0, week: null };
+
+                let maxCount = 0;
+                let maxWeek = null;
+                allWeeks.forEach(week => {
+                    if (week.count > maxCount) {
+                        maxCount = week.count;
+                        maxWeek = week.date;
+                    }
+                });
+
+                return { count: maxCount, week: maxWeek };
+            };
+
+            const days = getData();
+            const currentTotal = days.reduce((sum, d) => sum + d.count, 0);
+            const maxCount = Math.max(...days.map(d => d.count), 1);
+            const rankInfo = getRank(currentTotal, period);
+            const personalBest = getPersonalBest();
+
+            const periodLabel = {
+                week: '今週',
+                month: '今月',
+                all: '全期間'
+            };
+
             return (
                 <div className="max-w-2xl mx-auto pt-8">
                     <h1 className="text-2xl font-black text-gray-800 mb-6">📈 成長グラフ</h1>
+
+                    {/* 期間選択 */}
+                    <div className="flex gap-2 mb-6">
+                        {['week', 'month', 'all'].map(p => (
+                            <button
+                                key={p}
+                                onClick={() => setPeriod(p)}
+                                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                                    period === p
+                                        ? 'bg-blue-500 text-white shadow-lg'
+                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                }`}
+                            >
+                                {p === 'week' ? '週' : p === 'month' ? '月' : '全期間'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* 達成ランク表示 */}
+                    <div className={`text-center py-6 px-6 rounded-xl mb-6 shadow-lg border-2 ${rankInfo.borderColor} ${rankInfo.bgColor}`}>
+                        <div className="text-sm font-bold text-gray-500 mb-2">{periodLabel[period]}の達成ランク</div>
+                        <div className={`text-5xl font-black mb-2 bg-gradient-to-r ${rankInfo.color} bg-clip-text text-transparent`}>
+                            {rankInfo.stars} {rankInfo.rank} {rankInfo.stars}
+                        </div>
+                        <div className="text-2xl mb-3">{rankInfo.icon}</div>
+                        <div className={`text-sm font-black ${rankInfo.textColor} mb-4`}>{rankInfo.label}</div>
+
+                        {/* 進捗バー */}
+                        <div className="mb-3">
+                            <div className="text-xs font-bold text-gray-500 mb-1">
+                                {periodLabel[period]}: {currentTotal}タスク完了
+                            </div>
+                            {rankInfo.nextThreshold && (
+                                <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full bg-gradient-to-r ${rankInfo.color} transition-all duration-500`}
+                                        style={{
+                                            width: `${Math.min(100, (currentTotal / rankInfo.nextThreshold) * 100)}%`
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 次ランクまで */}
+                        {rankInfo.nextThreshold && (
+                            <div className="text-sm font-black text-blue-600">
+                                🎯 あと{rankInfo.nextThreshold - currentTotal}タスクで次ランク！
+                            </div>
+                        )}
+                        {!rankInfo.nextThreshold && (
+                            <div className="text-sm font-black text-yellow-600">
+                                ✨ 最高ランク達成！
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 個人ベスト記録 */}
+                    {personalBest.count > 0 && period === 'week' && (
+                        <div className="text-center bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 mb-6 border-2 border-purple-200 shadow-sm">
+                            <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">自己ベスト</div>
+                            <div className="text-3xl font-black text-purple-600">{personalBest.count}タスク</div>
+                            {currentTotal >= personalBest.count ? (
+                                <div className="text-sm font-black text-pink-600 mt-2">
+                                    🎉 自己ベスト更新中！
+                                </div>
+                            ) : (
+                                <div className="text-sm font-bold text-gray-600 mt-2">
+                                    あと{personalBest.count - currentTotal}タスクで自己ベスト！
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 棒グラフ */}
+                    <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-gray-200 mb-6">
+                        <div className={`flex items-end justify-between gap-${period === 'month' ? '1' : '3'} h-56`}>
+                            {days.map((day, i) => {
+                                const maxHeight = 224 * 0.8;
+                                const heightPx = day.count === 0 ? 2 : Math.max(8, (day.count / maxCount) * maxHeight);
+                                const isToday = period === 'week' ? i === 6 : period === 'month' ? i === 29 : i === days.length - 1;
+                                return (
+                                    <div key={day.date} className="flex-1 flex flex-col items-center">
+                                        <div className={`text-${period === 'month' ? '2xs' : 'sm'} font-black text-gray-700 mb-2`}>
+                                            {day.count}
+                                        </div>
+                                        <div
+                                            className={`w-full rounded-t-xl transition-all ${
+                                                isToday ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
+                                            }`}
+                                            style={{
+                                                height: `${heightPx}px`
+                                            }}
+                                        />
+                                        <div className={`text-${period === 'month' ? '2xs' : 'xs'} font-bold mt-2 ${
+                                            isToday ? 'text-blue-500' : 'text-gray-500'
+                                        }`}>
+                                            {day.label}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* 合計 */}
+                    <div className="text-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200 shadow-sm">
+                        <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">{periodLabel[period]}の合計</div>
+                        <div className="text-4xl font-black text-blue-500">{currentTotal}</div>
+                        <div className="text-xs font-bold text-gray-500 mt-1">タスク完了</div>
+                    </div>
                 </div>
             );
         };
@@ -4264,6 +4565,7 @@
                 lastCompletionTime: 0, // 最後のタスク完了時刻
                 // 📈 成長グラフ用
                 dailyCompletionHistory: {}, // { '2026-01-16': 5, '2026-01-15': 3, ... }
+                goal: null, // ユーザーの目標
             }));
 
             const SECTION_SIZE = 4;
@@ -4273,7 +4575,7 @@
             const [isShopOpen, setIsShopOpen] = useState(false);
             const [isDoubleChance, setIsDoubleChance] = useState(false);
             const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-            const [timerState, setTimerState] = useState({ active: false, time: 52 * 60, mode: 'work' });
+            const [timerState, setTimerState] = useState({ active: false, time: 10 * 60, mode: 'break' });
             const [isCompletedOpen, setIsCompletedOpen] = useState(false);
             const [toastMessage, setToastMessage] = useState(null);
             const [showChestModal, setShowChestModal] = useState({ show: false, isWakeup: false });
@@ -4635,34 +4937,17 @@
                 let timer = null;
                 if (timerState.active && timerState.time > 0) {
                     timer = setInterval(() => setTimerState(s => ({ ...s, time: s.time - 1 })), 1000);
-                } else if (timerState.time === 0) {
-                    const isWork = timerState.mode === 'work';
-                    setTimerState({ active: false, mode: isWork ? 'break' : 'work', time: isWork ? 17 * 60 : 52 * 60 });
+                } else if (timerState.time === 0 && timerState.active) {
+                    // 休憩タイマー終了：リセットして停止
+                    setTimerState({ active: false, mode: 'break', time: 10 * 60 });
                     AudioEngine.play([880, 440], 'sine', 0.15, 0.2);
-
-                    setStats(s => {
-                        if (s.wager.active) {
-                            setToastMessage("倍か無か... 失敗 😢");
-                            return { ...s, wager: { active: false } };
-                        }
-                        return s;
-                    });
+                    setToastMessage("🎉 休憩終了！さあタスクに戻りましょう");
                 }
                 return () => clearInterval(timer);
             }, [timerState.active, timerState.time]);
 
-            const switchTimerMode = (mode) => {
-                const time = mode === 'work' ? 52 * 60 : 17 * 60;
-                setTimerState({ active: false, mode, time });
-                if (mode === 'break') {
-                    setStats(s => {
-                        if (s.wager.active) {
-                            setToastMessage("倍か無か... 失敗 😢");
-                            return { ...s, wager: { active: false } };
-                        }
-                        return s;
-                    });
-                }
+            const resetBreakTimer = () => {
+                setTimerState({ active: false, mode: 'break', time: 10 * 60 });
             };
 
             const resurrectStreak = () => {
@@ -5058,9 +5343,14 @@
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
 
+            // ヘッダーMVP進捗バー用（全タスクベース）
+            const allIncompleteTasks = tasks.filter(t => !t.completed);
+
             const totalTasks = tasks.length;
             const completedTasksCount = tasks.filter(t => t.completed).length;
             const completionRate = totalTasks === 0 ? 0 : Math.round((completedTasksCount / totalTasks) * 100);
+            const nextCompletionRate = totalTasks === 0 ? 0 : Math.round(((completedTasksCount + 1) / totalTasks) * 100);
+            const progressDelta = nextCompletionRate - completionRate;
 
             // Calculate Section 1 completion for Rocket Pulse
             let section1Tasks = [];
@@ -5100,12 +5390,33 @@
                         {/* Center: Project Progress Bar (MVP Progress) */}
                         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-[500px] px-4 hidden md:block">
                             <div className={`relative h-8 bg-gray-100 rounded-full overflow-hidden border-2 border-gray-200 shadow-inner ${levelGlow ? 'animate-pulse' : ''}`}>
-                                <div className={`h-full bg-gradient-to-r from-duo-green to-duo-greenHighlight transition-all duration-700 ease-out relative ${levelGlow ? 'progress-glow brightness-125' : ''}`} style={{ width: `${completionRate}%` }}>
-                                    <div className="absolute inset-0 bg-white/20 animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
+                                {/* 現在の進捗（グレー系・控えめ） */}
+                                <div className={`h-full bg-gradient-to-r from-slate-300 to-slate-400 relative ${levelGlow ? 'progress-glow brightness-125' : ''}`} style={{
+                                    width: `${completionRate}%`,
+                                    transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                                }}>
+                                    <div className="absolute inset-0 bg-white/10" style={{ backgroundSize: '200% 100%' }} />
                                 </div>
+
+                                {/* 次タスク完了時の進捗予告（控えめなストライプ） */}
+                                {allIncompleteTasks.length > 0 && (
+                                    <div
+                                        className="absolute top-0 h-full"
+                                        style={{
+                                            left: `${completionRate}%`,
+                                            width: `${progressDelta}%`,
+                                            background: 'repeating-linear-gradient(45deg, rgba(148, 163, 184, 0.5), rgba(148, 163, 184, 0.5) 8px, rgba(100, 116, 139, 0.5) 8px, rgba(100, 116, 139, 0.5) 16px)',
+                                            transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, width 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
+                                            animation: completionRate >= 90 ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
+                                        }}
+                                    />
+                                )}
+
                                 <div className={`absolute inset-0 flex items-center justify-center gap-2 z-10 transition-transform ${progressBounce ? 'scale-110' : ''}`}>
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-40" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.8)' }}>MVP Progress</span>
-                                    <span className={`text-xs font-black ${progressBounce ? 'text-duo-green' : 'text-slate-600'}`} style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>{completionRate}%</span>
+                                    <span className={`text-xs font-black ${progressBounce ? 'text-slate-700' : 'text-slate-600'}`} style={{ textShadow: '0 1px 0 rgba(255,255,255,0.6)' }}>
+                                        {completionRate >= 70 ? `残り${100 - completionRate}%` : `${completionRate}%`}
+                                    </span>
                                 </div>
                                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-lg z-20" style={{ animation: section1Rate > 0 && section1Rate < 1 ? `pulse ${pulseDuration} cubic-bezier(0.4, 0, 0.6, 1) infinite` : 'none', color: section1Rate > 0.8 ? '#ef4444' : 'currentColor', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))' }}>🚀</div>
                             </div>
@@ -5226,19 +5537,23 @@
                             </div>
                         </div>
 
-                        {/* Compact Focus Bar (Moved to Sidebar) */}
+                        {/* 休憩タイマー (Moved to Sidebar) */}
                         <div className="px-4 mb-6">
-                            <div className="w-full bg-white border-2 border-gray-200 border-b-4 rounded-2xl p-2 flex items-center justify-between shadow-sm hover:shadow-md transition-all">
-                                <button onClick={() => setTimerState(s => ({ ...s, active: !s.active }))}
-                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${btn3DClass} ${timerState.active ? 'bg-gray-100 text-gray-400 border-gray-300' : 'bg-duo-blue text-white border-duo-blueBorder'}`}>
-                                    {timerState.active ? <Icons.Pause size={18} fill="currentColor" /> : <Icons.Play size={18} fill="currentColor" className="ml-0.5" />}
-                                </button>
-                                <div className="text-xl font-black font-mono tracking-tighter text-duo-text">
-                                    {Math.floor(timerState.time / 60)}:{(timerState.time % 60).toString().padStart(2, '0')}
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <button onClick={() => switchTimerMode('work')} className={`text-[9px] font-black px-2 py-0.5 rounded ${timerState.mode === 'work' ? 'bg-duo-blue/10 text-duo-blue' : 'text-gray-400'}`}>集中</button>
-                                    <button onClick={() => switchTimerMode('break')} className={`text-[9px] font-black px-2 py-0.5 rounded ${timerState.mode === 'break' ? 'bg-duo-green/10 text-duo-green' : 'text-gray-400'}`}>休憩</button>
+                            <div className="w-full bg-white border-2 border-gray-200 border-b-4 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all">
+                                <div className="text-xs font-bold text-gray-500 mb-2 text-center">☕ 休憩タイマー (10分)</div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <button onClick={() => setTimerState(s => ({ ...s, active: !s.active }))}
+                                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${btn3DClass} ${timerState.active ? 'bg-gray-100 text-gray-400 border-gray-300' : 'bg-duo-green text-white border-green-600'}`}>
+                                        {timerState.active ? <Icons.Pause size={20} fill="currentColor" /> : <Icons.Play size={20} fill="currentColor" className="ml-0.5" />}
+                                    </button>
+                                    <div className="flex-1 text-center text-2xl font-black font-mono tracking-tight text-duo-text">
+                                        {Math.floor(timerState.time / 60)}:{(timerState.time % 60).toString().padStart(2, '0')}
+                                    </div>
+                                    <button onClick={resetBreakTimer}
+                                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${btn3DClass} bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200`}
+                                        title="リセット">
+                                        <Icons.RotateCcw size={18} />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -5589,22 +5904,59 @@
                                                             const sectionTotal = currentSectionAllTasks.length;
                                                             const progressPercent = sectionTotal > 0 ? Math.round((completedCount / sectionTotal) * 100) : 0;
 
+                                                            // 次のタスクを完了した場合の進捗を計算
+                                                            const nextProgressPercent = sectionTotal > 0 ? Math.round(((completedCount + 1) / sectionTotal) * 100) : 0;
+                                                            const progressDelta = nextProgressPercent - progressPercent;
+
                                                             return (
                                                                 <div className="px-4 pb-3">
                                                                     {/* 進捗バー */}
                                                                     <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
+                                                                        {/* 現在の進捗（実線・青色） */}
                                                                         <div
-                                                                            className={`h-full transition-all duration-500 ${progressPercent >= 80 ? 'bg-gradient-to-r from-green-400 to-green-500' : progressPercent >= 50 ? 'bg-gradient-to-r from-blue-400 to-blue-500' : 'bg-gradient-to-r from-yellow-400 to-yellow-500'}`}
-                                                                            style={{ width: `${progressPercent}%` }}
+                                                                            className="h-full bg-gradient-to-r from-blue-400 to-blue-500"
+                                                                            style={{
+                                                                                width: `${progressPercent}%`,
+                                                                                transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
+                                                                            }}
                                                                         >
                                                                             <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                                                         </div>
+
+                                                                        {/* 次のタスク完了時の進捗予告（金色ストライプ・キラキラ） */}
+                                                                        {incompleteCount > 0 && (
+                                                                            <div
+                                                                                className="absolute top-0 h-full overflow-hidden"
+                                                                                style={{
+                                                                                    left: `${progressPercent}%`,
+                                                                                    width: `${progressDelta}%`,
+                                                                                    background: 'repeating-linear-gradient(45deg, rgb(251, 191, 36), rgb(251, 191, 36) 8px, rgb(234, 179, 8) 8px, rgb(234, 179, 8) 16px)',
+                                                                                    boxShadow: 'inset 0 0 10px rgba(255, 215, 0, 0.6), 0 0 15px rgba(251, 191, 36, 0.4)',
+                                                                                    transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, width 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
+                                                                                    animation: nextProgressPercent >= 90
+                                                                                        ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite, gold-shine 0.8s ease-in-out infinite'
+                                                                                        : 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite, gold-shine 1.2s ease-in-out infinite'
+                                                                                }}
+                                                                            >
+                                                                                {/* キラキラ光が流れる効果 */}
+                                                                                <div
+                                                                                    className="absolute inset-0"
+                                                                                    style={{
+                                                                                        background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)',
+                                                                                        backgroundSize: '200% 100%',
+                                                                                        animation: 'gold-glitter 2s linear infinite'
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                     <div className="text-center text-xs text-gray-600 font-bold">
                                                                         {remaining === 1 ? (
                                                                             <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
+                                                                        ) : nextProgressPercent >= 90 ? (
+                                                                            <span className="text-orange-600">⚡ 次のタスクで<span className="text-lg">{nextProgressPercent}%</span>！ラストスパート！</span>
                                                                         ) : (
-                                                                            <span>あと{remaining}タスクで50💎 ({progressPercent}%完了)</span>
+                                                                            <span>あと{remaining}タスクで50💎</span>
                                                                         )}
                                                                     </div>
                                                                 </div>
