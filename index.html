@@ -4899,16 +4899,17 @@
                     const cloudTimestamp = cloudData.lastSync || 0;
                     const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
 
-                    // 🛡️ データ保護：タスク数で比較
+                    // 🛡️ データ保護：タスク数とタイムスタンプを組み合わせて判断
                     const cloudTasks = cloudData.tasks || [];
                     const localTaskCount = tasks.length;
                     const cloudTaskCount = cloudTasks.length;
+                    const taskCountDiff = Math.abs(cloudTaskCount - localTaskCount);
 
-                    console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}, Cloud time: ${cloudTimestamp}, Local time: ${localTimestamp}`);
+                    console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}, Diff: ${taskCountDiff}, Cloud time: ${cloudTimestamp}, Local time: ${localTimestamp}`);
 
                     // クラウドのデータが新しい場合のみ更新（自分自身の変更は無視）
                     if (cloudTimestamp > localTimestamp) {
-                        // 🛡️ ただし、タスク数が少ない方では多い方を上書きしない
+                        // 🛡️ ケース1: 一方が空の場合は特別扱い
                         if (cloudTaskCount === 0 && localTaskCount > 0) {
                             console.log('[Realtime] Ignoring empty cloud data (local has tasks)');
                             // 空のクラウドデータは無視し、ローカルをアップロード
@@ -4918,20 +4919,36 @@
                                 lastSync: Date.now(),
                                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                             }, { merge: true }).catch(err => console.error('[Realtime] Upload error:', err));
-                        } else if (cloudTaskCount >= localTaskCount) {
-                            // クラウドの方が多いか同じ場合は採用
-                            console.log('[Realtime] Received update from another device');
+                        } else if (localTaskCount === 0 && cloudTaskCount > 0) {
+                            console.log('[Realtime] Local is empty, using cloud data');
+                            setTasks(cloudTasks);
+                            if (cloudData.stats) setStats(cloudData.stats);
+                            localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                            setToastMessage('🔄 他のデバイスから同期されました');
+                        }
+                        // 🛡️ ケース2: タスク数の差が大きい（5個以上）場合は、多い方を優先
+                        else if (taskCountDiff >= 5) {
+                            if (cloudTaskCount > localTaskCount) {
+                                console.log('[Realtime] Cloud has significantly more tasks, using cloud data');
+                                setTasks(cloudTasks);
+                                if (cloudData.stats) setStats(cloudData.stats);
+                                localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                                setToastMessage('🔄 他のデバイスから同期されました');
+                            } else {
+                                console.log('[Realtime] Local has significantly more tasks, ignoring cloud data');
+                            }
+                        }
+                        // 🛡️ ケース3: タスク数の差が小さい（4個以内）→ タイムスタンプで判断
+                        else {
+                            console.log('[Realtime] Task count difference is small, using timestamp');
                             setTasks(cloudTasks);
                             if (cloudData.stats) setStats(cloudData.stats);
                             localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
 
-                            // トースト通知
-                            if (cloudTaskCount > localTaskCount) {
+                            // タスクの完了状態の変更など、通知は控えめに
+                            if (taskCountDiff > 0) {
                                 setToastMessage('🔄 他のデバイスから同期されました');
                             }
-                        } else {
-                            // ローカルの方が多い場合は無視
-                            console.log('[Realtime] Ignoring cloud data (local has more tasks)');
                         }
                     }
                 }, (error) => {
