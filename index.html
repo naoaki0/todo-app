@@ -4794,28 +4794,70 @@
                                 const cloudData = docSnap.data();
                                 console.log('[Sync] Loaded data from Firestore');
 
-                                // ローカルデータとクラウドデータの最終更新時刻を比較
-                                const localTimestamp = localStorage.getItem('duo_v18_lastSync') || 0;
-                                const cloudTimestamp = cloudData.lastSync || 0;
+                                // 🛡️ データ保護ロジック：タスク数で比較
+                                const cloudTasks = cloudData.tasks || [];
+                                const localTasks = tasks || [];
+                                const cloudTaskCount = cloudTasks.length;
+                                const localTaskCount = localTasks.length;
 
-                                if (cloudTimestamp > localTimestamp) {
-                                    // クラウドのデータが新しい場合は上書き
-                                    console.log('[Sync] Cloud data is newer, overwriting local data');
-                                    if (cloudData.tasks) setTasks(cloudData.tasks);
-                                    if (cloudData.stats) setStats(cloudData.stats);
-                                    localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-                                } else {
-                                    // ローカルが新しい場合はローカルデータをアップロード
-                                    console.log('[Sync] Local data is newer, uploading to Firestore');
+                                console.log(`[Sync] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}`);
+
+                                // データが多い方を優先（空のデータでの上書きを防止）
+                                if (cloudTaskCount === 0 && localTaskCount > 0) {
+                                    // クラウドが空で、ローカルにデータがある → ローカルをアップロード
+                                    console.log('[Sync] Cloud is empty, uploading local data');
                                     await userDocRef.set({
-                                        tasks,
+                                        tasks: localTasks,
                                         stats,
                                         lastSync: Date.now(),
                                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                                     }, { merge: true });
+                                    localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+                                } else if (localTaskCount === 0 && cloudTaskCount > 0) {
+                                    // ローカルが空で、クラウドにデータがある → クラウドを採用
+                                    console.log('[Sync] Local is empty, using cloud data');
+                                    setTasks(cloudTasks);
+                                    if (cloudData.stats) setStats(cloudData.stats);
+                                    localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+                                } else if (cloudTaskCount > localTaskCount) {
+                                    // クラウドの方が多い → クラウドを採用
+                                    console.log('[Sync] Cloud has more tasks, using cloud data');
+                                    setTasks(cloudTasks);
+                                    if (cloudData.stats) setStats(cloudData.stats);
+                                    localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+                                } else if (localTaskCount > cloudTaskCount) {
+                                    // ローカルの方が多い → ローカルをアップロード
+                                    console.log('[Sync] Local has more tasks, uploading local data');
+                                    await userDocRef.set({
+                                        tasks: localTasks,
+                                        stats,
+                                        lastSync: Date.now(),
+                                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                    }, { merge: true });
+                                    localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+                                } else {
+                                    // タスク数が同じ → タイムスタンプで比較
+                                    const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
+                                    const cloudTimestamp = cloudData.lastSync || 0;
+
+                                    if (cloudTimestamp > localTimestamp) {
+                                        console.log('[Sync] Same task count, cloud is newer');
+                                        setTasks(cloudTasks);
+                                        if (cloudData.stats) setStats(cloudData.stats);
+                                        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                                    } else {
+                                        console.log('[Sync] Same task count, local is newer, uploading');
+                                        await userDocRef.set({
+                                            tasks: localTasks,
+                                            stats,
+                                            lastSync: Date.now(),
+                                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                        }, { merge: true });
+                                        localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+                                    }
                                 }
                             } else {
-                                // 初回ログイン：ローカルデータをアップロード
+                                // 初回ログイン：ローカルデータをアップロード（空でもOK）
                                 console.log('[Sync] First login, uploading local data to Firestore');
                                 await userDocRef.set({
                                     tasks,
