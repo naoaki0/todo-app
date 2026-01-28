@@ -5062,8 +5062,8 @@
                         }
                     };
 
-                    // デバウンス処理（連続した変更を1秒後にまとめて保存）
-                    const timeoutId = setTimeout(saveToFirestore, 1000);
+                    // デバウンス処理（連続した変更を5秒後にまとめて保存）
+                    const timeoutId = setTimeout(saveToFirestore, 5000);
                     return () => clearTimeout(timeoutId);
                 }
             }, [tasks, stats, user, authLoading]);
@@ -5821,40 +5821,6 @@
                                     <span className="text-xs font-bold">燃焼中</span>
                                 </div>
                             )}
-
-                            {/* 🔐 認証・同期ボタン */}
-                            {!authLoading && (
-                                user ? (
-                                    <div className="flex items-center gap-2">
-                                        {/* 同期状態インジケーター */}
-                                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs ${
-                                            syncStatus === 'synced' ? 'bg-green-50 text-green-600' :
-                                            syncStatus === 'syncing' ? 'bg-blue-50 text-blue-600' :
-                                            'bg-red-50 text-red-600'
-                                        }`}>
-                                            {syncStatus === 'synced' && '✓'}
-                                            {syncStatus === 'syncing' && '⟳'}
-                                            {syncStatus === 'error' && '!'}
-                                        </div>
-                                        {/* ログアウトボタン */}
-                                        <button
-                                            onClick={handleLogout}
-                                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-600 transition-colors"
-                                            title={user.email}
-                                        >
-                                            <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
-                                            🚪
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={() => setShowAuthModal(true)}
-                                        className="flex items-center gap-1 px-3 py-1.5 bg-duo-blue hover:bg-duo-blueBorder text-white rounded-lg text-xs font-bold transition-colors border-b-2 border-duo-blueBorder"
-                                    >
-                                        🔐 ログイン
-                                    </button>
-                                )
-                            )}
                         </div>
                     </header>
 
@@ -6054,6 +6020,56 @@
                                     </div>
                                 )}
                             </div>
+
+                            {/* 🔐 認証・同期セクション */}
+                            {!authLoading && (
+                                <div className="pt-6 border-t-2 border-duo-gray/50 pb-6">
+                                    {user ? (
+                                        <div className="px-4 space-y-3">
+                                            {/* ユーザー情報 */}
+                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                <span className="font-bold">👤</span>
+                                                <span className="font-medium truncate">{user.email}</span>
+                                            </div>
+
+                                            {/* 同期状態 */}
+                                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold ${
+                                                syncStatus === 'synced' ? 'bg-green-50 text-green-600' :
+                                                syncStatus === 'syncing' ? 'bg-blue-50 text-blue-600' :
+                                                'bg-red-50 text-red-600'
+                                            }`}>
+                                                <span>
+                                                    {syncStatus === 'synced' && '✓ 同期完了'}
+                                                    {syncStatus === 'syncing' && '⟳ 同期中...'}
+                                                    {syncStatus === 'error' && '! 同期エラー'}
+                                                </span>
+                                            </div>
+
+                                            {/* ログアウトボタン */}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-bold text-gray-600 transition-colors"
+                                            >
+                                                <span>ログアウト</span>
+                                                <span>🚪</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="px-4">
+                                            <button
+                                                onClick={() => setShowAuthModal(true)}
+                                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-duo-blue hover:bg-duo-blueBorder text-white rounded-xl text-sm font-bold transition-colors border-b-4 border-duo-blueBorder active:border-b-2 active:translate-y-[2px]"
+                                            >
+                                                <span>🔐</span>
+                                                <span>ログインして同期</span>
+                                            </button>
+                                            <p className="mt-2 text-[10px] text-gray-400 text-center">
+                                                スマホとPCでデータを同期
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </aside>
 
