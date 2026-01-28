@@ -2140,9 +2140,8 @@
                 return getAllTimeData();
             };
 
-            // ランク判定関数
+            // ランク判定関数（シンプル版）
             const getRank = (count, periodType) => {
-                // 期間に応じて基準を調整
                 const thresholds = {
                     week: { S: 20, A: 15, B: 10 },
                     month: { S: 80, A: 60, B: 40 },
@@ -2150,50 +2149,10 @@
                 };
                 const t = thresholds[periodType];
 
-                if (count >= t.S) return {
-                    rank: 'S',
-                    color: 'from-yellow-300 to-yellow-500',
-                    textColor: 'text-yellow-600',
-                    bgColor: 'bg-yellow-50',
-                    borderColor: 'border-yellow-300',
-                    icon: '🏆',
-                    stars: '★★★',
-                    label: 'EXCELLENT PERFORMANCE',
-                    nextThreshold: null
-                };
-                if (count >= t.A) return {
-                    rank: 'A',
-                    color: 'from-gray-300 to-gray-400',
-                    textColor: 'text-gray-600',
-                    bgColor: 'bg-gray-50',
-                    borderColor: 'border-gray-300',
-                    icon: '🥈',
-                    stars: '★★',
-                    label: 'GREAT WORK',
-                    nextThreshold: t.S
-                };
-                if (count >= t.B) return {
-                    rank: 'B',
-                    color: 'from-orange-300 to-orange-500',
-                    textColor: 'text-orange-600',
-                    bgColor: 'bg-orange-50',
-                    borderColor: 'border-orange-300',
-                    icon: '🥉',
-                    stars: '★',
-                    label: 'GOOD JOB',
-                    nextThreshold: t.A
-                };
-                return {
-                    rank: 'C',
-                    color: 'from-gray-200 to-gray-300',
-                    textColor: 'text-gray-500',
-                    bgColor: 'bg-gray-50',
-                    borderColor: 'border-gray-300',
-                    icon: '📊',
-                    stars: '',
-                    label: 'KEEP GOING',
-                    nextThreshold: t.B
-                };
+                if (count >= t.S) return { rank: 'S', label: 'Excellent', nextThreshold: null };
+                if (count >= t.A) return { rank: 'A', label: 'Great', nextThreshold: t.S };
+                if (count >= t.B) return { rank: 'B', label: 'Good', nextThreshold: t.A };
+                return { rank: 'C', label: 'Keep Going', nextThreshold: t.B };
             };
 
             // 個人ベスト計算
@@ -2220,112 +2179,60 @@
             const personalBest = getPersonalBest();
 
             const periodLabel = {
-                week: '今週',
-                month: '今月',
-                all: '全期間'
+                week: 'This Week',
+                month: 'This Month',
+                all: 'All Time'
             };
 
             return (
-                <div className="max-w-2xl mx-auto pt-8">
-                    <h1 className="text-2xl font-black text-gray-800 mb-6">📈 成長グラフ</h1>
-
-                    {/* 期間選択 */}
-                    <div className="flex gap-2 mb-6">
+                <div className="max-w-2xl mx-auto pt-12 px-6">
+                    {/* 期間選択タブ */}
+                    <div className="flex gap-1 mb-12 bg-gray-100 rounded-xl p-1">
                         {['week', 'month', 'all'].map(p => (
                             <button
                                 key={p}
                                 onClick={() => setPeriod(p)}
-                                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                                className={`flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm transition-all ${
                                     period === p
-                                        ? 'bg-blue-500 text-white shadow-lg'
-                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                        ? 'bg-white text-gray-900 shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
-                                {p === 'week' ? '週' : p === 'month' ? '月' : '全期間'}
+                                {p === 'week' ? 'Week' : p === 'month' ? 'Month' : 'All Time'}
                             </button>
                         ))}
                     </div>
 
-                    {/* 達成ランク表示 */}
-                    <div className={`text-center py-6 px-6 rounded-xl mb-6 shadow-lg border-2 ${rankInfo.borderColor} ${rankInfo.bgColor}`}>
-                        <div className="text-sm font-bold text-gray-500 mb-2">{periodLabel[period]}の達成ランク</div>
-                        <div className={`text-5xl font-black mb-2 bg-gradient-to-r ${rankInfo.color} bg-clip-text text-transparent`}>
-                            {rankInfo.stars} {rankInfo.rank} {rankInfo.stars}
-                        </div>
-                        <div className="text-2xl mb-3">{rankInfo.icon}</div>
-                        <div className={`text-sm font-black ${rankInfo.textColor} mb-4`}>{rankInfo.label}</div>
-
-                        {/* 進捗バー */}
-                        <div className="mb-3">
-                            <div className="text-xs font-bold text-gray-500 mb-1">
-                                {periodLabel[period]}: {currentTotal}タスク完了
-                            </div>
-                            {rankInfo.nextThreshold && (
-                                <div className="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full bg-gradient-to-r ${rankInfo.color} transition-all duration-500`}
-                                        style={{
-                                            width: `${Math.min(100, (currentTotal / rankInfo.nextThreshold) * 100)}%`
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 次ランクまで */}
-                        {rankInfo.nextThreshold && (
-                            <div className="text-sm font-black text-blue-600">
-                                🎯 あと{rankInfo.nextThreshold - currentTotal}タスクで次ランク！
-                            </div>
-                        )}
-                        {!rankInfo.nextThreshold && (
-                            <div className="text-sm font-black text-yellow-600">
-                                ✨ 最高ランク達成！
-                            </div>
-                        )}
+                    {/* メインスタッツ */}
+                    <div className="text-center mb-12">
+                        <div className="text-5xl font-bold text-gray-900 mb-2">{currentTotal}</div>
+                        <div className="text-sm font-medium text-gray-500 uppercase tracking-wide">{periodLabel[period]}</div>
                     </div>
 
-                    {/* 個人ベスト記録 */}
-                    {personalBest.count > 0 && period === 'week' && (
-                        <div className="text-center bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 mb-6 border-2 border-purple-200 shadow-sm">
-                            <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">自己ベスト</div>
-                            <div className="text-3xl font-black text-purple-600">{personalBest.count}タスク</div>
-                            {currentTotal >= personalBest.count ? (
-                                <div className="text-sm font-black text-pink-600 mt-2">
-                                    🎉 自己ベスト更新中！
-                                </div>
-                            ) : (
-                                <div className="text-sm font-bold text-gray-600 mt-2">
-                                    あと{personalBest.count - currentTotal}タスクで自己ベスト！
-                                </div>
-                            )}
-                        </div>
-                    )}
-
                     {/* 棒グラフ */}
-                    <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-gray-200 mb-6">
-                        <div className={`flex items-end justify-between gap-${period === 'month' ? '1' : '3'} h-56`}>
+                    <div className="mb-16">
+                        <div className={`flex items-end justify-between gap-${period === 'month' ? '0.5' : '2'} h-48`}>
                             {days.map((day, i) => {
-                                const maxHeight = 224 * 0.8;
-                                const heightPx = day.count === 0 ? 2 : Math.max(8, (day.count / maxCount) * maxHeight);
+                                const maxHeight = 192 * 0.85;
+                                const heightPx = day.count === 0 ? 1 : Math.max(4, (day.count / maxCount) * maxHeight);
                                 const isToday = period === 'week' ? i === 6 : period === 'month' ? i === 29 : i === days.length - 1;
                                 return (
-                                    <div key={day.date} className="flex-1 flex flex-col items-center">
-                                        <div className={`text-${period === 'month' ? '2xs' : 'sm'} font-black text-gray-700 mb-2`}>
-                                            {day.count}
+                                    <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
+                                        <div className={`text-xs font-semibold ${day.count > 0 ? 'text-gray-400' : 'text-gray-300'}`}>
+                                            {day.count > 0 ? day.count : ''}
                                         </div>
                                         <div
-                                            className={`w-full rounded-t-xl transition-all ${
-                                                isToday ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
+                                            className={`w-full rounded-full transition-all duration-300 ${
+                                                isToday ? 'bg-black' : day.count > 0 ? 'bg-gray-300' : 'bg-gray-200'
                                             }`}
                                             style={{
                                                 height: `${heightPx}px`
                                             }}
                                         />
-                                        <div className={`text-${period === 'month' ? '2xs' : 'xs'} font-bold mt-2 ${
-                                            isToday ? 'text-blue-500' : 'text-gray-500'
+                                        <div className={`text-xs font-medium ${
+                                            isToday ? 'text-gray-900' : 'text-gray-400'
                                         }`}>
-                                            {day.label}
+                                            {period === 'month' ? (day.label.split('/')[1] || day.label) : day.label}
                                         </div>
                                     </div>
                                 );
@@ -2333,12 +2240,46 @@
                         </div>
                     </div>
 
-                    {/* 合計 */}
-                    <div className="text-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200 shadow-sm">
-                        <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">{periodLabel[period]}の合計</div>
-                        <div className="text-4xl font-black text-blue-500">{currentTotal}</div>
-                        <div className="text-xs font-bold text-gray-500 mt-1">タスク完了</div>
+                    {/* ランクとベスト（横並び） */}
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        {/* ランク表示 */}
+                        <div className="bg-gray-50 rounded-2xl p-6 text-center">
+                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Rank</div>
+                            <div className="text-4xl font-bold text-gray-900 mb-2">{rankInfo.rank}</div>
+                            <div className="text-xs font-medium text-gray-500">{rankInfo.label}</div>
+                        </div>
+
+                        {/* 個人ベスト */}
+                        {personalBest.count > 0 && period === 'week' && (
+                            <div className="bg-gray-50 rounded-2xl p-6 text-center">
+                                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Best</div>
+                                <div className="text-4xl font-bold text-gray-900 mb-2">{personalBest.count}</div>
+                                <div className="text-xs font-medium text-gray-500">
+                                    {currentTotal >= personalBest.count ? 'New Record' : 'Personal Best'}
+                                </div>
+                            </div>
+                        )}
                     </div>
+
+                    {/* 次の目標 */}
+                    {rankInfo.nextThreshold && (
+                        <div className="bg-gray-50 rounded-2xl p-6">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="text-sm font-medium text-gray-500">Next Rank</div>
+                                <div className="text-sm font-semibold text-gray-900">
+                                    {currentTotal} / {rankInfo.nextThreshold}
+                                </div>
+                            </div>
+                            <div className="relative w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                    className="absolute top-0 left-0 h-full bg-gray-900 transition-all duration-500 ease-out"
+                                    style={{
+                                        width: `${Math.min(100, (currentTotal / rankInfo.nextThreshold) * 100)}%`
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
