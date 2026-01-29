@@ -6311,6 +6311,8 @@
                                                             const incompleteCount = currentSectionAllTasks.filter(t => !t.completed).length;
                                                             const sectionTotal = currentSectionAllTasks.length;
                                                             const progressPercent = sectionTotal > 0 ? Math.round((completedCount / sectionTotal) * 100) : 0;
+                                                            // 進捗0%の時も少し青バーを表示（約3.33%）
+                                                            const displayPercent = progressPercent === 0 && sectionTotal > 0 ? 100/30 : progressPercent;
 
                                                             // 次のタスクを完了した場合の進捗を計算
                                                             const nextProgressPercent = sectionTotal > 0 ? Math.round(((completedCount + 1) / sectionTotal) * 100) : 0;
@@ -6324,7 +6326,7 @@
                                                                         <div
                                                                             className="h-full bg-gradient-to-r from-blue-400 to-blue-500"
                                                                             style={{
-                                                                                width: `${progressPercent}%`,
+                                                                                width: `${displayPercent}%`,
                                                                                 transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
                                                                             }}
                                                                         >
