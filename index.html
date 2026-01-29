@@ -6330,7 +6330,7 @@
                                                                                 transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
                                                                             }}
                                                                         >
-                                                                            <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                                                                            {progressPercent > 0 && <div className="absolute inset-0 bg-white/20 animate-pulse" />}
                                                                         </div>
 
                                                                         {/* 次のタスク完了時の進捗予告（金色ストライプ・キラキラ） */}
