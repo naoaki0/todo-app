@@ -5583,6 +5583,19 @@
             // Pulse speed depends on rate. 0.2s (fast) to 2s (slow)
             const pulseDuration = section1Rate > 0 ? Math.max(0.2, 2 - (section1Rate * 1.8)) + 's' : '0s';
 
+            // 📈 ミニスパークライン用データ（過去7日）
+            const miniSparkDays = (() => {
+                const history = stats.dailyCompletionHistory || {};
+                const days = [];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    days.push({ count: history[dateStr] || 0, isToday: i === 0 });
+                }
+                return days;
+            })();
+            const miniSparkMax = Math.max(1, ...miniSparkDays.map(d => d.count));
 
             const btn3DClass = "transition-all active:translate-y-[4px] active:border-b-0 border-b-[4px] hover:scale-105 active:scale-95 duration-150";
 
@@ -5949,7 +5962,31 @@
                                     onClose={() => setActiveListId('default')}
                                 />
                             ) : (
-                                <div className="max-w-2xl mx-auto pt-8">
+                                <div className="max-w-2xl mx-auto pt-8 relative">
+                                    {/* 📈 ミニスパークライン - 左余白に配置（lg以上で表示） */}
+                                    <div
+                                        className="hidden lg:block absolute right-full top-20 pr-5 cursor-pointer group"
+                                        onClick={() => setActiveListId('growthGraph')}
+                                        title="成長グラフを開く"
+                                    >
+                                        <div className="bg-white rounded-lg p-2 border border-gray-100 shadow-sm group-hover:shadow-md group-hover:border-blue-200 transition-all">
+                                            <div className="text-center text-[9px] text-gray-400 font-bold mb-1.5 tracking-wide">📈 成長</div>
+                                            <svg width="68" height="40" viewBox="0 0 68 40" className="block">
+                                                {miniSparkDays.map((day, i) => {
+                                                    const barW = 7;
+                                                    const x = i * (68 / 7);
+                                                    const maxH = 32;
+                                                    const h = day.count === 0 ? 2 : Math.max(3, (day.count / miniSparkMax) * maxH);
+                                                    const y = 36 - h;
+                                                    return <rect key={i} x={x} y={y} width={barW} height={h} fill={day.isToday ? '#3b82f6' : '#d1d5db'} rx={1.5} />;
+                                                })}
+                                            </svg>
+                                            <div className={`text-center text-[9px] font-black mt-1.5 ${miniSparkDays[6].count > 0 ? 'text-blue-500' : 'text-gray-400'}`}>
+                                                今日 {miniSparkDays[6].count}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="flex items-center gap-3 mb-6">
                                         <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
                                         {notificationPermission !== 'granted' && (
