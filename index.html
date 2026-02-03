@@ -5597,6 +5597,28 @@
             })();
             const miniSparkMax = Math.max(1, ...miniSparkDays.map(d => d.count));
 
+            // 今週合計と達成ランク
+            const miniWeekTotal = miniSparkDays.reduce((sum, d) => sum + d.count, 0);
+            const miniRank = (() => {
+                if (miniWeekTotal >= 20) return { rank: 'S', icon: '🏆', color: 'text-yellow-600', nextThreshold: null };
+                if (miniWeekTotal >= 15) return { rank: 'A', icon: '🥈', color: 'text-gray-600', nextThreshold: 20 };
+                if (miniWeekTotal >= 10) return { rank: 'B', icon: '🥉', color: 'text-orange-600', nextThreshold: 15 };
+                return { rank: 'C', icon: '📊', color: 'text-gray-500', nextThreshold: 10 };
+            })();
+
+            // 自己ベスト（全期間の週単位最大値）
+            const miniPersonalBest = (() => {
+                const history = stats.dailyCompletionHistory || {};
+                const weekTotals = {};
+                Object.keys(history).forEach(dateStr => {
+                    const d = new Date(dateStr);
+                    d.setDate(d.getDate() - d.getDay()); // 週頭（日曜日）へ
+                    const weekStart = d.toISOString().split('T')[0];
+                    weekTotals[weekStart] = (weekTotals[weekStart] || 0) + (history[dateStr] || 0);
+                });
+                return Math.max(0, ...Object.values(weekTotals));
+            })();
+
             const btn3DClass = "transition-all active:translate-y-[4px] active:border-b-0 border-b-[4px] hover:scale-105 active:scale-95 duration-150";
 
             const isStreakActive = stats.lastDate === getAdjustedToday();
@@ -5984,6 +6006,30 @@
                                             <div className={`text-center text-[9px] font-black mt-1.5 ${miniSparkDays[6].count > 0 ? 'text-blue-500' : 'text-gray-400'}`}>
                                                 今日 {miniSparkDays[6].count}
                                             </div>
+
+                                            {/* 仕切り */}
+                                            <div className="border-t border-gray-200 my-2"></div>
+
+                                            {/* 達成ランク */}
+                                            <div className="flex items-center justify-center gap-1">
+                                                <span className="text-sm">{miniRank.icon}</span>
+                                                <span className={`text-[11px] font-black ${miniRank.color}`}>{miniRank.rank}</span>
+                                                <span className="text-[8px] text-gray-400 font-bold">今週</span>
+                                            </div>
+                                            {miniRank.nextThreshold && (
+                                                <div className="text-center mt-0.5">
+                                                    <span className="text-[8px] text-blue-500 font-black">あと{miniRank.nextThreshold - miniWeekTotal}で次ランク</span>
+                                                </div>
+                                            )}
+
+                                            {/* 自己ベスト */}
+                                            {miniPersonalBest > 0 && (
+                                                <div className="text-center mt-1.5 pt-1.5 border-t border-gray-100">
+                                                    <span className="text-[8px] text-gray-400 font-bold">ベスト </span>
+                                                    <span className={`text-[9px] font-black ${miniWeekTotal >= miniPersonalBest ? 'text-pink-500' : 'text-purple-600'}`}>{miniPersonalBest}</span>
+                                                    {miniWeekTotal >= miniPersonalBest && <span className="text-[8px] text-pink-500 font-black"> 更新中!</span>}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
