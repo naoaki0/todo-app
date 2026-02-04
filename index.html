@@ -3949,7 +3949,7 @@
             }, [task.challengeEndTime, task.completed]);
 
             // 🎰 ギャンブルデザイン最大化: handleToggle
-            // 予告演出、音変化、ニアミス強化、連荘、天井可視化、The Freezeを統合
+            // 予告演出、音変化、ニアミス強化、天井可視化、The Freezeを統合
             const handleToggle = async (e) => {
                 e.stopPropagation();
 
@@ -3964,7 +3964,6 @@
                 // --- 共通演出ロジック（開始・完了で使用） ---
                 const runGamblingSequence = async (isStartPhase) => {
                     const isFeverMode = stats.feverEndTime > Date.now();
-                    const isRensouMode = stats.rensouCount > 0;
 
                     // 🎰 1. 予告枠色を先に決定（結果とは独立）
                     // 予告は結果を示唆するが、確定ではない（裏切りあり）
@@ -3978,11 +3977,6 @@
                         forecast = 'gold'; // 金=チャンス
                     } else if (forecastRoll < 45) {
                         forecast = 'green'; // 緑=ちょいアツ
-                    }
-
-                    // 連荘中は予告が良くなりやすい
-                    if (isRensouMode && forecast === 'white' && Math.random() < 0.4) {
-                        forecast = 'green';
                     }
 
                     // 🎰 2. 予告演出の表示（枠色変化）
@@ -4010,7 +4004,7 @@
 
                     // 🎰 3. ドラムロール（枠色と結果に応じて音程変化）
                     // 音程が段階的に変化し、結果を予測させない
-                    const tier = determineRewardTier(stats.pityCounter, isFeverMode || isRensouMode);
+                    const tier = determineRewardTier(stats.pityCounter, isFeverMode);
                     const isGoodResult = tier === 'big' || tier === 'jackpot';
                     const isMediumResult = tier === 'normal' || tier === 'small';
 
@@ -4065,28 +4059,7 @@
                         }
                     }
 
-                    // 🎰 7. 連荘モード処理
-                    let newRensouCount = stats.rensouCount;
-                    if (tier === 'normal' || tier === 'big' || tier === 'jackpot') {
-                        // 当たり時、20%で連荘突入/継続
-                        if (Math.random() < 0.2) {
-                            newRensouCount = isRensouMode ? stats.rensouCount + 1 : 3;
-                            if (isRensouMode) {
-                                setToastMessage(`🔥 連荘継続！残り${newRensouCount}回！`);
-                            } else {
-                                setToastMessage('🎰 連荘モード突入！次の3回、big確率2倍！');
-                            }
-                        }
-                    }
-                    if (isRensouMode && !isStartPhase) {
-                        newRensouCount = Math.max(0, stats.rensouCount - 1);
-                        if (newRensouCount === 0) {
-                            setToastMessage('💔 連荘終了...');
-                            AudioEngine.play([400, 300, 200], 'sine', 0.15, 0.1);
-                        }
-                    }
-
-                    return { tier, showNearMiss, nearMissIntensity, newPityCounter, newRensouCount, forecast };
+                    return { tier, showNearMiss, nearMissIntensity, newPityCounter, forecast };
                 };
 
                 // === 1回目クリック: 開始 ===
@@ -4138,7 +4111,7 @@
                 setIsCompleting(true);
 
                 const result = await runGamblingSequence(false);
-                const { tier, showNearMiss, nearMissIntensity, newPityCounter, newRensouCount } = result;
+                const { tier, showNearMiss, nearMissIntensity, newPityCounter } = result;
 
                 // タスク完了処理
                 onToggle(task);
@@ -4197,24 +4170,24 @@
 
                 if (tier === 'whiff') {
                     setRewardEffect(<><WinText tier={tier} /><RewardWhiff onComplete={effectComplete} showNearMiss={showNearMiss} nearMissIntensity={nearMissIntensity} consecutiveWhiff={newPityCounter} /></>);
-                    setStats(prev => ({ ...prev, pityCounter: newPityCounter, rensouCount: newRensouCount, comboCount: 0, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
+                    setStats(prev => ({ ...prev, pityCounter: newPityCounter, comboCount: 0, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
                 } else if (tier === 'small') {
                     setRewardEffect(<><WinText tier={tier} /><RewardSmallWin onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
-                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
                     if (showCombo) setToastMessage(`🔥 ${newComboCount}x COMBO! +${gemCount}💎`);
                 } else if (tier === 'normal') {
                     setRewardEffect(<><WinText tier={tier} /><RewardNormal onComplete={effectComplete} centerX={centerX} centerY={centerY} /><GemAbsorb amount={gemCount} startX={centerX} startY={centerY} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
-                    setStats(prev => ({ ...prev, pityCounter: 0, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
                     if (showCombo) setToastMessage(`🔥 ${newComboCount}x COMBO! +${gemCount}💎`);
                 } else if (tier === 'big') {
                     setRewardEffect(<><WinText tier={tier} /><RewardBig onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
-                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
                     setToastMessage(showCombo ? `🔥 ${newComboCount}x COMBO! FEVER MODE!! +${gemCount}💎` : '🔥 FEVER MODE!! 3分間レア確率2倍！');
                 } else if (tier === 'jackpot') {
                     setRewardEffect(<><WinText tier={tier} /><RewardJackpot onComplete={effectComplete} /><GemAbsorb amount={gemCount} startX={window.innerWidth / 2} startY={window.innerHeight / 2} />{showCombo && <ComboDisplay comboCount={newComboCount} />}</>);
                     const feverEnd = Date.now() + 3 * 60 * 1000;
-                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, rensouCount: newRensouCount, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
+                    setStats(prev => ({ ...prev, pityCounter: 0, feverEndTime: feverEnd, gems: prev.gems + gemCount, comboCount: newComboCount, lastCompletionTime: now, dailyCompletionHistory: updateHistory(prev) }));
                     setToastMessage(showCombo ? `🎰 ${newComboCount}x COMBO! JACKPOT!!! +${gemCount}💎` : '🎰 JACKPOT!!! 🔥 FEVER MODE 発動！');
                 }
             };
@@ -4519,7 +4492,6 @@
                 lastWakeupChestTime: 0, // 最後にスリープ復帰宝箱を開けた時刻
                 pityCounter: 0, // 天井カウンター（スカが続くと上昇）
                 feverEndTime: 0, // フィーバーモード終了時刻
-                rensouCount: 0, // 連荘モード残り回数
                 tempGems: 0,
                 initialTempGems: 0,
                 isBurning: false,
@@ -5714,8 +5686,8 @@
                         </div>
                     </header>
 
-                    {/* 🎰 天井・連荘ステータスバー */}
-                    {(stats.pityCounter >= 3 || stats.rensouCount > 0 || stats.feverEndTime > Date.now()) && (
+                    {/* 🎰 天井ステータスバー */}
+                    {(stats.pityCounter >= 3 || stats.feverEndTime > Date.now()) && (
                         <div className="fixed top-16 left-0 right-0 z-[70] px-4 py-2 flex justify-center gap-3 pointer-events-none">
                             {/* 天井カウンター（3回以上のスカで表示） */}
                             {stats.pityCounter >= 3 && (
@@ -5725,18 +5697,6 @@
                                         <div>
                                             <div className="text-xs font-bold opacity-80">天井まで</div>
                                             <div className="text-lg font-black">{8 - stats.pityCounter}回</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            {/* 連荘モード表示 */}
-                            {stats.rensouCount > 0 && (
-                                <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-2xl shadow-lg animate-bounce pointer-events-auto">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg">🎰</span>
-                                        <div>
-                                            <div className="text-xs font-bold opacity-80">連荘モード</div>
-                                            <div className="text-lg font-black">残り{stats.rensouCount}回</div>
                                         </div>
                                     </div>
                                 </div>
