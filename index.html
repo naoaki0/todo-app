@@ -6239,7 +6239,10 @@
                                                                     currentSection++;
                                                                 }
                                                                 if (currentSection === sectionNum) {
-                                                                    currentSectionIncomplete.push(task);
+                                                                    // isSectionHead: true のタスクはカウントしない
+                                                                    if (!task.isSectionHead || i === 0) {
+                                                                        currentSectionIncomplete.push(task);
+                                                                    }
                                                                 } else if (currentSection > sectionNum) {
                                                                     break;
                                                                 }
@@ -6255,7 +6258,8 @@
                                                             const currentSectionId = currentSectionIncomplete[0]?.sectionId;
 
                                                             // そのsectionIdに属するすべてのタスク（完了+未完了）を取得
-                                                            const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId);
+                                                            // isSectionHead: true のタスクは除外
+                                                            const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId && !t.isSectionHead);
                                                             const completedCount = currentSectionAllTasks.filter(t => t.completed).length;
                                                             const incompleteCount = currentSectionAllTasks.filter(t => !t.completed).length;
                                                             const sectionTotal = currentSectionAllTasks.length;
@@ -6322,6 +6326,8 @@
                                                             );
                                                         })()}
 
+                                                        {/* isSectionHead: true のタスクはセクションヘッダーのみ表示（タスクとしては非表示） */}
+                                                        {!t.isSectionHead && (
                                                         <div
                                                             onDragOver={(e) => handleDragOver(e, t)}
                                                             onDrop={(e) => handleDrop(e, t)}
@@ -6346,6 +6352,7 @@
                                                                 setToastMessage={setToastMessage}
                                                             />
                                                         </div>
+                                                        )}
                                                     </React.Fragment>
                                                 );
                                             }
