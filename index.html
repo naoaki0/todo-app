@@ -6266,7 +6266,9 @@
 
                                             return sections.map((section, sectionIndex) => {
                                                 const sectionNum = sectionIndex + 1;
-                                                const sectionName = section.header?.sectionName || section.header?.title || `Section ${sectionNum}`;
+                                                // セクション名はヘッダーまたはセクション内の最初のタスクから取得
+                                                const sectionName = section.header?.sectionName || section.header?.title ||
+                                                    section.tasks.find(t => t.sectionName)?.sectionName || `Section ${sectionNum}`;
 
                                                 return (
                                                     <React.Fragment key={`section-${sectionIndex}`}>
