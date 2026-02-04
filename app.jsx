@@ -2125,7 +2125,6 @@
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [activeListId, setActiveListId] = useState('default');
             const [isShopOpen, setIsShopOpen] = useState(false);
-            const [isDoubleChance, setIsDoubleChance] = useState(false);
             const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
             const [timerState, setTimerState] = useState({ active: false, time: 10 * 60, mode: 'break' });
             const [isCompletedOpen, setIsCompletedOpen] = useState(false);
