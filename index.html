@@ -1453,15 +1453,19 @@
             0% {
                 background-position: -200% center;
             }
+
             100% {
                 background-position: 200% center;
             }
         }
 
         @keyframes gold-shine {
-            0%, 100% {
+
+            0%,
+            100% {
                 filter: brightness(1) saturate(1);
             }
+
             50% {
                 filter: brightness(1.4) saturate(1.3);
             }
@@ -2235,11 +2239,10 @@
                             <button
                                 key={p}
                                 onClick={() => setPeriod(p)}
-                                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
-                                    period === p
-                                        ? 'bg-blue-500 text-white shadow-lg'
-                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                }`}
+                                className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${period === p
+                                    ? 'bg-blue-500 text-white shadow-lg'
+                                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                    }`}
                             >
                                 {p === 'week' ? '週' : p === 'month' ? '月' : '全期間'}
                             </button>
@@ -2315,16 +2318,14 @@
                                             {day.count}
                                         </div>
                                         <div
-                                            className={`w-full rounded-t-xl transition-all ${
-                                                isToday ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
-                                            }`}
+                                            className={`w-full rounded-t-xl transition-all ${isToday ? 'bg-gradient-to-t from-blue-500 to-blue-400 shadow-lg' : 'bg-gray-300'
+                                                }`}
                                             style={{
                                                 height: `${heightPx}px`
                                             }}
                                         />
-                                        <div className={`text-${period === 'month' ? '2xs' : 'xs'} font-bold mt-2 ${
-                                            isToday ? 'text-blue-500' : 'text-gray-500'
-                                        }`}>
+                                        <div className={`text-${period === 'month' ? '2xs' : 'xs'} font-bold mt-2 ${isToday ? 'text-blue-500' : 'text-gray-500'
+                                            }`}>
                                             {day.label}
                                         </div>
                                     </div>
@@ -2432,6 +2433,117 @@
             );
         };
 
+        // 🌀 Antigravity Button: 開発環境への次元跳躍
+        const AntigravityButton = () => {
+            const [isHovered, setIsHovered] = useState(false);
+            const [isWarping, setIsWarping] = useState(false);
+
+            const handleWarp = () => {
+                if (isWarping) return;
+
+                // URL設定チェック
+                let targetUrl = localStorage.getItem('antigravity_url');
+                if (!targetUrl) {
+                    const input = prompt("🚀 ワープ先のURLを入力してください\n(例: ブラウザ版AntigravityのURL, 本番サイトのURLなど)", window.location.href);
+                    if (input) {
+                        targetUrl = input;
+                        localStorage.setItem('antigravity_url', targetUrl);
+                    } else {
+                        return;
+                    }
+                }
+
+                setIsWarping(true);
+
+                // ワープチャージ音
+                AudioEngine.play([100, 200, 400, 800, 1600], 'sawtooth', 0.1, 0.05);
+
+                // 即時遷移（ユーザージェスチャー内で実行）
+                window.location.href = targetUrl;
+
+                // フェイルセーフ: 5秒後に復帰（遷移失敗時用）
+                setTimeout(() => setIsWarping(false), 5000);
+            };
+
+            const handleContextMenu = (e) => {
+                e.preventDefault();
+                const currentUrl = localStorage.getItem('antigravity_url') || '';
+                const input = prompt("⚙️ ワープ先URLの変更:", currentUrl);
+                if (input !== null) {
+                    localStorage.setItem('antigravity_url', input);
+                    alert("✅ ワープ先を更新しました！");
+                }
+            };
+
+            return (
+                <>
+                    {/* ワープ演出オーバーレイ */}
+                    {isWarping && (
+                        <div
+                            className="fixed inset-0 z-[1000] flex items-center justify-center overflow-hidden cursor-pointer"
+                            onClick={() => setIsWarping(false)}
+                            title="クリックしてキャンセル"
+                        >
+                            <div className="absolute inset-0 bg-black animate-[warp-fade-in_0.2s_ease-out_forwards]" />
+
+                            {/* 集中線 */}
+                            <div className="absolute inset-0 opacity-0 animate-[warp-lines_1.5s_ease-in_forwards]"
+                                style={{
+                                    background: 'repeating-conic-gradient(transparent 0deg, transparent 2deg, rgba(0, 255, 255, 0.5) 3deg, transparent 4deg)',
+                                    transform: 'scale(2)',
+                                }}
+                            />
+
+                            {/* 次元歪みリング */}
+                            <div className="absolute w-[200vw] h-[200vw] rounded-full border-[100px] border-purple-500 opacity-0 animate-[warp-ring_1.0s_ease-in_forwards]" />
+                            <div className="absolute w-[100vw] h-[100vw] rounded-full border-[50px] border-blue-500 opacity-0 animate-[warp-ring_1.0s_ease-in_0.2s_forwards]" />
+
+                            <div className="relative text-transparent text-9xl font-black italic tracking-tighter animate-[warp-text_0.5s_ease-in_0.8s_forwards]"
+                                style={{ WebkitTextStroke: '2px white' }}>
+                                WARP!!
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ボタン本体 */}
+                    <button
+                        className={`fixed bottom-8 right-8 z-[100] group transition-all duration-300 ease-out ${isWarping ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
+                        onMouseEnter={() => {
+                            setIsHovered(true);
+                            AudioEngine.play([100, 120], 'sawtooth', 0.05, 0.1); // 重力音
+                        }}
+                        onMouseLeave={() => setIsHovered(false)}
+                        onClick={handleWarp}
+                        onContextMenu={handleContextMenu}
+                        title="右クリックでワープ先設定"
+                    >
+                        {/* 外部発光（オーラ） */}
+                        <div className="absolute inset-0 rounded-full bg-blue-500 blur-xl opacity-40 animate-pulse group-hover:opacity-80 group-hover:blur-2xl transition-all duration-500" />
+
+                        {/* 内部回転リング */}
+                        <div className="absolute inset-[-4px] rounded-full border-2 border-transparent border-t-cyan-400 border-l-purple-500 animate-[spin_3s_linear_infinite] opacity-70" />
+                        <div className="absolute inset-[-8px] rounded-full border border-transparent border-r-blue-500 border-b-pink-500 animate-[spin_5s_linear_infinite_reverse] opacity-50" />
+
+                        {/* 本体 */}
+                        <div className="relative w-16 h-16 rounded-full bg-black flex items-center justify-center overflow-hidden border border-white/20 shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                            {/* 背景の宇宙 */}
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwMDAwMCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEiIGZpbGw9IiNGRkZGRkYiLz48L3N2Zz4=')] opacity-50 animate-[spin_20s_linear_infinite]" />
+
+                            {/* アイコン */}
+                            <div className={`text-2xl transform transition-all duration-300 ${isHovered ? 'scale-125 rotate-180 text-cyan-300' : 'text-gray-400'}`}>
+                                🚀
+                            </div>
+                        </div>
+
+                        {/* ラベル（ホバー時のみ） */}
+                        <div className={`absolute right-full mr-4 top-1/2 -translate-y-1/2 whitespace-nowrap text-cyan-400 font-bold tracking-widest text-sm
+                            transition-all duration-300 ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'}`}>
+                            ANTIGRAVITY
+                        </div>
+                    </button>
+                </>
+            );
+        };
         const RewardWhiff = ({ onComplete, showNearMiss, nearMissIntensity = 'normal', consecutiveWhiff = 0 }) => {
             const [particles, setParticles] = useState([]);
             const [showText, setShowText] = useState(false);
@@ -4421,10 +4533,10 @@
                                 className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-xl transition-colors"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                                 </svg>
                                 Googleでログイン
                             </button>
@@ -4584,7 +4696,6 @@
             const [authLoading, setAuthLoading] = useState(true);
             const [showAuthModal, setShowAuthModal] = useState(false);
             const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
-            const skipSaveRef = React.useRef(false); // クラウドから同期直後の無必要な書き戻しを防止
 
             const closeToast = useCallback(() => {
                 setToastMessage(null);
@@ -4692,22 +4803,32 @@
 
                                 console.log(`[Sync] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}`);
 
-                                // タイムスタンプを優先で比較（削除・減少も正しく反映）
-                                const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
-                                const cloudTimestamp = cloudData.lastSync || 0;
-
-                                console.log(`[Sync] Timestamps - Cloud: ${cloudTimestamp}, Local: ${localTimestamp}`);
-
-                                if (cloudTimestamp > localTimestamp) {
-                                    // クラウドが新しい → クラウドを採用（削除も含む）
-                                    console.log('[Sync] Cloud is newer, using cloud data');
+                                // データが多い方を優先（空のデータでの上書きを防止）
+                                if (cloudTaskCount === 0 && localTaskCount > 0) {
+                                    // クラウドが空で、ローカルにデータがある → ローカルをアップロード
+                                    console.log('[Sync] Cloud is empty, uploading local data');
+                                    await userDocRef.set({
+                                        tasks: localTasks,
+                                        stats,
+                                        lastSync: Date.now(),
+                                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                    }, { merge: true });
+                                    localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+                                } else if (localTaskCount === 0 && cloudTaskCount > 0) {
+                                    // ローカルが空で、クラウドにデータがある → クラウドを採用
+                                    console.log('[Sync] Local is empty, using cloud data');
                                     setTasks(cloudTasks);
                                     if (cloudData.stats) setStats(cloudData.stats);
-                                    localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-                                    skipSaveRef.current = true;
-                                } else if (localTimestamp > cloudTimestamp) {
-                                    // ローカルが新しい → ローカルをアップロード
-                                    console.log('[Sync] Local is newer, uploading local data');
+                                    localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+                                } else if (cloudTaskCount > localTaskCount) {
+                                    // クラウドの方が多い → クラウドを採用
+                                    console.log('[Sync] Cloud has more tasks, using cloud data');
+                                    setTasks(cloudTasks);
+                                    if (cloudData.stats) setStats(cloudData.stats);
+                                    localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+                                } else if (localTaskCount > cloudTaskCount) {
+                                    // ローカルの方が多い → ローカルをアップロード
+                                    console.log('[Sync] Local has more tasks, uploading local data');
                                     await userDocRef.set({
                                         tasks: localTasks,
                                         stats,
@@ -4716,29 +4837,17 @@
                                     }, { merge: true });
                                     localStorage.setItem('duo_v18_lastSync', Date.now().toString());
                                 } else {
-                                    // タイムスタンプが同じか両方0 → 初回同期用フォールバック：タスク数で判断
-                                    if (cloudTaskCount > 0 && localTaskCount === 0) {
-                                        console.log('[Sync] Fallback: cloud has data, using cloud');
+                                    // タスク数が同じ → タイムスタンプで比較
+                                    const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
+                                    const cloudTimestamp = cloudData.lastSync || 0;
+
+                                    if (cloudTimestamp > localTimestamp) {
+                                        console.log('[Sync] Same task count, cloud is newer');
                                         setTasks(cloudTasks);
                                         if (cloudData.stats) setStats(cloudData.stats);
-                                        localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
-                                        skipSaveRef.current = true;
-                                    } else if (localTaskCount > 0 && cloudTaskCount === 0) {
-                                        console.log('[Sync] Fallback: local has data, uploading');
-                                        await userDocRef.set({
-                                            tasks: localTasks,
-                                            stats,
-                                            lastSync: Date.now(),
-                                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                                        }, { merge: true });
-                                        localStorage.setItem('duo_v18_lastSync', Date.now().toString());
-                                    } else if (cloudTaskCount >= localTaskCount) {
-                                        console.log('[Sync] Fallback: cloud has more or equal, using cloud');
-                                        setTasks(cloudTasks);
-                                        if (cloudData.stats) setStats(cloudData.stats);
-                                        skipSaveRef.current = true;
+                                        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
                                     } else {
-                                        console.log('[Sync] Fallback: local has more, uploading');
+                                        console.log('[Sync] Same task count, local is newer, uploading');
                                         await userDocRef.set({
                                             tasks: localTasks,
                                             stats,
@@ -4799,16 +4908,48 @@
 
                     console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}, Diff: ${taskCountDiff}, Cloud time: ${cloudTimestamp}, Local time: ${localTimestamp}`);
 
-                    // クラウドが新しい場合のみ更新（タイムスタンプが唯一の判定基準）
+                    // クラウドのデータが新しい場合のみ更新（自分自身の変更は無視）
                     if (cloudTimestamp > localTimestamp) {
-                        console.log('[Realtime] Cloud is newer, using cloud data');
-                        setTasks(cloudTasks);
-                        if (cloudData.stats) setStats(cloudData.stats);
-                        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-                        skipSaveRef.current = true;
-
-                        if (taskCountDiff > 0) {
+                        // 🛡️ ケース1: 一方が空の場合は特別扱い
+                        if (cloudTaskCount === 0 && localTaskCount > 0) {
+                            console.log('[Realtime] Ignoring empty cloud data (local has tasks)');
+                            // 空のクラウドデータは無視し、ローカルをアップロード
+                            userDocRef.set({
+                                tasks: tasks,
+                                stats: stats,
+                                lastSync: Date.now(),
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true }).catch(err => console.error('[Realtime] Upload error:', err));
+                        } else if (localTaskCount === 0 && cloudTaskCount > 0) {
+                            console.log('[Realtime] Local is empty, using cloud data');
+                            setTasks(cloudTasks);
+                            if (cloudData.stats) setStats(cloudData.stats);
+                            localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
                             setToastMessage('🔄 他のデバイスから同期されました');
+                        }
+                        // 🛡️ ケース2: タスク数の差が大きい（5個以上）場合は、多い方を優先
+                        else if (taskCountDiff >= 5) {
+                            if (cloudTaskCount > localTaskCount) {
+                                console.log('[Realtime] Cloud has significantly more tasks, using cloud data');
+                                setTasks(cloudTasks);
+                                if (cloudData.stats) setStats(cloudData.stats);
+                                localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                                setToastMessage('🔄 他のデバイスから同期されました');
+                            } else {
+                                console.log('[Realtime] Local has significantly more tasks, ignoring cloud data');
+                            }
+                        }
+                        // 🛡️ ケース3: タスク数の差が小さい（4個以内）→ タイムスタンプで判断
+                        else {
+                            console.log('[Realtime] Task count difference is small, using timestamp');
+                            setTasks(cloudTasks);
+                            if (cloudData.stats) setStats(cloudData.stats);
+                            localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+
+                            // タスクの完了状態の変更など、通知は控えめに
+                            if (taskCountDiff > 0) {
+                                setToastMessage('🔄 他のデバイスから同期されました');
+                            }
                         }
                     }
                 }, (error) => {
@@ -4901,12 +5042,6 @@
                 // ログイン済みの場合はFirestoreにも保存
                 if (user && window.firebaseDB && !authLoading) {
                     const saveToFirestore = async () => {
-                        // クラウドから同期直後は書き戻しをスキップ（上書き防止）
-                        if (skipSaveRef.current) {
-                            skipSaveRef.current = false;
-                            console.log('[Sync] Skipped save (just synced from remote)');
-                            return;
-                        }
                         try {
                             setSyncStatus('syncing');
                             const userDocRef = window.firebaseDB.collection('users').doc(user.uid);
@@ -5583,41 +5718,6 @@
             // Pulse speed depends on rate. 0.2s (fast) to 2s (slow)
             const pulseDuration = section1Rate > 0 ? Math.max(0.2, 2 - (section1Rate * 1.8)) + 's' : '0s';
 
-            // 📈 ミニスパークライン用データ（過去7日）
-            const miniSparkDays = (() => {
-                const history = stats.dailyCompletionHistory || {};
-                const days = [];
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    const dateStr = date.toISOString().split('T')[0];
-                    days.push({ count: history[dateStr] || 0, isToday: i === 0 });
-                }
-                return days;
-            })();
-            const miniSparkMax = Math.max(1, ...miniSparkDays.map(d => d.count));
-
-            // 今週合計と達成ランク
-            const miniWeekTotal = miniSparkDays.reduce((sum, d) => sum + d.count, 0);
-            const miniRank = (() => {
-                if (miniWeekTotal >= 20) return { rank: 'S', icon: '🏆', color: 'text-yellow-600', nextThreshold: null };
-                if (miniWeekTotal >= 15) return { rank: 'A', icon: '🥈', color: 'text-gray-600', nextThreshold: 20 };
-                if (miniWeekTotal >= 10) return { rank: 'B', icon: '🥉', color: 'text-orange-600', nextThreshold: 15 };
-                return { rank: 'C', icon: '📊', color: 'text-gray-500', nextThreshold: 10 };
-            })();
-
-            // 自己ベスト（全期間の週単位最大値）
-            const miniPersonalBest = (() => {
-                const history = stats.dailyCompletionHistory || {};
-                const weekTotals = {};
-                Object.keys(history).forEach(dateStr => {
-                    const d = new Date(dateStr);
-                    d.setDate(d.getDate() - d.getDay()); // 週頭（日曜日）へ
-                    const weekStart = d.toISOString().split('T')[0];
-                    weekTotals[weekStart] = (weekTotals[weekStart] || 0) + (history[dateStr] || 0);
-                });
-                return Math.max(0, ...Object.values(weekTotals));
-            })();
 
             const btn3DClass = "transition-all active:translate-y-[4px] active:border-b-0 border-b-[4px] hover:scale-105 active:scale-95 duration-150";
 
@@ -5934,11 +6034,10 @@
                                             </div>
 
                                             {/* 同期状態 */}
-                                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold ${
-                                                syncStatus === 'synced' ? 'bg-green-50 text-green-600' :
+                                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold ${syncStatus === 'synced' ? 'bg-green-50 text-green-600' :
                                                 syncStatus === 'syncing' ? 'bg-blue-50 text-blue-600' :
-                                                'bg-red-50 text-red-600'
-                                            }`}>
+                                                    'bg-red-50 text-red-600'
+                                                }`}>
                                                 <span>
                                                     {syncStatus === 'synced' && '✓ 同期完了'}
                                                     {syncStatus === 'syncing' && '⟳ 同期中...'}
@@ -5984,55 +6083,7 @@
                                     onClose={() => setActiveListId('default')}
                                 />
                             ) : (
-                                <div className="max-w-2xl mx-auto pt-8 relative">
-                                    {/* 📈 ミニスパークライン - 左余白に配置（lg以上で表示） */}
-                                    <div
-                                        className="hidden lg:block absolute right-full top-20 pr-5 cursor-pointer group"
-                                        onClick={() => setActiveListId('growthGraph')}
-                                        title="成長グラフを開く"
-                                    >
-                                        <div className="bg-white rounded-lg p-2 border border-gray-100 shadow-sm group-hover:shadow-md group-hover:border-blue-200 transition-all">
-                                            <div className="text-center text-[9px] text-gray-400 font-bold mb-1.5 tracking-wide">📈 成長</div>
-                                            <svg width="68" height="40" viewBox="0 0 68 40" className="block">
-                                                {miniSparkDays.map((day, i) => {
-                                                    const barW = 7;
-                                                    const x = i * (68 / 7);
-                                                    const maxH = 32;
-                                                    const h = day.count === 0 ? 2 : Math.max(3, (day.count / miniSparkMax) * maxH);
-                                                    const y = 36 - h;
-                                                    return <rect key={i} x={x} y={y} width={barW} height={h} fill={day.isToday ? '#3b82f6' : '#d1d5db'} rx={1.5} />;
-                                                })}
-                                            </svg>
-                                            <div className={`text-center text-[9px] font-black mt-1.5 ${miniSparkDays[6].count > 0 ? 'text-blue-500' : 'text-gray-400'}`}>
-                                                今日 {miniSparkDays[6].count}
-                                            </div>
-
-                                            {/* 仕切り */}
-                                            <div className="border-t border-gray-200 my-2"></div>
-
-                                            {/* 達成ランク */}
-                                            <div className="flex items-center justify-center gap-1">
-                                                <span className="text-sm">{miniRank.icon}</span>
-                                                <span className={`text-[11px] font-black ${miniRank.color}`}>{miniRank.rank}</span>
-                                                <span className="text-[8px] text-gray-400 font-bold">今週</span>
-                                            </div>
-                                            {miniRank.nextThreshold && (
-                                                <div className="text-center mt-0.5">
-                                                    <span className="text-[8px] text-blue-500 font-black">あと{miniRank.nextThreshold - miniWeekTotal}で次ランク</span>
-                                                </div>
-                                            )}
-
-                                            {/* 自己ベスト */}
-                                            {miniPersonalBest > 0 && (
-                                                <div className="text-center mt-1.5 pt-1.5 border-t border-gray-100">
-                                                    <span className="text-[8px] text-gray-400 font-bold">ベスト </span>
-                                                    <span className={`text-[9px] font-black ${miniWeekTotal >= miniPersonalBest ? 'text-pink-500' : 'text-purple-600'}`}>{miniPersonalBest}</span>
-                                                    {miniWeekTotal >= miniPersonalBest && <span className="text-[8px] text-pink-500 font-black"> 更新中!</span>}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
+                                <div className="max-w-2xl mx-auto pt-8">
                                     <div className="flex items-center gap-3 mb-6">
                                         <h1 className="text-lg font-bold tracking-tight text-gray-500">{activeListId === 'default' ? 'マイタスク' : '締切リスト'}</h1>
                                         {notificationPermission !== 'granted' && (
@@ -6194,30 +6245,49 @@
                                     })()}
 
                                     <div className="space-y-3 relative">
-                                        {incomplete.map((t, index) => {
-                                            const isFirst = index === 0;
-                                            const showSectionHeader = isFirst || t.isSectionHead;
+                                        {(() => {
+                                            // セクションヘッダーを含む全タスクからセクション構造を計算
+                                            const sections = [];
+                                            let currentSection = { header: null, tasks: [] };
 
-                                            if (showSectionHeader) {
-                                                sectionCounter++;
-                                                const sectionNum = sectionCounter;
-                                                const isLast = isLastTaskInSection(index);
+                                            for (const task of incomplete) {
+                                                if (task.isSectionHead) {
+                                                    if (currentSection.header !== null || currentSection.tasks.length > 0) {
+                                                        sections.push(currentSection);
+                                                    }
+                                                    currentSection = { header: task, tasks: [] };
+                                                } else {
+                                                    currentSection.tasks.push(task);
+                                                }
+                                            }
+                                            if (currentSection.header !== null || currentSection.tasks.length > 0) {
+                                                sections.push(currentSection);
+                                            }
+
+                                            return sections.map((section, sectionIndex) => {
+                                                const sectionNum = sectionIndex + 1;
+                                                // セクション名はヘッダーまたはセクション内の最初のタスクから取得
+                                                const sectionName = section.header?.sectionName || section.header?.title ||
+                                                    section.tasks.find(t => t.sectionName)?.sectionName || `Section ${sectionNum}`;
 
                                                 return (
-                                                    <React.Fragment key={t.id}>
+                                                    <React.Fragment key={`section-${sectionIndex}`}>
+                                                        {/* セクションヘッダー */}
                                                         <div className="py-4 flex items-center justify-center gap-2" data-section={sectionNum}>
                                                             <div
                                                                 className={`font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest cursor-pointer hover:scale-105 transition-transform ${sectionNum === 1 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-gray-200 text-gray-500'}`}
                                                                 onContextMenu={(e) => {
                                                                     e.preventDefault();
-                                                                    const newName = prompt('セクション名を入力してください:', t.sectionName || `Section ${sectionNum}`);
-                                                                    if (newName !== null && newName.trim()) {
-                                                                        updateTask(t.id, { sectionName: newName.trim() });
+                                                                    if (section.header) {
+                                                                        const newName = prompt('セクション名を入力してください:', sectionName);
+                                                                        if (newName !== null && newName.trim()) {
+                                                                            updateTask(section.header.id, { sectionName: newName.trim() });
+                                                                        }
                                                                     }
                                                                 }}
                                                                 title="右クリックで名前を変更"
                                                             >
-                                                                {t.sectionName || `Section ${sectionNum}`}
+                                                                {sectionName}
                                                             </div>
                                                             {sectionNum === 1 && (
                                                                 <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
@@ -6227,165 +6297,88 @@
                                                             )}
                                                         </div>
 
-                                                        {/* 📊 セクション進捗バー - 現在のセクション */}
-                                                        {(() => {
-                                                            // 🎯 現在のセクション（sectionNum）に属する「未完了」タスクを抽出
-                                                            // incomplete配列の先頭からセクション区切りまでを取得
-                                                            let currentSectionIncomplete = [];
-                                                            let currentSection = 1;
-                                                            for (let i = 0; i < incomplete.length; i++) {
-                                                                const task = incomplete[i];
-                                                                if (i > 0 && task.isSectionHead) {
-                                                                    currentSection++;
-                                                                }
-                                                                if (currentSection === sectionNum) {
-                                                                    // isSectionHead: true のタスクはカウントしない
-                                                                    if (!task.isSectionHead || i === 0) {
-                                                                        currentSectionIncomplete.push(task);
-                                                                    }
-                                                                } else if (currentSection > sectionNum) {
-                                                                    break;
-                                                                }
-                                                            }
-
-                                                            const remaining = currentSectionIncomplete.length;
-
-                                                            // セクション完了時、またはSection 1以外は表示しない
-                                                            if (remaining === 0 || sectionNum !== 1) return null;
-
-                                                            // 🎯 現在表示されているセクション1のsectionIdを取得
-                                                            // （未完了タスクの最初のセクション）
-                                                            const currentSectionId = currentSectionIncomplete[0]?.sectionId;
-
-                                                            // そのsectionIdに属するすべてのタスク（完了+未完了）を取得
-                                                            // isSectionHead: true のタスクは除外
+                                                        {/* 📊 セクション進捗バー - Section 1のみ */}
+                                                        {sectionNum === 1 && section.tasks.length > 0 && (() => {
+                                                            const currentSectionId = section.tasks[0]?.sectionId;
                                                             const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId && !t.isSectionHead);
                                                             const completedCount = currentSectionAllTasks.filter(t => t.completed).length;
                                                             const incompleteCount = currentSectionAllTasks.filter(t => !t.completed).length;
                                                             const sectionTotal = currentSectionAllTasks.length;
                                                             const progressPercent = sectionTotal > 0 ? Math.round((completedCount / sectionTotal) * 100) : 0;
-                                                            // 進捗0%の時も少し青バーを表示（約3.33%）
-                                                            const displayPercent = progressPercent === 0 && sectionTotal > 0 ? 100/30 : progressPercent;
-
-                                                            // 次のタスクを完了した場合の進捗を計算
                                                             const nextProgressPercent = sectionTotal > 0 ? Math.round(((completedCount + 1) / sectionTotal) * 100) : 0;
                                                             const progressDelta = nextProgressPercent - progressPercent;
 
                                                             return (
                                                                 <div className="px-4 pb-3">
-                                                                    {/* 進捗バー */}
                                                                     <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner mb-2">
-                                                                        {/* 現在の進捗（実線・青色） */}
                                                                         <div
                                                                             className="h-full bg-gradient-to-r from-blue-400 to-blue-500"
                                                                             style={{
-                                                                                width: `${displayPercent}%`,
+                                                                                width: `${progressPercent}%`,
                                                                                 transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)'
                                                                             }}
                                                                         >
-                                                                            {progressPercent > 0 && <div className="absolute inset-0 bg-white/20 animate-pulse" />}
+                                                                            <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                                                         </div>
-
-                                                                        {/* 次のタスク完了時の進捗予告（金色ストライプ・キラキラ） */}
                                                                         {incompleteCount > 0 && (
                                                                             <div
                                                                                 className="absolute top-0 h-full overflow-hidden"
                                                                                 style={{
-                                                                                    left: `${displayPercent}%`,
+                                                                                    left: `${progressPercent}%`,
                                                                                     width: `${progressDelta}%`,
                                                                                     background: 'repeating-linear-gradient(45deg, rgb(251, 191, 36), rgb(251, 191, 36) 8px, rgb(234, 179, 8) 8px, rgb(234, 179, 8) 16px)',
                                                                                     boxShadow: 'inset 0 0 10px rgba(255, 215, 0, 0.6), 0 0 15px rgba(251, 191, 36, 0.4)',
-                                                                                    transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, width 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s',
-                                                                                    animation: nextProgressPercent >= 90
-                                                                                        ? 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite, gold-shine 0.8s ease-in-out infinite'
-                                                                                        : 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite, gold-shine 1.2s ease-in-out infinite'
+                                                                                    transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s, width 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s'
                                                                                 }}
-                                                                            >
-                                                                                {/* キラキラ光が流れる効果 */}
-                                                                                <div
-                                                                                    className="absolute inset-0"
-                                                                                    style={{
-                                                                                        background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%)',
-                                                                                        backgroundSize: '200% 100%',
-                                                                                        animation: 'gold-glitter 2s linear infinite'
-                                                                                    }}
-                                                                                />
-                                                                            </div>
+                                                                            />
                                                                         )}
                                                                     </div>
                                                                     <div className="text-center text-xs text-gray-600 font-bold">
-                                                                        {remaining === 1 ? (
+                                                                        {section.tasks.length === 1 ? (
                                                                             <span className="text-green-600">🎁 あと1つで達成！完了時50💎ボーナス</span>
-                                                                        ) : nextProgressPercent >= 90 ? (
-                                                                            <span className="text-orange-600">⚡ 次のタスクで<span className="text-lg">{nextProgressPercent}%</span>！ラストスパート！</span>
                                                                         ) : (
-                                                                            <span>あと{remaining}タスクで50💎</span>
+                                                                            <span>あと{section.tasks.length}タスクで50💎</span>
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                             );
                                                         })()}
 
-                                                        {/* isSectionHead: true のタスクはセクションヘッダーのみ表示（タスクとしては非表示） */}
-                                                        {!t.isSectionHead && (
-                                                        <div
-                                                            onDragOver={(e) => handleDragOver(e, t)}
-                                                            onDrop={(e) => handleDrop(e, t)}
-                                                        >
-                                                            <TaskItem
-                                                                task={t}
-                                                                isMobile={isMobile}
-                                                                onXpGain={handleXpGain}
-                                                                onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
-                                                                onUpdate={updateTask}
-                                                                onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
-                                                                onDragStart={handleDragStart}
-                                                                isDragging={draggedTaskId === t.id}
-                                                                isDeadlineView={activeListId === 'deadline'}
-                                                                activeTheme={stats.currentTheme}
-                                                                onContextMenu={handleContextMenu}
-                                                                isFocusedSection={sectionNum === 1}
-                                                                isLastInSection={isLast}
-                                                                setRewardEffect={setRewardEffect}
-                                                                stats={stats}
-                                                                setStats={setStats}
-                                                                setToastMessage={setToastMessage}
-                                                            />
-                                                        </div>
-                                                        )}
+                                                        {/* セクション内のタスク */}
+                                                        {section.tasks.map((t, taskIndex) => {
+                                                            const isLast = taskIndex === section.tasks.length - 1;
+                                                            return (
+                                                                <div
+                                                                    key={t.id}
+                                                                    onDragOver={(e) => handleDragOver(e, t)}
+                                                                    onDrop={(e) => handleDrop(e, t)}
+                                                                >
+                                                                    <TaskItem
+                                                                        task={t}
+                                                                        isMobile={isMobile}
+                                                                        onXpGain={handleXpGain}
+                                                                        onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
+                                                                        onUpdate={updateTask}
+                                                                        onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
+                                                                        onDragStart={handleDragStart}
+                                                                        isDragging={draggedTaskId === t.id}
+                                                                        isDeadlineView={activeListId === 'deadline'}
+                                                                        activeTheme={stats.currentTheme}
+                                                                        onContextMenu={handleContextMenu}
+                                                                        isFocusedSection={sectionNum === 1}
+                                                                        isLastInSection={isLast}
+                                                                        setRewardEffect={setRewardEffect}
+                                                                        stats={stats}
+                                                                        setStats={setStats}
+                                                                        setToastMessage={setToastMessage}
+                                                                    />
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </React.Fragment>
                                                 );
-                                            }
-
-                                            const isLast = isLastTaskInSection(index);
-                                            return (
-                                                <div
-                                                    key={t.id}
-                                                    onDragOver={(e) => handleDragOver(e, t)}
-                                                    onDrop={(e) => handleDrop(e, t)}
-                                                >
-                                                    <TaskItem
-                                                        task={t}
-                                                        isMobile={isMobile}
-                                                        onXpGain={handleXpGain}
-                                                        onToggle={() => updateTask(t.id, { completed: true, completedAt: Date.now() })}
-                                                        onUpdate={updateTask}
-                                                        onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
-                                                        onDragStart={handleDragStart}
-                                                        isDragging={draggedTaskId === t.id}
-                                                        isDeadlineView={activeListId === 'deadline'}
-                                                        activeTheme={stats.currentTheme}
-                                                        onContextMenu={handleContextMenu}
-                                                        isFocusedSection={sectionCounter === 1}
-                                                        isLastInSection={isLast}
-                                                        setRewardEffect={setRewardEffect}
-                                                        stats={stats}
-                                                        setStats={setStats}
-                                                        setToastMessage={setToastMessage}
-                                                    />
-                                                </div>
-                                            );
-                                        })}
+                                            });
+                                        })()}
                                     </div>
 
                                     {/* 完了タスクセクション */}
@@ -6503,6 +6496,8 @@
                         />
                     )}
 
+                    {/* 🌀 Antigravity Button */}
+                    <AntigravityButton />
 
                     {/* 📈 成長グラフモーダル - 削除：ページに移行 */}
 
@@ -6515,7 +6510,12 @@
                         />
                     )}
 
-
+                    <style>{`
+                        @keyframes warp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+                        @keyframes warp-lines { from { opacity: 0; transform: scale(1); } to { opacity: 0.8; transform: scale(3); } }
+                        @keyframes warp-ring { from { opacity: 0; transform: scale(0); border-width: 100px; } to { opacity: 0.5; transform: scale(1.5); border-width: 0px; } }
+                        @keyframes warp-text { from { opacity: 0; transform: scale(3); } to { opacity: 1; transform: scale(1); } }
+                    `}</style>
                 </div>
             );
         };
