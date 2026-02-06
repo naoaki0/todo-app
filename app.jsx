@@ -2267,7 +2267,7 @@
                         if (cloudData.stats) setStats(cloudData.stats);
                         lastSyncRef.current = cloudTimestamp;
                         localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-                        setToastMessage('🔄 他のデバイスから同期されました');
+                        console.log('[Realtime] Synced from another device');
                     }
                 }, (error) => {
                     console.error('[Realtime] Error in realtime listener:', error);
