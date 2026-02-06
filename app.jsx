@@ -1547,6 +1547,7 @@
             const [isStarting, setIsStarting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
             const [animateCheckbox, setAnimateCheckbox] = useState(false);
+            const [showActions, setShowActions] = useState(false);
             const [currentForecast, setCurrentForecast] = useState(null); // 予告枠色
             const buttonRef = useRef(null);
 
@@ -1815,6 +1816,7 @@
                         }
                     }}
                     onContextMenu={(e) => onContextMenu && onContextMenu(e, task)}
+                    onClick={() => { if (isMobile) setShowActions(prev => !prev); }}
                 >
                     {/* ドラッグハンドル */}
                     {!task.completed && (
@@ -1865,11 +1867,10 @@
                             }`}>{task.title}</div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {/* ボタン群: 常に表示 */}
+                        {/* ボタン群: PC=ホバーで表示、モバイル=タップで表示 */}
                         {!task.completed && (
                             <div className="flex items-center gap-1">
-                                {/* その他のボタン（ホバー時のみ表示） */}
-                                <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`}>
                                     <IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
                                 </div>
                             </div>
@@ -1877,7 +1878,7 @@
 
                         {/* 完了済みタスクのボタン */}
                         {task.completed && (
-                            <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`}>
                                 <IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
                             </div>
                         )}
