@@ -2478,9 +2478,7 @@
             const handleGoogleLogin = async () => {
                 try {
                     const provider = new firebase.auth.GoogleAuthProvider();
-                    await window.firebaseAuth.signInWithPopup(provider);
-                    setShowAuthModal(false);
-                    setToastMessage('✅ ログインしました');
+                    await window.firebaseAuth.signInWithRedirect(provider);
                 } catch (error) {
                     console.error('[Auth] Google login error:', error);
                     setToastMessage('❌ ログインに失敗しました');
