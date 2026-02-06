@@ -1844,27 +1844,10 @@ const TaskItem = ({
   const [isCompleting, setIsCompleting] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [confettiType, setConfettiType] = useState(null);
-  const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
   const [animateCheckbox, setAnimateCheckbox] = useState(false);
-  const [isEditingTime, setIsEditingTime] = useState(false);
-  const [editTimeValue, setEditTimeValue] = useState('9.5');
+  const [showActions, setShowActions] = useState(false);
   const [currentForecast, setCurrentForecast] = useState(null); // 予告枠色
   const buttonRef = useRef(null);
-  useEffect(() => {
-    if (!task.challengeEndTime || task.completed) {
-      setChallengeTimeLeft(null);
-      return;
-    }
-    const update = () => {
-      const diff = task.challengeEndTime - Date.now();
-      const sec = diff <= 0 ? 0 : Math.ceil(diff / 1000);
-      setChallengeTimeLeft(sec);
-    };
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, [task.challengeEndTime, task.completed]);
-
   // 🎰 ギャンブルデザイン最大化: handleToggle
   // 予告演出、音変化、ニアミス強化、天井可視化、The Freezeを統合
   const handleToggle = async e => {
@@ -2261,7 +2244,8 @@ const TaskItem = ({
         onDragStart(e, task);
       }
     },
-    onContextMenu: e => onContextMenu && onContextMenu(e, task)
+    onContextMenu: e => onContextMenu && onContextMenu(e, task),
+    onClick: () => { if (isMobile) setShowActions(prev => !prev); }
   }, !task.completed && /*#__PURE__*/React.createElement("div", {
     className: "pt-0.5 pr-2 flex-shrink-0 cursor-move text-gray-300 hover:text-gray-500 transition-colors"
   }, /*#__PURE__*/React.createElement(Icons.GripVertical, {
@@ -2305,77 +2289,8 @@ const TaskItem = ({
     className: "flex items-center gap-1"
   }, !task.completed && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1"
-  }, challengeTimeLeft !== null ? /*#__PURE__*/React.createElement("span", {
-    className: `text-[11px] font-black px-3 py-1 rounded-xl border-b-2 shadow-sm ${challengeTimeLeft > 0 ? 'bg-duo-pink text-white border-duo-pinkBorder animate-pulse' : 'bg-gray-200 text-gray-500 border-gray-300'}`
-  }, challengeTimeLeft > 0 ? `${Math.floor(challengeTimeLeft / 60)}:${(challengeTimeLeft % 60).toString().padStart(2, '0')}` : 'TIME OVER') : /*#__PURE__*/React.createElement("span", {
-    className: "text-[11px] font-bold px-3 py-1 rounded-xl bg-gray-50 text-gray-400 border border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors",
-    onClick: e => {
-      e.stopPropagation();
-      setEditTimeValue(String(task.challengeDuration || 9.5));
-      setIsEditingTime(true);
-    }
-  }, task.challengeDuration || 9.5, "min"), isEditingTime && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 bg-black/50 z-[300] flex items-center justify-center",
-    onClick: () => setIsEditingTime(false)
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-2xl p-6 shadow-floating w-80 animate-scale-in",
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("h3", {
-    className: "text-lg font-black mb-4 text-gray-700"
-  }, "Set Time Limit"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2 mb-4"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    step: "0.5",
-    min: "0.5",
-    value: editTimeValue,
-    onChange: e => setEditTimeValue(e.target.value),
-    className: "flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl font-bold text-lg text-center"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "font-bold text-gray-500"
-  }, "min")), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-2"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      onUpdate(task.id, {
-        challengeDuration: parseFloat(editTimeValue)
-      });
-      setIsEditingTime(false);
-    },
-    className: "flex-1 bg-duo-blue text-white font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
-  }, "Save"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setIsEditingTime(false),
-    className: "flex-1 bg-gray-200 text-gray-600 font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
-  }, "Cancel"))))), !task.completed && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement(IconButton, {
-    icon: Icons.Flame,
-    size: 18,
-    className: challengeTimeLeft !== null ? "text-orange-500" : "text-gray-300 hover:text-orange-400 hover:bg-orange-50",
-    onClick: e => {
-      e.stopPropagation();
-      const duration = (task.challengeDuration || 9.5) * 60 * 1000;
-      onUpdate(task.id, {
-        challengeEndTime: Date.now() + duration
-      });
-
-      // Morning Burn: Stop burning and save gems when starting a task
-      if (stats.isBurning && stats.tempGems > 0) {
-        const savedGems = stats.tempGems;
-        setStats(prev => ({
-          ...prev,
-          gems: prev.gems + savedGems,
-          tempGems: 0,
-          initialTempGems: 0,
-          isBurning: false,
-          devLogs: [...(prev.devLogs || []), `✅ タスク着手！${savedGems}💎を獲得しました。朝の勝負に勝利！`]
-        }));
-        setToastMessage(`🎉 ${savedGems}💎 を獲得！朝の勝負に勝利しました！`);
-        AudioEngine.play([200, 300, 400, 500], 'sine', 0.2, 0.3);
-      }
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
+    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`
   }, /*#__PURE__*/React.createElement(IconButton, {
     icon: Icons.Trash2,
     size: 18,
@@ -2385,7 +2300,7 @@ const TaskItem = ({
       onDelete(task.id);
     }
   }))), task.completed && /*#__PURE__*/React.createElement("div", {
-    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
+    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`
   }, /*#__PURE__*/React.createElement(IconButton, {
     icon: Icons.Trash2,
     size: 18,
@@ -3007,9 +2922,7 @@ const App = () => {
   const handleGoogleLogin = async () => {
     try {
       const provider = new firebase.auth.GoogleAuthProvider();
-      await window.firebaseAuth.signInWithPopup(provider);
-      setShowAuthModal(false);
-      setToastMessage('✅ ログインしました');
+      await window.firebaseAuth.signInWithRedirect(provider);
     } catch (error) {
       console.error('[Auth] Google login error:', error);
       setToastMessage('❌ ログインに失敗しました');
@@ -3175,12 +3088,11 @@ const App = () => {
     }
 
     // High Velocity (20💎 for Section 1, 15💎 for others)
-    const isChallenge = task.challengeEndTime && task.challengeEndTime > Date.now();
     const isFlowActive = Date.now() < stats.flowCapacitorEndTime;
-    if ((isChallenge || isFlowActive) && rewardAmount < 15) {
+    if (isFlowActive && rewardAmount < 15) {
       rewardAmount = isSection1Task ? 20 : 15;
       rewardType = 'velocity';
-      logText = isSection1Task ? `[⚡ MVP Focus] ${task.title} を最速で完遂。リリースが近づいています。` : `[High Velocity] タイムアタック成功。${task.title} を最短工数で完遂しました。`;
+      logText = isSection1Task ? `[⚡ MVP Focus] ${task.title} を最速で完遂。リリースが近づいています。` : `[High Velocity] ${task.title} を最短工数で完遂しました。`;
     }
 
     // MVP Task Bonus: Section 1のタスクは基礎報酬増加
@@ -3255,8 +3167,8 @@ const App = () => {
         }
       }
 
-      // Wager Logic (Simplified: Active & Challenge Success = Win)
-      if (prev.wager.active && (isChallenge || isFlowActive)) {
+      // Wager Logic (Simplified: Active & Flow = Win)
+      if (prev.wager.active && isFlowActive) {
         wagerBonus = 100;
         wagerComplete = true;
         newWager = {
