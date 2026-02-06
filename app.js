@@ -2507,6 +2507,7 @@ const App = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
+  const lastSyncRef = useRef(0); // 自分の保存タイムスタンプを追跡
 
   const closeToast = useCallback(() => {
     setToastMessage(null);
@@ -2598,19 +2599,22 @@ const App = () => {
               }, {
                 merge: true
               });
-              localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+              lastSyncRef.current = Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else if (localTaskCount === 0 && cloudTaskCount > 0) {
               // ローカルが空で、クラウドにデータがある → クラウドを採用
               console.log('[Sync] Local is empty, using cloud data');
               setTasks(cloudTasks);
               if (cloudData.stats) setStats(cloudData.stats);
-              localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+              lastSyncRef.current = cloudData.lastSync || Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else if (cloudTaskCount > localTaskCount) {
               // クラウドの方が多い → クラウドを採用
               console.log('[Sync] Cloud has more tasks, using cloud data');
               setTasks(cloudTasks);
               if (cloudData.stats) setStats(cloudData.stats);
-              localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+              lastSyncRef.current = cloudData.lastSync || Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else if (localTaskCount > cloudTaskCount) {
               // ローカルの方が多い → ローカルをアップロード
               console.log('[Sync] Local has more tasks, uploading local data');
@@ -2622,7 +2626,8 @@ const App = () => {
               }, {
                 merge: true
               });
-              localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+              lastSyncRef.current = Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else {
               // タスク数が同じ → タイムスタンプで比較
               const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
@@ -2631,6 +2636,7 @@ const App = () => {
                 console.log('[Sync] Same task count, cloud is newer');
                 setTasks(cloudTasks);
                 if (cloudData.stats) setStats(cloudData.stats);
+                lastSyncRef.current = cloudTimestamp;
                 localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
               } else {
                 console.log('[Sync] Same task count, local is newer, uploading');
@@ -2642,7 +2648,8 @@ const App = () => {
                 }, {
                   merge: true
                 });
-                localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+                lastSyncRef.current = Date.now();
+                localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
               }
             }
           } else {
@@ -2655,7 +2662,8 @@ const App = () => {
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+            lastSyncRef.current = Date.now();
+            localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
           }
           setSyncStatus('synced');
         } catch (error) {
@@ -2680,60 +2688,26 @@ const App = () => {
       if (!docSnap.exists) return;
       const cloudData = docSnap.data();
       const cloudTimestamp = cloudData.lastSync || 0;
-      const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
 
-      // 🛡️ データ保護：タスク数とタイムスタンプを組み合わせて判断
+      // 自分自身の書き込みによるonSnapshotは無視
+      if (cloudTimestamp <= lastSyncRef.current) {
+        console.log('[Realtime] Ignoring own write');
+        return;
+      }
+
       const cloudTasks = cloudData.tasks || [];
-      const localTaskCount = tasks.length;
       const cloudTaskCount = cloudTasks.length;
-      const taskCountDiff = Math.abs(cloudTaskCount - localTaskCount);
-      console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}, Diff: ${taskCountDiff}, Cloud time: ${cloudTimestamp}, Local time: ${localTimestamp}`);
 
-      // クラウドのデータが新しい場合のみ更新（自分自身の変更は無視）
-      if (cloudTimestamp > localTimestamp) {
-        // 🛡️ ケース1: 一方が空の場合は特別扱い
-        if (cloudTaskCount === 0 && localTaskCount > 0) {
-          console.log('[Realtime] Ignoring empty cloud data (local has tasks)');
-          // 空のクラウドデータは無視し、ローカルをアップロード
-          userDocRef.set({
-            tasks: tasks,
-            stats: stats,
-            lastSync: Date.now(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, {
-            merge: true
-          }).catch(err => console.error('[Realtime] Upload error:', err));
-        } else if (localTaskCount === 0 && cloudTaskCount > 0) {
-          console.log('[Realtime] Local is empty, using cloud data');
-          setTasks(cloudTasks);
-          if (cloudData.stats) setStats(cloudData.stats);
-          localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-          setToastMessage('🔄 他のデバイスから同期されました');
-        }
-        // 🛡️ ケース2: タスク数の差が大きい（5個以上）場合は、多い方を優先
-        else if (taskCountDiff >= 5) {
-          if (cloudTaskCount > localTaskCount) {
-            console.log('[Realtime] Cloud has significantly more tasks, using cloud data');
-            setTasks(cloudTasks);
-            if (cloudData.stats) setStats(cloudData.stats);
-            localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-            setToastMessage('🔄 他のデバイスから同期されました');
-          } else {
-            console.log('[Realtime] Local has significantly more tasks, ignoring cloud data');
-          }
-        }
-        // 🛡️ ケース3: タスク数の差が小さい（4個以内）→ タイムスタンプで判断
-        else {
-          console.log('[Realtime] Task count difference is small, using timestamp');
-          setTasks(cloudTasks);
-          if (cloudData.stats) setStats(cloudData.stats);
-          localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+      console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Cloud time: ${cloudTimestamp}, Last sync: ${lastSyncRef.current}`);
 
-          // タスクの完了状態の変更など、通知は控えめに
-          if (taskCountDiff > 0) {
-            setToastMessage('🔄 他のデバイスから同期されました');
-          }
-        }
+      // 他のデバイスからの変更を適用
+      if (cloudTaskCount > 0) {
+        console.log('[Realtime] Applying cloud data from another device');
+        setTasks(cloudTasks);
+        if (cloudData.stats) setStats(cloudData.stats);
+        lastSyncRef.current = cloudTimestamp;
+        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+        setToastMessage('🔄 他のデバイスから同期されました');
       }
     }, error => {
       console.error('[Realtime] Error in realtime listener:', error);
@@ -2743,7 +2717,7 @@ const App = () => {
       console.log('[Realtime] Cleaning up realtime sync listener');
       unsubscribe();
     };
-  }, [user, tasks, stats]);
+  }, [user]);
 
   // 💾 ローカルストレージとFirestoreへの保存
   useEffect(() => {
@@ -2766,6 +2740,7 @@ const App = () => {
           }, {
             merge: true
           });
+          lastSyncRef.current = timestamp;
           localStorage.setItem('duo_v18_lastSync', timestamp.toString());
           setSyncStatus('synced');
           console.log('[Sync] Saved to Firestore');
