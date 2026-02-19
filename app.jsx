@@ -2030,6 +2030,46 @@
 
             const SECTION_SIZE = 4;
 
+            // 初回ロード時: 空セクションを作る不要なisSectionHeadを除去
+            useEffect(() => {
+                const incompleteTasks = tasks.filter(t => !t.completed);
+                let needsCleanup = false;
+                // 連続するisSectionHeadをチェック（後ろにタスクが無いheadは不要）
+                for (let i = 0; i < incompleteTasks.length - 1; i++) {
+                    if (incompleteTasks[i].isSectionHead && incompleteTasks[i + 1].isSectionHead) {
+                        needsCleanup = true;
+                        break;
+                    }
+                }
+                // 最後のタスクがisSectionHead（その後にタスクがない）場合も不要
+                if (incompleteTasks.length > 0 && incompleteTasks[incompleteTasks.length - 1].isSectionHead && incompleteTasks.length > 1) {
+                    needsCleanup = true;
+                }
+                if (needsCleanup) {
+                    // isSectionHeadの直後にタスクがあるもののみ残す
+                    const incompleteIds = new Set(incompleteTasks.map(t => t.id));
+                    const validHeadIds = new Set();
+                    for (let i = 0; i < incompleteTasks.length; i++) {
+                        if (incompleteTasks[i].isSectionHead && i < incompleteTasks.length - 1 && !incompleteTasks[i + 1].isSectionHead) {
+                            validHeadIds.add(incompleteTasks[i].id);
+                        }
+                    }
+                    const cleaned = tasks.map(t => {
+                        if (t.completed || !t.isSectionHead) return t;
+                        if (validHeadIds.has(t.id)) return t;
+                        return { ...t, isSectionHead: false };
+                    });
+                    // sectionIdを再計算
+                    let sectionId = 1;
+                    const updated = cleaned.map((t, idx) => {
+                        if (t.completed) return t;
+                        if (idx > 0 && t.isSectionHead) sectionId++;
+                        return { ...t, sectionId };
+                    });
+                    setTasks(updated);
+                }
+            }, []); // 初回のみ実行
+
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [activeListId, setActiveListId] = useState('default');
             const [isShopOpen, setIsShopOpen] = useState(false);

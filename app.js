@@ -2479,6 +2479,39 @@ const App = () => {
     goal: null // ユーザーの目標
   }));
   const SECTION_SIZE = 4;
+  useEffect(() => {
+    const incompleteTasks = tasks.filter(t => !t.completed);
+    let needsCleanup = false;
+    for (let i = 0; i < incompleteTasks.length - 1; i++) {
+      if (incompleteTasks[i].isSectionHead && incompleteTasks[i + 1].isSectionHead) {
+        needsCleanup = true;
+        break;
+      }
+    }
+    if (incompleteTasks.length > 0 && incompleteTasks[incompleteTasks.length - 1].isSectionHead && incompleteTasks.length > 1) {
+      needsCleanup = true;
+    }
+    if (needsCleanup) {
+      const validHeadIds = new Set();
+      for (let i = 0; i < incompleteTasks.length; i++) {
+        if (incompleteTasks[i].isSectionHead && i < incompleteTasks.length - 1 && !incompleteTasks[i + 1].isSectionHead) {
+          validHeadIds.add(incompleteTasks[i].id);
+        }
+      }
+      const cleaned = tasks.map(t => {
+        if (t.completed || !t.isSectionHead) return t;
+        if (validHeadIds.has(t.id)) return t;
+        return { ...t, isSectionHead: false };
+      });
+      let sectionId = 1;
+      const updated = cleaned.map((t, idx) => {
+        if (t.completed) return t;
+        if (idx > 0 && t.isSectionHead) sectionId++;
+        return { ...t, sectionId };
+      });
+      setTasks(updated);
+    }
+  }, []);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeListId, setActiveListId] = useState('default');
   const [isShopOpen, setIsShopOpen] = useState(false);
