@@ -1839,7 +1839,8 @@ const TaskItem = ({
   setRewardEffect,
   stats,
   setStats,
-  setToastMessage
+  setToastMessage,
+  onMoveToSection1
 }) => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -1855,6 +1856,8 @@ const TaskItem = ({
 
     // 既に完了している場合は単純にトグル（未完了に戻す）
     if (task.completed) return onToggle(task);
+    // Section 1以外の未完了タスクはチェック不可
+    if (!isFocusedSection) return;
     if (isCompleting || isStarting) return;
     const rect = buttonRef.current ? buttonRef.current.getBoundingClientRect() : null;
     const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
@@ -2235,7 +2238,7 @@ const TaskItem = ({
   const checkboxPop = animateCheckbox ? "animate-checkbox-pop" : "";
   const anticipationGlow = animateCheckbox ? "animate-anticipation-glow animate-anticipation-pulse" : "";
   // Section 1以外はクリック不可 (pointer-events-none)
-  const disabledClass = !isFocusedSection && !task.completed ? "pointer-events-none opacity-50 grayscale" : "";
+  const disabledClass = !isFocusedSection && !task.completed ? "opacity-50 grayscale" : "";
   return /*#__PURE__*/React.createElement("div", {
     className: `group flex items-start py-5 px-5 border-b-2 transition-all ${springClass} ${disabledClass} ${isDragging ? 'opacity-50 bg-blue-50' : ''} ${task.completed ? 'bg-gray-50 opacity-60 border-gray-100' : isFocusedSection ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-gray-100 border-gray-200'}`,
     draggable: !task.completed,
@@ -2291,7 +2294,15 @@ const TaskItem = ({
     className: "flex items-center gap-1"
   }, /*#__PURE__*/React.createElement("div", {
     className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`
-  }, /*#__PURE__*/React.createElement(IconButton, {
+  }, !isFocusedSection && onMoveToSection1 && /*#__PURE__*/React.createElement(IconButton, {
+    icon: Icons.ChevronUp,
+    size: 18,
+    className: "text-blue-400 hover:text-blue-600 hover:bg-blue-50",
+    onClick: e => {
+      e.stopPropagation();
+      onMoveToSection1(task.id);
+    }
+  }), /*#__PURE__*/React.createElement(IconButton, {
     icon: Icons.Trash2,
     size: 18,
     className: "text-gray-300 hover:text-duo-pink hover:bg-red-50",
@@ -3301,6 +3312,33 @@ const App = () => {
     setDraggedTaskId(null);
     setDragOverTaskId(null);
   };
+  const moveToSection1 = taskId => {
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+    let section1EndIndex = -1;
+    let passedFirstIncomplete = false;
+    for (let i = 0; i < tasks.length; i++) {
+      if (tasks[i].completed) continue;
+      if (!passedFirstIncomplete) {
+        passedFirstIncomplete = true;
+        section1EndIndex = i;
+        continue;
+      }
+      if (tasks[i].isSectionHead) break;
+      section1EndIndex = i;
+    }
+    if (section1EndIndex === -1 || taskIndex <= section1EndIndex) return;
+    const newTasks = [...tasks];
+    const [movedTask] = newTasks.splice(taskIndex, 1);
+    newTasks.splice(section1EndIndex + 1, 0, movedTask);
+    let sectionId = 1;
+    const updated = newTasks.map((t, idx) => {
+      if (t.completed) return t;
+      if (idx > 0 && t.isSectionHead) sectionId++;
+      return { ...t, sectionId };
+    });
+    setTasks(updated);
+  };
   const visibleTasks = tasks.filter(t => activeListId === 'default' ? !t.listId || t.listId === 'default' : t.listId === activeListId);
   const incomplete = visibleTasks.filter(t => !t.completed);
   const completed = visibleTasks.filter(t => t.completed);
@@ -3969,7 +4007,8 @@ const App = () => {
           setRewardEffect: setRewardEffect,
           stats: stats,
           setStats: setStats,
-          setToastMessage: setToastMessage
+          setToastMessage: setToastMessage,
+          onMoveToSection1: sectionNum !== 1 ? moveToSection1 : undefined
         }));
       }));
     });

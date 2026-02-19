@@ -1542,7 +1542,7 @@
         };
 
 
-        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false, setRewardEffect, stats, setStats, setToastMessage }) => {
+        const TaskItem = ({ task, onToggle, onUpdate, onDelete, onDragStart, isDragging, isMobile, onXpGain, isDeadlineView, activeTheme, onContextMenu, isFocusedSection = true, isLastInSection = false, setRewardEffect, stats, setStats, setToastMessage, onMoveToSection1 }) => {
             const [isCompleting, setIsCompleting] = useState(false);
             const [isStarting, setIsStarting] = useState(false);
             const [confettiType, setConfettiType] = useState(null);
@@ -1558,6 +1558,8 @@
 
                 // 既に完了している場合は単純にトグル（未完了に戻す）
                 if (task.completed) return onToggle(task);
+                // Section 1以外の未完了タスクはチェック不可
+                if (!isFocusedSection) return;
                 if (isCompleting || isStarting) return;
 
                 const rect = buttonRef.current ? buttonRef.current.getBoundingClientRect() : null;
@@ -1798,8 +1800,8 @@
             const springClass = isCompleting ? "animate-spring" : "";
             const checkboxPop = animateCheckbox ? "animate-checkbox-pop" : "";
             const anticipationGlow = animateCheckbox ? "animate-anticipation-glow animate-anticipation-pulse" : "";
-            // Section 1以外はクリック不可 (pointer-events-none)
-            const disabledClass = !isFocusedSection && !task.completed ? "pointer-events-none opacity-50 grayscale" : "";
+            // Section 1以外は薄く表示（pointer-events-noneは外し、ボタン操作を可能にする）
+            const disabledClass = !isFocusedSection && !task.completed ? "opacity-50 grayscale" : "";
 
             return (
                 <div
@@ -1871,6 +1873,10 @@
                         {!task.completed && (
                             <div className="flex items-center gap-1">
                                 <div className={`flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`}>
+                                    {/* Section 1以外のタスクにSection 1へ移動ボタンを表示 */}
+                                    {!isFocusedSection && onMoveToSection1 && (
+                                        <IconButton icon={Icons.ChevronUp} size={18} className="text-blue-400 hover:text-blue-600 hover:bg-blue-50" onClick={(e) => { e.stopPropagation(); onMoveToSection1(task.id); }} />
+                                    )}
                                     <IconButton icon={Icons.Trash2} size={18} className="text-gray-300 hover:text-duo-pink hover:bg-red-50" onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} />
                                 </div>
                             </div>
@@ -2858,6 +2864,44 @@
                 setDragOverTaskId(null);
             };
 
+            // Section 1の末尾にタスクを移動する
+            const moveToSection1 = (taskId) => {
+                const taskIndex = tasks.findIndex(t => t.id === taskId);
+                if (taskIndex === -1) return;
+
+                // tasksの中でsection 1の最後のインデックスを探す
+                // (最初の未完了タスク群の中で、2つ目以降のisSectionHeadが出る直前まで)
+                let section1EndIndex = -1;
+                let passedFirstIncomplete = false;
+                for (let i = 0; i < tasks.length; i++) {
+                    if (tasks[i].completed) continue;
+                    if (!passedFirstIncomplete) {
+                        passedFirstIncomplete = true;
+                        section1EndIndex = i;
+                        continue;
+                    }
+                    if (tasks[i].isSectionHead) break; // section 2の開始
+                    section1EndIndex = i;
+                }
+
+                if (section1EndIndex === -1 || taskIndex <= section1EndIndex) return;
+
+                const newTasks = [...tasks];
+                const [movedTask] = newTasks.splice(taskIndex, 1);
+                // taskIndexがsection1EndIndexより後なので、splice後のインデックス調整不要
+                newTasks.splice(section1EndIndex + 1, 0, movedTask);
+
+                // sectionIdを再計算
+                let sectionId = 1;
+                const updated = newTasks.map((t, idx) => {
+                    if (t.completed) return t;
+                    if (idx > 0 && t.isSectionHead) sectionId++;
+                    return { ...t, sectionId };
+                });
+
+                setTasks(updated);
+            };
+
             const visibleTasks = tasks.filter(t => activeListId === 'default' ? !t.listId || t.listId === 'default' : t.listId === activeListId);
             const incomplete = visibleTasks.filter(t => !t.completed);
             const completed = visibleTasks.filter(t => t.completed);
@@ -3524,6 +3568,7 @@
                                                                         stats={stats}
                                                                         setStats={setStats}
                                                                         setToastMessage={setToastMessage}
+                                                                        onMoveToSection1={sectionNum !== 1 ? moveToSection1 : undefined}
                                                                     />
                                                                 </div>
                                                             );
