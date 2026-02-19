@@ -3917,7 +3917,7 @@ const App = () => {
     if (currentSection.header !== null || currentSection.tasks.length > 0) {
       sections.push(currentSection);
     }
-    return sections.map((section, sectionIndex) => {
+    return sections.filter(s => s.tasks.length > 0).map((section, sectionIndex) => {
       const sectionNum = sectionIndex + 1;
       // セクション名はヘッダーまたはセクション内の最初のタスクから取得
       const sectionName = section.header?.sectionName || section.header?.title || section.tasks.find(t => t.sectionName)?.sectionName || `Section ${sectionNum}`;
