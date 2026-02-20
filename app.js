@@ -3308,6 +3308,39 @@ const App = () => {
     ...updates
   } : t));
 
+  // isSectionHeadタスクを完了する際、次タスクへisSectionHead/sectionNameを引き継ぐ
+  const completeTask = taskId => {
+    setTasks(prev => {
+      const taskIndex = prev.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) return prev;
+      const task = prev[taskIndex];
+      let nextHeadIndex = -1;
+      if (task.isSectionHead) {
+        for (let i = taskIndex + 1; i < prev.length; i++) {
+          const t = prev[i];
+          if (!t.completed && t.isSectionHead) break; // 次のセクション境界
+          if (!t.completed) {
+            nextHeadIndex = i;
+            break;
+          }
+        }
+      }
+      return prev.map((t, i) => {
+        if (i === taskIndex) return {
+          ...t,
+          completed: true,
+          completedAt: Date.now()
+        };
+        if (i === nextHeadIndex) return {
+          ...t,
+          isSectionHead: true,
+          sectionName: task.sectionName || t.sectionName
+        };
+        return t;
+      });
+    });
+  };
+
   // タスクの並び替え機能
   // ドラッグ&ドロップ関数
   const handleDragStart = (e, task) => {
@@ -3962,7 +3995,7 @@ const App = () => {
         }
         currentSection = {
           header: task,
-          tasks: []
+          tasks: [task]
         };
       } else {
         currentSection.tasks.push(task);
@@ -3973,8 +4006,8 @@ const App = () => {
     }
     return sections.filter(s => s.tasks.length > 0).map((section, sectionIndex) => {
       const sectionNum = sectionIndex + 1;
-      // セクション名はヘッダーまたはセクション内の最初のタスクから取得
-      const sectionName = section.header?.sectionName || section.header?.title || section.tasks.find(t => t.sectionName)?.sectionName || `Section ${sectionNum}`;
+      // セクション名はheaderのsectionNameプロパティから取得（なければSection Nをフォールバック）
+      const sectionName = section.header?.sectionName || section.tasks.find(t => t.sectionName)?.sectionName || `Section ${sectionNum}`;
       return /*#__PURE__*/React.createElement(React.Fragment, {
         key: `section-${sectionIndex}`
       }, /*#__PURE__*/React.createElement("div", {
@@ -4002,7 +4035,7 @@ const App = () => {
         className: "text-[10px] font-black text-yellow-700 uppercase tracking-wider"
       }, "MVP Focus"))), sectionNum === 1 && section.tasks.length > 0 && (() => {
         const currentSectionId = section.tasks[0]?.sectionId;
-        const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId && !t.isSectionHead);
+        const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId);
         const completedCount = currentSectionAllTasks.filter(t => t.completed).length;
         const incompleteCount = currentSectionAllTasks.filter(t => !t.completed).length;
         const sectionTotal = currentSectionAllTasks.length;
@@ -4045,10 +4078,7 @@ const App = () => {
           task: t,
           isMobile: isMobile,
           onXpGain: handleXpGain,
-          onToggle: () => updateTask(t.id, {
-            completed: true,
-            completedAt: Date.now()
-          }),
+          onToggle: () => completeTask(t.id),
           onUpdate: updateTask,
           onDelete: id => setTasks(tasks.filter(x => x.id !== id)),
           onDragStart: handleDragStart,
