@@ -1839,32 +1839,16 @@ const TaskItem = ({
   setRewardEffect,
   stats,
   setStats,
-  setToastMessage
+  setToastMessage,
+  onMoveToSection1
 }) => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [confettiType, setConfettiType] = useState(null);
-  const [challengeTimeLeft, setChallengeTimeLeft] = useState(null);
   const [animateCheckbox, setAnimateCheckbox] = useState(false);
-  const [isEditingTime, setIsEditingTime] = useState(false);
-  const [editTimeValue, setEditTimeValue] = useState('9.5');
+  const [showActions, setShowActions] = useState(false);
   const [currentForecast, setCurrentForecast] = useState(null); // 予告枠色
   const buttonRef = useRef(null);
-  useEffect(() => {
-    if (!task.challengeEndTime || task.completed) {
-      setChallengeTimeLeft(null);
-      return;
-    }
-    const update = () => {
-      const diff = task.challengeEndTime - Date.now();
-      const sec = diff <= 0 ? 0 : Math.ceil(diff / 1000);
-      setChallengeTimeLeft(sec);
-    };
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, [task.challengeEndTime, task.completed]);
-
   // 🎰 ギャンブルデザイン最大化: handleToggle
   // 予告演出、音変化、ニアミス強化、天井可視化、The Freezeを統合
   const handleToggle = async e => {
@@ -1872,6 +1856,8 @@ const TaskItem = ({
 
     // 既に完了している場合は単純にトグル（未完了に戻す）
     if (task.completed) return onToggle(task);
+    // Section 1以外の未完了タスクはチェック不可
+    if (!isFocusedSection) return;
     if (isCompleting || isStarting) return;
     const rect = buttonRef.current ? buttonRef.current.getBoundingClientRect() : null;
     const centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
@@ -2252,7 +2238,7 @@ const TaskItem = ({
   const checkboxPop = animateCheckbox ? "animate-checkbox-pop" : "";
   const anticipationGlow = animateCheckbox ? "animate-anticipation-glow animate-anticipation-pulse" : "";
   // Section 1以外はクリック不可 (pointer-events-none)
-  const disabledClass = !isFocusedSection && !task.completed ? "pointer-events-none opacity-50 grayscale" : "";
+  const disabledClass = !isFocusedSection && !task.completed ? "opacity-50 grayscale" : "";
   return /*#__PURE__*/React.createElement("div", {
     className: `group flex items-start py-5 px-5 border-b-2 transition-all ${springClass} ${disabledClass} ${isDragging ? 'opacity-50 bg-blue-50' : ''} ${task.completed ? 'bg-gray-50 opacity-60 border-gray-100' : isFocusedSection ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-gray-100 border-gray-200'}`,
     draggable: !task.completed,
@@ -2261,7 +2247,8 @@ const TaskItem = ({
         onDragStart(e, task);
       }
     },
-    onContextMenu: e => onContextMenu && onContextMenu(e, task)
+    onContextMenu: e => onContextMenu && onContextMenu(e, task),
+    onClick: () => { if (isMobile) setShowActions(prev => !prev); }
   }, !task.completed && /*#__PURE__*/React.createElement("div", {
     className: "pt-0.5 pr-2 flex-shrink-0 cursor-move text-gray-300 hover:text-gray-500 transition-colors"
   }, /*#__PURE__*/React.createElement(Icons.GripVertical, {
@@ -2305,78 +2292,17 @@ const TaskItem = ({
     className: "flex items-center gap-1"
   }, !task.completed && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1"
-  }, challengeTimeLeft !== null ? /*#__PURE__*/React.createElement("span", {
-    className: `text-[11px] font-black px-3 py-1 rounded-xl border-b-2 shadow-sm ${challengeTimeLeft > 0 ? 'bg-duo-pink text-white border-duo-pinkBorder animate-pulse' : 'bg-gray-200 text-gray-500 border-gray-300'}`
-  }, challengeTimeLeft > 0 ? `${Math.floor(challengeTimeLeft / 60)}:${(challengeTimeLeft % 60).toString().padStart(2, '0')}` : 'TIME OVER') : /*#__PURE__*/React.createElement("span", {
-    className: "text-[11px] font-bold px-3 py-1 rounded-xl bg-gray-50 text-gray-400 border border-gray-200 cursor-pointer hover:bg-gray-100 hover:border-gray-300 transition-colors",
-    onClick: e => {
-      e.stopPropagation();
-      setEditTimeValue(String(task.challengeDuration || 9.5));
-      setIsEditingTime(true);
-    }
-  }, task.challengeDuration || 9.5, "min"), isEditingTime && /*#__PURE__*/React.createElement("div", {
-    className: "fixed inset-0 bg-black/50 z-[300] flex items-center justify-center",
-    onClick: () => setIsEditingTime(false)
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-white rounded-2xl p-6 shadow-floating w-80 animate-scale-in",
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("h3", {
-    className: "text-lg font-black mb-4 text-gray-700"
-  }, "Set Time Limit"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2 mb-4"
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    step: "0.5",
-    min: "0.5",
-    value: editTimeValue,
-    onChange: e => setEditTimeValue(e.target.value),
-    className: "flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl font-bold text-lg text-center"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "font-bold text-gray-500"
-  }, "min")), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-2"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      onUpdate(task.id, {
-        challengeDuration: parseFloat(editTimeValue)
-      });
-      setIsEditingTime(false);
-    },
-    className: "flex-1 bg-duo-blue text-white font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
-  }, "Save"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setIsEditingTime(false),
-    className: "flex-1 bg-gray-200 text-gray-600 font-black py-2 rounded-xl hover:scale-105 active:scale-95 transition-transform"
-  }, "Cancel"))))), !task.completed && /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement(IconButton, {
-    icon: Icons.Flame,
+    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`
+  }, !isFocusedSection && onMoveToSection1 && /*#__PURE__*/React.createElement(IconButton, {
+    icon: Icons.ChevronUp,
     size: 18,
-    className: challengeTimeLeft !== null ? "text-orange-500" : "text-gray-300 hover:text-orange-400 hover:bg-orange-50",
+    className: "text-blue-400 hover:text-blue-600 hover:bg-blue-50",
     onClick: e => {
       e.stopPropagation();
-      const duration = (task.challengeDuration || 9.5) * 60 * 1000;
-      onUpdate(task.id, {
-        challengeEndTime: Date.now() + duration
-      });
-
-      // Morning Burn: Stop burning and save gems when starting a task
-      if (stats.isBurning && stats.tempGems > 0) {
-        const savedGems = stats.tempGems;
-        setStats(prev => ({
-          ...prev,
-          gems: prev.gems + savedGems,
-          tempGems: 0,
-          initialTempGems: 0,
-          isBurning: false,
-          devLogs: [...(prev.devLogs || []), `✅ タスク着手！${savedGems}💎を獲得しました。朝の勝負に勝利！`]
-        }));
-        setToastMessage(`🎉 ${savedGems}💎 を獲得！朝の勝負に勝利しました！`);
-        AudioEngine.play([200, 300, 400, 500], 'sine', 0.2, 0.3);
-      }
+      onMoveToSection1(task.id);
     }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
-  }, /*#__PURE__*/React.createElement(IconButton, {
+  }), /*#__PURE__*/React.createElement(IconButton, {
     icon: Icons.Trash2,
     size: 18,
     className: "text-gray-300 hover:text-duo-pink hover:bg-red-50",
@@ -2385,7 +2311,7 @@ const TaskItem = ({
       onDelete(task.id);
     }
   }))), task.completed && /*#__PURE__*/React.createElement("div", {
-    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
+    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`
   }, /*#__PURE__*/React.createElement(IconButton, {
     icon: Icons.Trash2,
     size: 18,
@@ -2553,6 +2479,39 @@ const App = () => {
     goal: null // ユーザーの目標
   }));
   const SECTION_SIZE = 4;
+  useEffect(() => {
+    const incompleteTasks = tasks.filter(t => !t.completed);
+    let needsCleanup = false;
+    for (let i = 0; i < incompleteTasks.length - 1; i++) {
+      if (incompleteTasks[i].isSectionHead && incompleteTasks[i + 1].isSectionHead) {
+        needsCleanup = true;
+        break;
+      }
+    }
+    if (incompleteTasks.length > 0 && incompleteTasks[incompleteTasks.length - 1].isSectionHead && incompleteTasks.length > 1) {
+      needsCleanup = true;
+    }
+    if (needsCleanup) {
+      const validHeadIds = new Set();
+      for (let i = 0; i < incompleteTasks.length; i++) {
+        if (incompleteTasks[i].isSectionHead && i < incompleteTasks.length - 1 && !incompleteTasks[i + 1].isSectionHead) {
+          validHeadIds.add(incompleteTasks[i].id);
+        }
+      }
+      const cleaned = tasks.map(t => {
+        if (t.completed || !t.isSectionHead) return t;
+        if (validHeadIds.has(t.id)) return t;
+        return { ...t, isSectionHead: false };
+      });
+      let sectionId = 1;
+      const updated = cleaned.map((t, idx) => {
+        if (t.completed) return t;
+        if (idx > 0 && t.isSectionHead) sectionId++;
+        return { ...t, sectionId };
+      });
+      setTasks(updated);
+    }
+  }, []);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeListId, setActiveListId] = useState('default');
   const [isShopOpen, setIsShopOpen] = useState(false);
@@ -2592,6 +2551,7 @@ const App = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
+  const lastSyncRef = useRef(0); // 自分の保存タイムスタンプを追跡
 
   const closeToast = useCallback(() => {
     setToastMessage(null);
@@ -2683,19 +2643,22 @@ const App = () => {
               }, {
                 merge: true
               });
-              localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+              lastSyncRef.current = Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else if (localTaskCount === 0 && cloudTaskCount > 0) {
               // ローカルが空で、クラウドにデータがある → クラウドを採用
               console.log('[Sync] Local is empty, using cloud data');
               setTasks(cloudTasks);
               if (cloudData.stats) setStats(cloudData.stats);
-              localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+              lastSyncRef.current = cloudData.lastSync || Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else if (cloudTaskCount > localTaskCount) {
               // クラウドの方が多い → クラウドを採用
               console.log('[Sync] Cloud has more tasks, using cloud data');
               setTasks(cloudTasks);
               if (cloudData.stats) setStats(cloudData.stats);
-              localStorage.setItem('duo_v18_lastSync', (cloudData.lastSync || Date.now()).toString());
+              lastSyncRef.current = cloudData.lastSync || Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else if (localTaskCount > cloudTaskCount) {
               // ローカルの方が多い → ローカルをアップロード
               console.log('[Sync] Local has more tasks, uploading local data');
@@ -2707,7 +2670,8 @@ const App = () => {
               }, {
                 merge: true
               });
-              localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+              lastSyncRef.current = Date.now();
+              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
             } else {
               // タスク数が同じ → タイムスタンプで比較
               const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
@@ -2716,6 +2680,7 @@ const App = () => {
                 console.log('[Sync] Same task count, cloud is newer');
                 setTasks(cloudTasks);
                 if (cloudData.stats) setStats(cloudData.stats);
+                lastSyncRef.current = cloudTimestamp;
                 localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
               } else {
                 console.log('[Sync] Same task count, local is newer, uploading');
@@ -2727,7 +2692,8 @@ const App = () => {
                 }, {
                   merge: true
                 });
-                localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+                lastSyncRef.current = Date.now();
+                localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
               }
             }
           } else {
@@ -2740,7 +2706,8 @@ const App = () => {
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            localStorage.setItem('duo_v18_lastSync', Date.now().toString());
+            lastSyncRef.current = Date.now();
+            localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
           }
           setSyncStatus('synced');
         } catch (error) {
@@ -2765,60 +2732,26 @@ const App = () => {
       if (!docSnap.exists) return;
       const cloudData = docSnap.data();
       const cloudTimestamp = cloudData.lastSync || 0;
-      const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
 
-      // 🛡️ データ保護：タスク数とタイムスタンプを組み合わせて判断
+      // 自分自身の書き込みによるonSnapshotは無視
+      if (cloudTimestamp <= lastSyncRef.current) {
+        console.log('[Realtime] Ignoring own write');
+        return;
+      }
+
       const cloudTasks = cloudData.tasks || [];
-      const localTaskCount = tasks.length;
       const cloudTaskCount = cloudTasks.length;
-      const taskCountDiff = Math.abs(cloudTaskCount - localTaskCount);
-      console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}, Diff: ${taskCountDiff}, Cloud time: ${cloudTimestamp}, Local time: ${localTimestamp}`);
 
-      // クラウドのデータが新しい場合のみ更新（自分自身の変更は無視）
-      if (cloudTimestamp > localTimestamp) {
-        // 🛡️ ケース1: 一方が空の場合は特別扱い
-        if (cloudTaskCount === 0 && localTaskCount > 0) {
-          console.log('[Realtime] Ignoring empty cloud data (local has tasks)');
-          // 空のクラウドデータは無視し、ローカルをアップロード
-          userDocRef.set({
-            tasks: tasks,
-            stats: stats,
-            lastSync: Date.now(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, {
-            merge: true
-          }).catch(err => console.error('[Realtime] Upload error:', err));
-        } else if (localTaskCount === 0 && cloudTaskCount > 0) {
-          console.log('[Realtime] Local is empty, using cloud data');
-          setTasks(cloudTasks);
-          if (cloudData.stats) setStats(cloudData.stats);
-          localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-          setToastMessage('🔄 他のデバイスから同期されました');
-        }
-        // 🛡️ ケース2: タスク数の差が大きい（5個以上）場合は、多い方を優先
-        else if (taskCountDiff >= 5) {
-          if (cloudTaskCount > localTaskCount) {
-            console.log('[Realtime] Cloud has significantly more tasks, using cloud data');
-            setTasks(cloudTasks);
-            if (cloudData.stats) setStats(cloudData.stats);
-            localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-            setToastMessage('🔄 他のデバイスから同期されました');
-          } else {
-            console.log('[Realtime] Local has significantly more tasks, ignoring cloud data');
-          }
-        }
-        // 🛡️ ケース3: タスク数の差が小さい（4個以内）→ タイムスタンプで判断
-        else {
-          console.log('[Realtime] Task count difference is small, using timestamp');
-          setTasks(cloudTasks);
-          if (cloudData.stats) setStats(cloudData.stats);
-          localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+      console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Cloud time: ${cloudTimestamp}, Last sync: ${lastSyncRef.current}`);
 
-          // タスクの完了状態の変更など、通知は控えめに
-          if (taskCountDiff > 0) {
-            setToastMessage('🔄 他のデバイスから同期されました');
-          }
-        }
+      // 他のデバイスからの変更を適用
+      if (cloudTaskCount > 0) {
+        console.log('[Realtime] Applying cloud data from another device');
+        setTasks(cloudTasks);
+        if (cloudData.stats) setStats(cloudData.stats);
+        lastSyncRef.current = cloudTimestamp;
+        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+        console.log('[Realtime] Synced from another device');
       }
     }, error => {
       console.error('[Realtime] Error in realtime listener:', error);
@@ -2828,7 +2761,7 @@ const App = () => {
       console.log('[Realtime] Cleaning up realtime sync listener');
       unsubscribe();
     };
-  }, [user, tasks, stats]);
+  }, [user]);
 
   // 💾 ローカルストレージとFirestoreへの保存
   useEffect(() => {
@@ -2838,6 +2771,10 @@ const App = () => {
 
     // ログイン済みの場合はFirestoreにも保存
     if (user && window.firebaseDB && !authLoading) {
+      // デバウンス中のonSnapshotで古いクラウドデータに上書きされないよう
+      // 即座にlastSyncRefを現在時刻に更新しておく
+      lastSyncRef.current = Date.now();
+
       const saveToFirestore = async () => {
         try {
           setSyncStatus('syncing');
@@ -2851,6 +2788,7 @@ const App = () => {
           }, {
             merge: true
           });
+          lastSyncRef.current = timestamp;
           localStorage.setItem('duo_v18_lastSync', timestamp.toString());
           setSyncStatus('synced');
           console.log('[Sync] Saved to Firestore');
@@ -3007,9 +2945,7 @@ const App = () => {
   const handleGoogleLogin = async () => {
     try {
       const provider = new firebase.auth.GoogleAuthProvider();
-      await window.firebaseAuth.signInWithPopup(provider);
-      setShowAuthModal(false);
-      setToastMessage('✅ ログインしました');
+      await window.firebaseAuth.signInWithRedirect(provider);
     } catch (error) {
       console.error('[Auth] Google login error:', error);
       setToastMessage('❌ ログインに失敗しました');
@@ -3175,12 +3111,11 @@ const App = () => {
     }
 
     // High Velocity (20💎 for Section 1, 15💎 for others)
-    const isChallenge = task.challengeEndTime && task.challengeEndTime > Date.now();
     const isFlowActive = Date.now() < stats.flowCapacitorEndTime;
-    if ((isChallenge || isFlowActive) && rewardAmount < 15) {
+    if (isFlowActive && rewardAmount < 15) {
       rewardAmount = isSection1Task ? 20 : 15;
       rewardType = 'velocity';
-      logText = isSection1Task ? `[⚡ MVP Focus] ${task.title} を最速で完遂。リリースが近づいています。` : `[High Velocity] タイムアタック成功。${task.title} を最短工数で完遂しました。`;
+      logText = isSection1Task ? `[⚡ MVP Focus] ${task.title} を最速で完遂。リリースが近づいています。` : `[High Velocity] ${task.title} を最短工数で完遂しました。`;
     }
 
     // MVP Task Bonus: Section 1のタスクは基礎報酬増加
@@ -3255,8 +3190,8 @@ const App = () => {
         }
       }
 
-      // Wager Logic (Simplified: Active & Challenge Success = Win)
-      if (prev.wager.active && (isChallenge || isFlowActive)) {
+      // Wager Logic (Simplified: Active & Flow = Win)
+      if (prev.wager.active && isFlowActive) {
         wagerBonus = 100;
         wagerComplete = true;
         newWager = {
@@ -3413,6 +3348,33 @@ const App = () => {
   const handleDragEnd = () => {
     setDraggedTaskId(null);
     setDragOverTaskId(null);
+  };
+  const moveToSection1 = taskId => {
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+    let section1EndIndex = -1;
+    let passedFirstIncomplete = false;
+    for (let i = 0; i < tasks.length; i++) {
+      if (tasks[i].completed) continue;
+      if (!passedFirstIncomplete) {
+        passedFirstIncomplete = true;
+        section1EndIndex = i;
+        continue;
+      }
+      if (tasks[i].isSectionHead) break;
+      section1EndIndex = i;
+    }
+    if (section1EndIndex === -1 || taskIndex <= section1EndIndex) return;
+    const newTasks = [...tasks];
+    const [movedTask] = newTasks.splice(taskIndex, 1);
+    newTasks.splice(section1EndIndex + 1, 0, movedTask);
+    let sectionId = 1;
+    const updated = newTasks.map((t, idx) => {
+      if (t.completed) return t;
+      if (idx > 0 && t.isSectionHead) sectionId++;
+      return { ...t, sectionId };
+    });
+    setTasks(updated);
   };
   const visibleTasks = tasks.filter(t => activeListId === 'default' ? !t.listId || t.listId === 'default' : t.listId === activeListId);
   const incomplete = visibleTasks.filter(t => !t.completed);
@@ -3992,7 +3954,7 @@ const App = () => {
     if (currentSection.header !== null || currentSection.tasks.length > 0) {
       sections.push(currentSection);
     }
-    return sections.map((section, sectionIndex) => {
+    return sections.filter(s => s.tasks.length > 0).map((section, sectionIndex) => {
       const sectionNum = sectionIndex + 1;
       // セクション名はヘッダーまたはセクション内の最初のタスクから取得
       const sectionName = section.header?.sectionName || section.header?.title || section.tasks.find(t => t.sectionName)?.sectionName || `Section ${sectionNum}`;
@@ -4082,7 +4044,8 @@ const App = () => {
           setRewardEffect: setRewardEffect,
           stats: stats,
           setStats: setStats,
-          setToastMessage: setToastMessage
+          setToastMessage: setToastMessage,
+          onMoveToSection1: sectionNum !== 1 ? moveToSection1 : undefined
         }));
       }));
     });
