@@ -2771,6 +2771,10 @@ const App = () => {
 
     // ログイン済みの場合はFirestoreにも保存
     if (user && window.firebaseDB && !authLoading) {
+      // デバウンス中のonSnapshotで古いクラウドデータに上書きされないよう
+      // 即座にlastSyncRefを現在時刻に更新しておく
+      lastSyncRef.current = Date.now();
+
       const saveToFirestore = async () => {
         try {
           setSyncStatus('syncing');
