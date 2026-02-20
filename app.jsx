@@ -2108,7 +2108,10 @@
             const [authLoading, setAuthLoading] = useState(true);
             const [showAuthModal, setShowAuthModal] = useState(false);
             const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
-            const lastSyncRef = useRef(0); // 自分の保存タイムスタンプを追跡
+            const localLastModifiedRef = useRef(
+                parseInt(localStorage.getItem('duo_v18_lastSync') || '0')
+            ); // ローカルでの最終変更時刻を追跡（LWW用）
+            const isApplyingCloudRef = useRef(false); // クラウドデータ適用中フラグ
 
             const closeToast = useCallback(() => {
                 setToastMessage(null);
@@ -2184,86 +2187,71 @@
                                 const cloudData = docSnap.data();
                                 console.log('[Sync] Loaded data from Firestore');
 
-                                // 🛡️ データ保護ロジック：タスク数で比較
+                                // 🛡️ Last Write Wins（LWW）同期ロジック
                                 const cloudTasks = cloudData.tasks || [];
                                 const localTasks = tasks || [];
                                 const cloudTaskCount = cloudTasks.length;
                                 const localTaskCount = localTasks.length;
+                                const cloudTimestamp = cloudData.lastSync || 0;
+                                const localTimestamp = localLastModifiedRef.current;
 
                                 console.log(`[Sync] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}`);
+                                console.log(`[Sync] Cloud timestamp: ${cloudTimestamp}, Local timestamp: ${localTimestamp}`);
 
-                                // データが多い方を優先（空のデータでの上書きを防止）
                                 if (cloudTaskCount === 0 && localTaskCount > 0) {
                                     // クラウドが空で、ローカルにデータがある → ローカルをアップロード
                                     console.log('[Sync] Cloud is empty, uploading local data');
+                                    const timestamp = localLastModifiedRef.current || Date.now();
                                     await userDocRef.set({
                                         tasks: localTasks,
                                         stats,
-                                        lastSync: Date.now(),
+                                        lastSync: timestamp,
                                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                                     }, { merge: true });
-                                    lastSyncRef.current = Date.now();
-                                    localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
+                                    localLastModifiedRef.current = timestamp;
+                                    localStorage.setItem('duo_v18_lastSync', timestamp.toString());
                                 } else if (localTaskCount === 0 && cloudTaskCount > 0) {
                                     // ローカルが空で、クラウドにデータがある → クラウドを採用
                                     console.log('[Sync] Local is empty, using cloud data');
+                                    isApplyingCloudRef.current = true;
                                     setTasks(cloudTasks);
                                     if (cloudData.stats) setStats(cloudData.stats);
-                                    lastSyncRef.current = cloudData.lastSync || Date.now();
-                                    localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-                                } else if (cloudTaskCount > localTaskCount) {
-                                    // クラウドの方が多い → クラウドを採用
-                                    console.log('[Sync] Cloud has more tasks, using cloud data');
+                                    localLastModifiedRef.current = cloudTimestamp;
+                                    localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                                } else if (cloudTimestamp > localTimestamp) {
+                                    // クラウドの方が新しい → クラウドを採用（LWW）
+                                    console.log('[Sync] Cloud is newer (LWW), using cloud data');
+                                    isApplyingCloudRef.current = true;
                                     setTasks(cloudTasks);
                                     if (cloudData.stats) setStats(cloudData.stats);
-                                    lastSyncRef.current = cloudData.lastSync || Date.now();
-                                    localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-                                } else if (localTaskCount > cloudTaskCount) {
-                                    // ローカルの方が多い → ローカルをアップロード
-                                    console.log('[Sync] Local has more tasks, uploading local data');
+                                    localLastModifiedRef.current = cloudTimestamp;
+                                    localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+                                } else {
+                                    // ローカルの方が新しい、または同じ → ローカルをアップロード
+                                    console.log('[Sync] Local is newer or equal (LWW), uploading local data');
+                                    const timestamp = localLastModifiedRef.current || Date.now();
                                     await userDocRef.set({
                                         tasks: localTasks,
                                         stats,
-                                        lastSync: Date.now(),
+                                        lastSync: timestamp,
                                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                                     }, { merge: true });
-                                    lastSyncRef.current = Date.now();
-                                    localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-                                } else {
-                                    // タスク数が同じ → タイムスタンプで比較
-                                    const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
-                                    const cloudTimestamp = cloudData.lastSync || 0;
-
-                                    if (cloudTimestamp > localTimestamp) {
-                                        console.log('[Sync] Same task count, cloud is newer');
-                                        setTasks(cloudTasks);
-                                        if (cloudData.stats) setStats(cloudData.stats);
-                                        lastSyncRef.current = cloudTimestamp;
-                                        localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-                                    } else {
-                                        console.log('[Sync] Same task count, local is newer, uploading');
-                                        await userDocRef.set({
-                                            tasks: localTasks,
-                                            stats,
-                                            lastSync: Date.now(),
-                                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                                        }, { merge: true });
-                                        lastSyncRef.current = Date.now();
-                                        localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-                                    }
+                                    localLastModifiedRef.current = timestamp;
+                                    localStorage.setItem('duo_v18_lastSync', timestamp.toString());
                                 }
                             } else {
                                 // 初回ログイン：ローカルデータをアップロード（空でもOK）
                                 console.log('[Sync] First login, uploading local data to Firestore');
+                                const timestamp = localLastModifiedRef.current || Date.now();
                                 await userDocRef.set({
                                     tasks,
                                     stats,
-                                    lastSync: Date.now(),
+                                    lastSync: timestamp,
                                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                                 });
-                                lastSyncRef.current = Date.now();
-                                localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
+                                localLastModifiedRef.current = timestamp;
+                                localStorage.setItem('duo_v18_lastSync', timestamp.toString());
                             }
 
                             setSyncStatus('synced');
@@ -2295,23 +2283,24 @@
                     const cloudData = docSnap.data();
                     const cloudTimestamp = cloudData.lastSync || 0;
 
-                    // 自分自身の書き込みによるonSnapshotは無視
-                    if (cloudTimestamp <= lastSyncRef.current) {
-                        console.log('[Realtime] Ignoring own write');
+                    // LWW: クラウドのタイムスタンプがローカルの最終変更時刻より新しい場合のみ採用
+                    if (cloudTimestamp <= localLastModifiedRef.current) {
+                        console.log('[Realtime] Ignoring: cloud is not newer than local (LWW)');
                         return;
                     }
 
                     const cloudTasks = cloudData.tasks || [];
                     const cloudTaskCount = cloudTasks.length;
 
-                    console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Cloud time: ${cloudTimestamp}, Last sync: ${lastSyncRef.current}`);
+                    console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Cloud time: ${cloudTimestamp}, Local modified: ${localLastModifiedRef.current}`);
 
-                    // 他のデバイスからの変更を適用
+                    // 他のデバイスからの変更を適用（LWW: クラウドの方が新しい）
                     if (cloudTaskCount > 0) {
-                        console.log('[Realtime] Applying cloud data from another device');
+                        console.log('[Realtime] Applying cloud data (LWW: cloud is newer)');
+                        isApplyingCloudRef.current = true;
                         setTasks(cloudTasks);
                         if (cloudData.stats) setStats(cloudData.stats);
-                        lastSyncRef.current = cloudTimestamp;
+                        localLastModifiedRef.current = cloudTimestamp;
                         localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
                         console.log('[Realtime] Synced from another device');
                     }
@@ -2335,15 +2324,23 @@
 
                 // ログイン済みの場合はFirestoreにも保存
                 if (user && window.firebaseDB && !authLoading) {
-                    // デバウンス中のonSnapshotで古いクラウドデータに上書きされないよう
-                    // 即座にlastSyncRefを現在時刻に更新しておく
-                    lastSyncRef.current = Date.now();
+                    // クラウドデータ適用による状態変更の場合はFirestoreへの再保存をスキップ
+                    if (isApplyingCloudRef.current) {
+                        isApplyingCloudRef.current = false;
+                        console.log('[Sync] Skipping save: change originated from cloud');
+                        return;
+                    }
+
+                    // LWW: ローカル変更時刻を即時記録
+                    localLastModifiedRef.current = Date.now();
+                    localStorage.setItem('duo_v18_lastSync', localLastModifiedRef.current.toString());
 
                     const saveToFirestore = async () => {
                         try {
                             setSyncStatus('syncing');
                             const userDocRef = window.firebaseDB.collection('users').doc(user.uid);
-                            const timestamp = Date.now();
+                            // LWW: 保存時のタイムスタンプは変更時刻を使用（新しいDate.now()ではない）
+                            const timestamp = localLastModifiedRef.current;
 
                             await userDocRef.set({
                                 tasks,
@@ -2352,10 +2349,9 @@
                                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                             }, { merge: true });
 
-                            lastSyncRef.current = timestamp;
                             localStorage.setItem('duo_v18_lastSync', timestamp.toString());
                             setSyncStatus('synced');
-                            console.log('[Sync] Saved to Firestore');
+                            console.log('[Sync] Saved to Firestore (LWW timestamp:', timestamp, ')');
                         } catch (error) {
                             console.error('[Sync] Error saving to Firestore:', error);
                             setSyncStatus('error');

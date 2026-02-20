@@ -1849,6 +1849,7 @@ const TaskItem = ({
   const [showActions, setShowActions] = useState(false);
   const [currentForecast, setCurrentForecast] = useState(null); // 予告枠色
   const buttonRef = useRef(null);
+
   // 🎰 ギャンブルデザイン最大化: handleToggle
   // 予告演出、音変化、ニアミス強化、天井可視化、The Freezeを統合
   const handleToggle = async e => {
@@ -2237,7 +2238,7 @@ const TaskItem = ({
   const springClass = isCompleting ? "animate-spring" : "";
   const checkboxPop = animateCheckbox ? "animate-checkbox-pop" : "";
   const anticipationGlow = animateCheckbox ? "animate-anticipation-glow animate-anticipation-pulse" : "";
-  // Section 1以外はクリック不可 (pointer-events-none)
+  // Section 1以外は薄く表示（pointer-events-noneは外し、ボタン操作を可能にする）
   const disabledClass = !isFocusedSection && !task.completed ? "opacity-50 grayscale" : "";
   return /*#__PURE__*/React.createElement("div", {
     className: `group flex items-start py-5 px-5 border-b-2 transition-all ${springClass} ${disabledClass} ${isDragging ? 'opacity-50 bg-blue-50' : ''} ${task.completed ? 'bg-gray-50 opacity-60 border-gray-100' : isFocusedSection ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-gray-100 border-gray-200'}`,
@@ -2248,7 +2249,9 @@ const TaskItem = ({
       }
     },
     onContextMenu: e => onContextMenu && onContextMenu(e, task),
-    onClick: () => { if (isMobile) setShowActions(prev => !prev); }
+    onClick: () => {
+      if (isMobile) setShowActions(prev => !prev);
+    }
   }, !task.completed && /*#__PURE__*/React.createElement("div", {
     className: "pt-0.5 pr-2 flex-shrink-0 cursor-move text-gray-300 hover:text-gray-500 transition-colors"
   }, /*#__PURE__*/React.createElement(Icons.GripVertical, {
@@ -2293,7 +2296,7 @@ const TaskItem = ({
   }, !task.completed && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1"
   }, /*#__PURE__*/React.createElement("div", {
-    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`
+    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? showActions ? 'opacity-100' : 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`
   }, !isFocusedSection && onMoveToSection1 && /*#__PURE__*/React.createElement(IconButton, {
     icon: Icons.ChevronUp,
     size: 18,
@@ -2311,7 +2314,7 @@ const TaskItem = ({
       onDelete(task.id);
     }
   }))), task.completed && /*#__PURE__*/React.createElement("div", {
-    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? (showActions ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`
+    className: `flex items-center gap-1 transition-opacity duration-200 ${isMobile ? showActions ? 'opacity-100' : 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`
   }, /*#__PURE__*/React.createElement(IconButton, {
     icon: Icons.Trash2,
     size: 18,
@@ -2479,19 +2482,25 @@ const App = () => {
     goal: null // ユーザーの目標
   }));
   const SECTION_SIZE = 4;
+
+  // 初回ロード時: 空セクションを作る不要なisSectionHeadを除去
   useEffect(() => {
     const incompleteTasks = tasks.filter(t => !t.completed);
     let needsCleanup = false;
+    // 連続するisSectionHeadをチェック（後ろにタスクが無いheadは不要）
     for (let i = 0; i < incompleteTasks.length - 1; i++) {
       if (incompleteTasks[i].isSectionHead && incompleteTasks[i + 1].isSectionHead) {
         needsCleanup = true;
         break;
       }
     }
+    // 最後のタスクがisSectionHead（その後にタスクがない）場合も不要
     if (incompleteTasks.length > 0 && incompleteTasks[incompleteTasks.length - 1].isSectionHead && incompleteTasks.length > 1) {
       needsCleanup = true;
     }
     if (needsCleanup) {
+      // isSectionHeadの直後にタスクがあるもののみ残す
+      const incompleteIds = new Set(incompleteTasks.map(t => t.id));
       const validHeadIds = new Set();
       for (let i = 0; i < incompleteTasks.length; i++) {
         if (incompleteTasks[i].isSectionHead && i < incompleteTasks.length - 1 && !incompleteTasks[i + 1].isSectionHead) {
@@ -2501,17 +2510,25 @@ const App = () => {
       const cleaned = tasks.map(t => {
         if (t.completed || !t.isSectionHead) return t;
         if (validHeadIds.has(t.id)) return t;
-        return { ...t, isSectionHead: false };
+        return {
+          ...t,
+          isSectionHead: false
+        };
       });
+      // sectionIdを再計算
       let sectionId = 1;
       const updated = cleaned.map((t, idx) => {
         if (t.completed) return t;
         if (idx > 0 && t.isSectionHead) sectionId++;
-        return { ...t, sectionId };
+        return {
+          ...t,
+          sectionId
+        };
       });
       setTasks(updated);
     }
-  }, []);
+  }, []); // 初回のみ実行
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeListId, setActiveListId] = useState('default');
   const [isShopOpen, setIsShopOpen] = useState(false);
@@ -2551,7 +2568,8 @@ const App = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
-  const lastSyncRef = useRef(0); // 自分の保存タイムスタンプを追跡
+  const localLastModifiedRef = useRef(parseInt(localStorage.getItem('duo_v18_lastSync') || '0')); // ローカルでの最終変更時刻を追跡（LWW用）
+  const isApplyingCloudRef = useRef(false); // クラウドデータ適用中フラグ
 
   const closeToast = useCallback(() => {
     setToastMessage(null);
@@ -2624,90 +2642,73 @@ const App = () => {
             const cloudData = docSnap.data();
             console.log('[Sync] Loaded data from Firestore');
 
-            // 🛡️ データ保護ロジック：タスク数で比較
+            // 🛡️ Last Write Wins（LWW）同期ロジック
             const cloudTasks = cloudData.tasks || [];
             const localTasks = tasks || [];
             const cloudTaskCount = cloudTasks.length;
             const localTaskCount = localTasks.length;
+            const cloudTimestamp = cloudData.lastSync || 0;
+            const localTimestamp = localLastModifiedRef.current;
             console.log(`[Sync] Cloud tasks: ${cloudTaskCount}, Local tasks: ${localTaskCount}`);
-
-            // データが多い方を優先（空のデータでの上書きを防止）
+            console.log(`[Sync] Cloud timestamp: ${cloudTimestamp}, Local timestamp: ${localTimestamp}`);
             if (cloudTaskCount === 0 && localTaskCount > 0) {
               // クラウドが空で、ローカルにデータがある → ローカルをアップロード
               console.log('[Sync] Cloud is empty, uploading local data');
+              const timestamp = localLastModifiedRef.current || Date.now();
               await userDocRef.set({
                 tasks: localTasks,
                 stats,
-                lastSync: Date.now(),
+                lastSync: timestamp,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
               }, {
                 merge: true
               });
-              lastSyncRef.current = Date.now();
-              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
+              localLastModifiedRef.current = timestamp;
+              localStorage.setItem('duo_v18_lastSync', timestamp.toString());
             } else if (localTaskCount === 0 && cloudTaskCount > 0) {
               // ローカルが空で、クラウドにデータがある → クラウドを採用
               console.log('[Sync] Local is empty, using cloud data');
+              isApplyingCloudRef.current = true;
               setTasks(cloudTasks);
               if (cloudData.stats) setStats(cloudData.stats);
-              lastSyncRef.current = cloudData.lastSync || Date.now();
-              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-            } else if (cloudTaskCount > localTaskCount) {
-              // クラウドの方が多い → クラウドを採用
-              console.log('[Sync] Cloud has more tasks, using cloud data');
+              localLastModifiedRef.current = cloudTimestamp;
+              localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+            } else if (cloudTimestamp > localTimestamp) {
+              // クラウドの方が新しい → クラウドを採用（LWW）
+              console.log('[Sync] Cloud is newer (LWW), using cloud data');
+              isApplyingCloudRef.current = true;
               setTasks(cloudTasks);
               if (cloudData.stats) setStats(cloudData.stats);
-              lastSyncRef.current = cloudData.lastSync || Date.now();
-              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-            } else if (localTaskCount > cloudTaskCount) {
-              // ローカルの方が多い → ローカルをアップロード
-              console.log('[Sync] Local has more tasks, uploading local data');
+              localLastModifiedRef.current = cloudTimestamp;
+              localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
+            } else {
+              // ローカルの方が新しい、または同じ → ローカルをアップロード
+              console.log('[Sync] Local is newer or equal (LWW), uploading local data');
+              const timestamp = localLastModifiedRef.current || Date.now();
               await userDocRef.set({
                 tasks: localTasks,
                 stats,
-                lastSync: Date.now(),
+                lastSync: timestamp,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
               }, {
                 merge: true
               });
-              lastSyncRef.current = Date.now();
-              localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-            } else {
-              // タスク数が同じ → タイムスタンプで比較
-              const localTimestamp = parseInt(localStorage.getItem('duo_v18_lastSync') || '0');
-              const cloudTimestamp = cloudData.lastSync || 0;
-              if (cloudTimestamp > localTimestamp) {
-                console.log('[Sync] Same task count, cloud is newer');
-                setTasks(cloudTasks);
-                if (cloudData.stats) setStats(cloudData.stats);
-                lastSyncRef.current = cloudTimestamp;
-                localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
-              } else {
-                console.log('[Sync] Same task count, local is newer, uploading');
-                await userDocRef.set({
-                  tasks: localTasks,
-                  stats,
-                  lastSync: Date.now(),
-                  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, {
-                  merge: true
-                });
-                lastSyncRef.current = Date.now();
-                localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
-              }
+              localLastModifiedRef.current = timestamp;
+              localStorage.setItem('duo_v18_lastSync', timestamp.toString());
             }
           } else {
             // 初回ログイン：ローカルデータをアップロード（空でもOK）
             console.log('[Sync] First login, uploading local data to Firestore');
+            const timestamp = localLastModifiedRef.current || Date.now();
             await userDocRef.set({
               tasks,
               stats,
-              lastSync: Date.now(),
+              lastSync: timestamp,
               createdAt: firebase.firestore.FieldValue.serverTimestamp(),
               updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            lastSyncRef.current = Date.now();
-            localStorage.setItem('duo_v18_lastSync', lastSyncRef.current.toString());
+            localLastModifiedRef.current = timestamp;
+            localStorage.setItem('duo_v18_lastSync', timestamp.toString());
           }
           setSyncStatus('synced');
         } catch (error) {
@@ -2733,23 +2734,22 @@ const App = () => {
       const cloudData = docSnap.data();
       const cloudTimestamp = cloudData.lastSync || 0;
 
-      // 自分自身の書き込みによるonSnapshotは無視
-      if (cloudTimestamp <= lastSyncRef.current) {
-        console.log('[Realtime] Ignoring own write');
+      // LWW: クラウドのタイムスタンプがローカルの最終変更時刻より新しい場合のみ採用
+      if (cloudTimestamp <= localLastModifiedRef.current) {
+        console.log('[Realtime] Ignoring: cloud is not newer than local (LWW)');
         return;
       }
-
       const cloudTasks = cloudData.tasks || [];
       const cloudTaskCount = cloudTasks.length;
+      console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Cloud time: ${cloudTimestamp}, Local modified: ${localLastModifiedRef.current}`);
 
-      console.log(`[Realtime] Cloud tasks: ${cloudTaskCount}, Cloud time: ${cloudTimestamp}, Last sync: ${lastSyncRef.current}`);
-
-      // 他のデバイスからの変更を適用
+      // 他のデバイスからの変更を適用（LWW: クラウドの方が新しい）
       if (cloudTaskCount > 0) {
-        console.log('[Realtime] Applying cloud data from another device');
+        console.log('[Realtime] Applying cloud data (LWW: cloud is newer)');
+        isApplyingCloudRef.current = true;
         setTasks(cloudTasks);
         if (cloudData.stats) setStats(cloudData.stats);
-        lastSyncRef.current = cloudTimestamp;
+        localLastModifiedRef.current = cloudTimestamp;
         localStorage.setItem('duo_v18_lastSync', cloudTimestamp.toString());
         console.log('[Realtime] Synced from another device');
       }
@@ -2771,15 +2771,22 @@ const App = () => {
 
     // ログイン済みの場合はFirestoreにも保存
     if (user && window.firebaseDB && !authLoading) {
-      // デバウンス中のonSnapshotで古いクラウドデータに上書きされないよう
-      // 即座にlastSyncRefを現在時刻に更新しておく
-      lastSyncRef.current = Date.now();
+      // クラウドデータ適用による状態変更の場合はFirestoreへの再保存をスキップ
+      if (isApplyingCloudRef.current) {
+        isApplyingCloudRef.current = false;
+        console.log('[Sync] Skipping save: change originated from cloud');
+        return;
+      }
 
+      // LWW: ローカル変更時刻を即時記録
+      localLastModifiedRef.current = Date.now();
+      localStorage.setItem('duo_v18_lastSync', localLastModifiedRef.current.toString());
       const saveToFirestore = async () => {
         try {
           setSyncStatus('syncing');
           const userDocRef = window.firebaseDB.collection('users').doc(user.uid);
-          const timestamp = Date.now();
+          // LWW: 保存時のタイムスタンプは変更時刻を使用（新しいDate.now()ではない）
+          const timestamp = localLastModifiedRef.current;
           await userDocRef.set({
             tasks,
             stats,
@@ -2788,10 +2795,9 @@ const App = () => {
           }, {
             merge: true
           });
-          lastSyncRef.current = timestamp;
           localStorage.setItem('duo_v18_lastSync', timestamp.toString());
           setSyncStatus('synced');
-          console.log('[Sync] Saved to Firestore');
+          console.log('[Sync] Saved to Firestore (LWW timestamp:', timestamp, ')');
         } catch (error) {
           console.error('[Sync] Error saving to Firestore:', error);
           setSyncStatus('error');
@@ -3349,9 +3355,14 @@ const App = () => {
     setDraggedTaskId(null);
     setDragOverTaskId(null);
   };
+
+  // Section 1の末尾にタスクを移動する
   const moveToSection1 = taskId => {
     const taskIndex = tasks.findIndex(t => t.id === taskId);
     if (taskIndex === -1) return;
+
+    // tasksの中でsection 1の最後のインデックスを探す
+    // (最初の未完了タスク群の中で、2つ目以降のisSectionHeadが出る直前まで)
     let section1EndIndex = -1;
     let passedFirstIncomplete = false;
     for (let i = 0; i < tasks.length; i++) {
@@ -3361,18 +3372,24 @@ const App = () => {
         section1EndIndex = i;
         continue;
       }
-      if (tasks[i].isSectionHead) break;
+      if (tasks[i].isSectionHead) break; // section 2の開始
       section1EndIndex = i;
     }
     if (section1EndIndex === -1 || taskIndex <= section1EndIndex) return;
     const newTasks = [...tasks];
     const [movedTask] = newTasks.splice(taskIndex, 1);
+    // taskIndexがsection1EndIndexより後なので、splice後のインデックス調整不要
     newTasks.splice(section1EndIndex + 1, 0, movedTask);
+
+    // sectionIdを再計算
     let sectionId = 1;
     const updated = newTasks.map((t, idx) => {
       if (t.completed) return t;
       if (idx > 0 && t.isSectionHead) sectionId++;
-      return { ...t, sectionId };
+      return {
+        ...t,
+        sectionId
+      };
     });
     setTasks(updated);
   };
