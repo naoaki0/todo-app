@@ -2444,13 +2444,19 @@
                         const taskExists = tasks.some(t => t.title === taskTitle);
 
                         if (!taskExists) {
+                            // 現在のセクション数を計算（最後のセクションに追加）
+                            let currentSectionCount = 1;
+                            for (let t of tasks) {
+                                if (t.isSectionHead) currentSectionCount++;
+                            }
                             const newTask = {
                                 id: (Date.now() + index).toString(),
                                 title: taskTitle,
                                 completed: false,
                                 listId: activeListId,
                                 createdAt: Date.now() + index,
-                                isSectionHead: tasks.length === 0 && newTasks.length === 0
+                                isSectionHead: tasks.length === 0 && newTasks.length === 0,
+                                sectionId: currentSectionCount
                             };
                             newTasks.push(newTask);
                             addedCount++;
@@ -2589,11 +2595,35 @@
                 if (!contextMenu) return;
                 const taskToPurge = contextMenu.task;
 
-                // タスクを末尾へ移動
-                const newTasks = tasks.filter(t => t.id !== taskToPurge.id);
-                newTasks.push(taskToPurge);
+                // isSectionHeadタスクをパージする際、次タスクへisSectionHead/sectionNameを引き継ぐ
+                let updatedTasks = tasks;
+                if (taskToPurge.isSectionHead) {
+                    const taskIndex = tasks.findIndex(t => t.id === taskToPurge.id);
+                    let nextHeadIndex = -1;
+                    for (let i = taskIndex + 1; i < tasks.length; i++) {
+                        const t = tasks[i];
+                        if (!t.completed && t.isSectionHead) break; // 次のセクション境界
+                        if (!t.completed) { nextHeadIndex = i; break; }
+                    }
+                    updatedTasks = tasks.map((t, i) => {
+                        if (i === nextHeadIndex) return { ...t, isSectionHead: true, sectionName: taskToPurge.sectionName || t.sectionName };
+                        return t;
+                    });
+                }
 
-                setTasks(newTasks);
+                // タスクを末尾へ移動（isSectionHeadを解除）
+                const newTasks = updatedTasks.filter(t => t.id !== taskToPurge.id);
+                newTasks.push({ ...taskToPurge, isSectionHead: false });
+
+                // sectionIdを再計算
+                let sectionId = 1;
+                const tasksWithSectionId = newTasks.map((t, idx) => {
+                    if (t.completed) return t;
+                    if (idx > 0 && t.isSectionHead) sectionId++;
+                    return { ...t, sectionId };
+                });
+
+                setTasks(tasksWithSectionId);
                 setContextMenu(null);
 
                 // パージ報酬: MVP最適化行動なので高報酬
