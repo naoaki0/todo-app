@@ -2873,6 +2873,30 @@
                 });
             };
 
+            // isSectionHeadタスクを削除する際、次タスクへisSectionHead/sectionNameを引き継ぐ
+            const deleteTask = (taskId) => {
+                setTasks(prev => {
+                    const taskIndex = prev.findIndex(t => t.id === taskId);
+                    if (taskIndex === -1) return prev;
+                    const task = prev[taskIndex];
+                    let nextHeadIndex = -1;
+                    if (task.isSectionHead) {
+                        for (let i = taskIndex + 1; i < prev.length; i++) {
+                            const t = prev[i];
+                            if (!t.completed && t.isSectionHead) break; // 次のセクション境界
+                            if (!t.completed) { nextHeadIndex = i; break; }
+                        }
+                    }
+                    return prev.filter((t, i) => i !== taskIndex).map((t, i, arr) => {
+                        // nextHeadIndexはfilter前のインデックスなので、filter後に対応するタスクを探す
+                        if (nextHeadIndex !== -1 && t.id === prev[nextHeadIndex].id) {
+                            return { ...t, isSectionHead: true, sectionName: task.sectionName || t.sectionName };
+                        }
+                        return t;
+                    });
+                });
+            };
+
             // タスクの並び替え機能
             // ドラッグ&ドロップ関数
             const handleDragStart = (e, task) => {
@@ -3619,7 +3643,7 @@
                                                                         onXpGain={handleXpGain}
                                                                         onToggle={() => completeTask(t.id)}
                                                                         onUpdate={updateTask}
-                                                                        onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
+                                                                        onDelete={(id) => deleteTask(id)}
                                                                         onDragStart={handleDragStart}
                                                                         isDragging={draggedTaskId === t.id}
                                                                         isDeadlineView={activeListId === 'deadline'}
@@ -3660,7 +3684,7 @@
                                                             onXpGain={handleXpGain}
                                                             onToggle={() => updateTask(t.id, { completed: false })}
                                                             onUpdate={updateTask}
-                                                            onDelete={(id) => setTasks(tasks.filter(x => x.id !== id))}
+                                                            onDelete={(id) => deleteTask(id)}
                                                             onDragStart={null}
                                                             isDragging={false}
                                                             isDeadlineView={activeListId === 'deadline'}
