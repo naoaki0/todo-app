@@ -2568,6 +2568,13 @@ const App = () => {
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
+  const [focusMode, setFocusMode] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('duo_v18_focusMode')) === true;
+    } catch {
+      return false;
+    }
+  });
   const localLastModifiedRef = useRef(parseInt(localStorage.getItem('duo_v18_lastSync') || '0')); // ローカルでの最終変更時刻を追跡（LWW用）
   const isApplyingCloudRef = useRef(false); // クラウドデータ適用中フラグ
 
@@ -2608,6 +2615,9 @@ const App = () => {
     }, 1000);
     return () => clearInterval(燃焼タイマー);
   }, [stats.isBurning]);
+  useEffect(() => {
+    localStorage.setItem('duo_v18_focusMode', JSON.stringify(focusMode));
+  }, [focusMode]);
   useEffect(() => {
     const h = () => {
       const m = window.innerWidth < 768;
@@ -4079,7 +4089,8 @@ const App = () => {
     if (currentSection.header !== null || currentSection.tasks.length > 0) {
       sections.push(currentSection);
     }
-    return sections.filter(s => s.tasks.length > 0).map((section, sectionIndex) => {
+    const visibleSections = focusMode ? sections.filter(s => s.tasks.length > 0).slice(0, 1) : sections.filter(s => s.tasks.length > 0);
+    return visibleSections.map((section, sectionIndex) => {
       const sectionNum = sectionIndex + 1;
       // セクション名はheaderのsectionNameプロパティから取得（なければSection Nをフォールバック）
       const sectionName = section.header?.sectionName || section.tasks.find(t => t.sectionName)?.sectionName || `Section ${sectionNum}`;
@@ -4102,13 +4113,17 @@ const App = () => {
           }
         },
         title: "\u53F3\u30AF\u30EA\u30C3\u30AF\u3067\u540D\u524D\u3092\u5909\u66F4"
-      }, sectionName), sectionNum === 1 && /*#__PURE__*/React.createElement("div", {
+      }, sectionName), sectionNum === 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
         className: "flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse"
       }, /*#__PURE__*/React.createElement("span", {
         className: "text-lg"
       }, "\uD83D\uDE80"), /*#__PURE__*/React.createElement("span", {
         className: "text-[10px] font-black text-yellow-700 uppercase tracking-wider"
-      }, "MVP Focus"))), sectionNum === 1 && section.tasks.length > 0 && (() => {
+      }, "MVP Focus")), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setFocusMode(!focusMode),
+        className: `font-black text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider transition-all border-2 ${juicyBtnClass} ${focusMode ? 'bg-purple-100 border-purple-300 text-purple-700 shadow-md' : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`,
+        title: focusMode ? '全タスク表示に切替' : '集中モード：1タスクだけ表示'
+      }, focusMode ? '🎯 集中' : '📋 全部'))), sectionNum === 1 && section.tasks.length > 0 && (() => {
         const currentSectionId = section.tasks[0]?.sectionId;
         const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId);
         const completedCount = currentSectionAllTasks.filter(t => t.completed).length;
@@ -4143,35 +4158,47 @@ const App = () => {
         }, section.tasks.length === 1 ? /*#__PURE__*/React.createElement("span", {
           className: "text-green-600"
         }, "\uD83C\uDF81 \u3042\u30681\u3064\u3067\u9054\u6210\uFF01\u5B8C\u4E86\u664250\uD83D\uDC8E\u30DC\u30FC\u30CA\u30B9") : /*#__PURE__*/React.createElement("span", null, "\u3042\u3068", section.tasks.length, "\u30BF\u30B9\u30AF\u306750\uD83D\uDC8E")));
-      })(), section.tasks.map((t, taskIndex) => {
-        const isLast = taskIndex === section.tasks.length - 1;
-        return /*#__PURE__*/React.createElement("div", {
-          key: t.id,
-          onDragOver: e => handleDragOver(e, t),
-          onDrop: e => handleDrop(e, t)
-        }, /*#__PURE__*/React.createElement(TaskItem, {
-          task: t,
-          isMobile: isMobile,
-          onXpGain: handleXpGain,
-          onToggle: () => completeTask(t.id),
-          onUpdate: updateTask,
-          onDelete: id => deleteTask(id),
-          onDragStart: handleDragStart,
-          isDragging: draggedTaskId === t.id,
-          isDeadlineView: activeListId === 'deadline',
-          activeTheme: stats.currentTheme,
-          onContextMenu: handleContextMenu,
-          isFocusedSection: sectionNum === 1,
-          isLastInSection: isLast,
-          setRewardEffect: setRewardEffect,
-          stats: stats,
-          setStats: setStats,
-          setToastMessage: setToastMessage,
-          onMoveToSection1: sectionNum !== 1 ? moveToSection1 : undefined
-        }));
-      }));
+      })(), (() => {
+        const tasksToShow = focusMode && sectionNum === 1 ? section.tasks.slice(0, 1) : section.tasks;
+        return tasksToShow.map((t, taskIndex) => {
+          const isLast = taskIndex === tasksToShow.length - 1;
+          return /*#__PURE__*/React.createElement("div", {
+            key: t.id,
+            onDragOver: e => handleDragOver(e, t),
+            onDrop: e => handleDrop(e, t)
+          }, /*#__PURE__*/React.createElement(TaskItem, {
+            task: t,
+            isMobile: isMobile,
+            onXpGain: handleXpGain,
+            onToggle: () => completeTask(t.id),
+            onUpdate: updateTask,
+            onDelete: id => deleteTask(id),
+            onDragStart: handleDragStart,
+            isDragging: draggedTaskId === t.id,
+            isDeadlineView: activeListId === 'deadline',
+            activeTheme: stats.currentTheme,
+            onContextMenu: handleContextMenu,
+            isFocusedSection: sectionNum === 1,
+            isLastInSection: isLast,
+            setRewardEffect: setRewardEffect,
+            stats: stats,
+            setStats: setStats,
+            setToastMessage: setToastMessage,
+            onMoveToSection1: sectionNum !== 1 ? moveToSection1 : undefined
+          }));
+        });
+      })(), focusMode && sectionNum === 1 && section.tasks.length > 1 && /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center justify-center gap-3 py-4"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2"
+      }, section.tasks.map((_, i) => /*#__PURE__*/React.createElement("div", {
+        key: i,
+        className: `w-2 h-2 rounded-full transition-all ${i === 0 ? 'bg-blue-500 scale-125' : 'bg-gray-300'}`
+      }))), /*#__PURE__*/React.createElement("span", {
+        className: "text-xs font-bold text-gray-400"
+      }, "1 / ", section.tasks.length)));
     });
-  })()), completed.length > 0 && /*#__PURE__*/React.createElement("div", {
+  })()), !focusMode && completed.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-16 mb-20"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setIsCompletedOpen(!isCompletedOpen),

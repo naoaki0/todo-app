@@ -2108,6 +2108,9 @@
             const [authLoading, setAuthLoading] = useState(true);
             const [showAuthModal, setShowAuthModal] = useState(false);
             const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing' | 'error'
+            const [focusMode, setFocusMode] = useState(() => {
+                try { return JSON.parse(localStorage.getItem('duo_v18_focusMode')) === true; } catch { return false; }
+            });
             const localLastModifiedRef = useRef(
                 parseInt(localStorage.getItem('duo_v18_lastSync') || '0')
             ); // ローカルでの最終変更時刻を追跡（LWW用）
@@ -2152,6 +2155,10 @@
 
                 return () => clearInterval(燃焼タイマー);
             }, [stats.isBurning]);
+
+            useEffect(() => {
+                localStorage.setItem('duo_v18_focusMode', JSON.stringify(focusMode));
+            }, [focusMode]);
 
             useEffect(() => {
                 const h = () => { const m = window.innerWidth < 768; setIsMobile(m); if (!m) setIsSidebarOpen(true); };
@@ -3578,7 +3585,10 @@
                                                 sections.push(currentSection);
                                             }
 
-                                            return sections.filter(s => s.tasks.length > 0).map((section, sectionIndex) => {
+                                            const visibleSections = focusMode
+                                                ? sections.filter(s => s.tasks.length > 0).slice(0, 1)
+                                                : sections.filter(s => s.tasks.length > 0);
+                                            return visibleSections.map((section, sectionIndex) => {
                                                 const sectionNum = sectionIndex + 1;
                                                 // セクション名はheaderのsectionNameプロパティから取得（なければSection Nをフォールバック）
                                                 const sectionName = section.header?.sectionName ||
@@ -3604,10 +3614,23 @@
                                                                 {sectionName}
                                                             </div>
                                                             {sectionNum === 1 && (
-                                                                <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
-                                                                    <span className="text-lg">🚀</span>
-                                                                    <span className="text-[10px] font-black text-yellow-700 uppercase tracking-wider">MVP Focus</span>
-                                                                </div>
+                                                                <>
+                                                                    <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
+                                                                        <span className="text-lg">🚀</span>
+                                                                        <span className="text-[10px] font-black text-yellow-700 uppercase tracking-wider">MVP Focus</span>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => setFocusMode(!focusMode)}
+                                                                        className={`font-black text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider transition-all border-2 ${juicyBtnClass} ${
+                                                                            focusMode
+                                                                                ? 'bg-purple-100 border-purple-300 text-purple-700 shadow-md'
+                                                                                : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                                                                        }`}
+                                                                        title={focusMode ? '全タスク表示に切替' : '集中モード：1タスクだけ表示'}
+                                                                    >
+                                                                        {focusMode ? '🎯 集中' : '📋 全部'}
+                                                                    </button>
+                                                                </>
                                                             )}
                                                         </div>
 
@@ -3659,8 +3682,10 @@
                                                         })()}
 
                                                         {/* セクション内のタスク */}
-                                                        {section.tasks.map((t, taskIndex) => {
-                                                            const isLast = taskIndex === section.tasks.length - 1;
+                                                        {(() => {
+                                                            const tasksToShow = focusMode && sectionNum === 1 ? section.tasks.slice(0, 1) : section.tasks;
+                                                            return tasksToShow.map((t, taskIndex) => {
+                                                            const isLast = taskIndex === tasksToShow.length - 1;
                                                             return (
                                                                 <div
                                                                     key={t.id}
@@ -3689,7 +3714,26 @@
                                                                     />
                                                                 </div>
                                                             );
-                                                        })}
+                                                        });
+                                                        })()}
+                                                        {/* 集中モード: 進捗インジケーター */}
+                                                        {focusMode && sectionNum === 1 && section.tasks.length > 1 && (
+                                                            <div className="flex items-center justify-center gap-3 py-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    {section.tasks.map((_, i) => (
+                                                                        <div
+                                                                            key={i}
+                                                                            className={`w-2 h-2 rounded-full transition-all ${
+                                                                                i === 0 ? 'bg-blue-500 scale-125' : 'bg-gray-300'
+                                                                            }`}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <span className="text-xs font-bold text-gray-400">
+                                                                    1 / {section.tasks.length}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </React.Fragment>
                                                 );
                                             });
@@ -3697,7 +3741,7 @@
                                     </div>
 
                                     {/* 完了タスクセクション */}
-                                    {completed.length > 0 && (
+                                    {!focusMode && completed.length > 0 && (
                                         <div className="mt-16 mb-20">
                                             <button onClick={() => setIsCompletedOpen(!isCompletedOpen)} className={`flex items-center gap-2 text-sm font-black text-gray-400 hover:text-gray-600 px-4 py-3 rounded-xl transition-colors bg-gray-50 border-2 border-transparent hover:border-gray-200 ${juicyBtnClass}`}>
                                                 {isCompletedOpen ? <Icons.ChevronDown size={18} /> : <Icons.ChevronRight size={18} />}
