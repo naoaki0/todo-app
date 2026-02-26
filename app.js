@@ -4168,6 +4168,7 @@ const App = () => {
           const totalTasks = section.tasks.length;
           const completedInSection = tasks.filter(t => t.sectionId === currentTask.sectionId && t.completed).length;
           const allInSection = tasks.filter(t => t.sectionId === currentTask.sectionId).length;
+          const focusCardRef = React.createRef();
 
           // 報酬プレビュー計算
           const isSection1 = currentTask.sectionId === 1;
@@ -4176,6 +4177,7 @@ const App = () => {
           return /*#__PURE__*/React.createElement("div", {
             className: "px-2 py-2"
           }, /*#__PURE__*/React.createElement("div", {
+            ref: focusCardRef,
             className: "relative bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 border-2 border-blue-200 rounded-2xl p-5 shadow-lg"
           }, /*#__PURE__*/React.createElement("div", {
             className: "flex items-center justify-between mb-4"
@@ -4206,7 +4208,12 @@ const App = () => {
             setToastMessage: setToastMessage,
             onMoveToSection1: undefined
           })), /*#__PURE__*/React.createElement("button", {
-            onClick: () => completeTask(currentTask.id),
+            onClick: () => {
+              const checkbox = focusCardRef.current?.querySelector('[class*="w-6 h-6 rounded-xl"]');
+              if (checkbox) {
+                checkbox.parentElement.click();
+              }
+            },
             className: `w-full mt-4 py-3 rounded-xl font-black text-sm tracking-wide transition-all ${juicyBtnClass} bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95`
           }, "\u5B8C\u4E86\u3059\u308B"), /*#__PURE__*/React.createElement("p", {
             className: "text-center text-[11px] text-gray-400 font-bold mt-3"

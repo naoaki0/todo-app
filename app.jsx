@@ -3694,6 +3694,7 @@
                                                                 const totalTasks = section.tasks.length;
                                                                 const completedInSection = tasks.filter(t => t.sectionId === currentTask.sectionId && t.completed).length;
                                                                 const allInSection = tasks.filter(t => t.sectionId === currentTask.sectionId).length;
+                                                                const focusCardRef = React.createRef();
 
                                                                 // 報酬プレビュー計算
                                                                 const isSection1 = currentTask.sectionId === 1;
@@ -3703,7 +3704,7 @@
                                                                 return (
                                                                     <div className="px-2 py-2">
                                                                         {/* ミッションカード */}
-                                                                        <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 border-2 border-blue-200 rounded-2xl p-5 shadow-lg">
+                                                                        <div ref={focusCardRef} className="relative bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 border-2 border-blue-200 rounded-2xl p-5 shadow-lg">
                                                                             {/* 上部: ステップ表示 */}
                                                                             <div className="flex items-center justify-between mb-4">
                                                                                 <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
@@ -3741,9 +3742,14 @@
                                                                                 />
                                                                             </div>
 
-                                                                            {/* 着手ボタン */}
+                                                                            {/* 着手ボタン - TaskItemのチェックボックスをクリックして報酬演出を発火 */}
                                                                             <button
-                                                                                onClick={() => completeTask(currentTask.id)}
+                                                                                onClick={() => {
+                                                                                    const checkbox = focusCardRef.current?.querySelector('[class*="w-6 h-6 rounded-xl"]');
+                                                                                    if (checkbox) {
+                                                                                        checkbox.parentElement.click();
+                                                                                    }
+                                                                                }}
                                                                                 className={`w-full mt-4 py-3 rounded-xl font-black text-sm tracking-wide transition-all ${juicyBtnClass} bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95`}
                                                                             >
                                                                                 完了する
