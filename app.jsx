@@ -3686,6 +3686,108 @@
                                                         {/* セクション内のタスク */}
                                                         {(() => {
                                                             const tasksToShow = focusMode && sectionNum === 1 ? section.tasks.slice(0, 1) : section.tasks;
+
+                                                            // 集中モード: ミッションカード風表示
+                                                            if (focusMode && sectionNum === 1 && tasksToShow.length > 0) {
+                                                                const currentTask = tasksToShow[0];
+                                                                const nextTask = section.tasks.length > 1 ? section.tasks[1] : null;
+                                                                const totalTasks = section.tasks.length;
+                                                                const completedInSection = tasks.filter(t => t.sectionId === currentTask.sectionId && t.completed).length;
+                                                                const allInSection = tasks.filter(t => t.sectionId === currentTask.sectionId).length;
+
+                                                                // 報酬プレビュー計算
+                                                                const isSection1 = currentTask.sectionId === 1;
+                                                                const remainingAfterThis = totalTasks - 1;
+                                                                const previewReward = remainingAfterThis === 0 ? 50 : isSection1 ? 10 : 2;
+
+                                                                return (
+                                                                    <div className="px-2 py-2">
+                                                                        {/* ミッションカード */}
+                                                                        <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 border-2 border-blue-200 rounded-2xl p-5 shadow-lg">
+                                                                            {/* 上部: ステップ表示 */}
+                                                                            <div className="flex items-center justify-between mb-4">
+                                                                                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                                                                                    Step {completedInSection + 1} / {allInSection}
+                                                                                </span>
+                                                                                <span className="text-[10px] font-bold text-amber-500 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                                                                    +{previewReward}💎
+                                                                                </span>
+                                                                            </div>
+
+                                                                            {/* タスク本体 */}
+                                                                            <div
+                                                                                onDragOver={(e) => handleDragOver(e, currentTask)}
+                                                                                onDrop={(e) => handleDrop(e, currentTask)}
+                                                                            >
+                                                                                <TaskItem
+                                                                                    task={currentTask}
+                                                                                    isMobile={isMobile}
+                                                                                    onXpGain={handleXpGain}
+                                                                                    onToggle={() => completeTask(currentTask.id)}
+                                                                                    onUpdate={updateTask}
+                                                                                    onDelete={(id) => deleteTask(id)}
+                                                                                    onDragStart={handleDragStart}
+                                                                                    isDragging={draggedTaskId === currentTask.id}
+                                                                                    isDeadlineView={activeListId === 'deadline'}
+                                                                                    activeTheme={stats.currentTheme}
+                                                                                    onContextMenu={handleContextMenu}
+                                                                                    isFocusedSection={true}
+                                                                                    isLastInSection={true}
+                                                                                    setRewardEffect={setRewardEffect}
+                                                                                    stats={stats}
+                                                                                    setStats={setStats}
+                                                                                    setToastMessage={setToastMessage}
+                                                                                    onMoveToSection1={undefined}
+                                                                                />
+                                                                            </div>
+
+                                                                            {/* 着手ボタン */}
+                                                                            <button
+                                                                                onClick={() => completeTask(currentTask.id)}
+                                                                                className={`w-full mt-4 py-3 rounded-xl font-black text-sm tracking-wide transition-all ${juicyBtnClass} bg-gradient-to-r from-blue-500 to-blue-600 text-white border-2 border-blue-400 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95`}
+                                                                            >
+                                                                                完了する
+                                                                            </button>
+
+                                                                            {/* 励ましコピー */}
+                                                                            <p className="text-center text-[11px] text-gray-400 font-bold mt-3">
+                                                                                {remainingAfterThis === 0
+                                                                                    ? '🎉 ラストタスク！これで完了'
+                                                                                    : remainingAfterThis === 1
+                                                                                        ? '✨ あと2つだけ'
+                                                                                        : '👆 タップするだけでOK'}
+                                                                            </p>
+                                                                        </div>
+
+                                                                        {/* 次タスクプレビュー */}
+                                                                        {nextTask && (
+                                                                            <div className="mt-3 px-4 py-2.5 flex items-center gap-3 opacity-40">
+                                                                                <div className="w-4 h-4 rounded-lg border-2 border-gray-300 flex-shrink-0" />
+                                                                                <span className="text-sm font-bold text-gray-400 truncate">
+                                                                                    次: {nextTask.title}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* プログレスドット */}
+                                                                        {totalTasks > 1 && (
+                                                                            <div className="flex items-center justify-center gap-2 pt-3">
+                                                                                {section.tasks.map((_, i) => (
+                                                                                    <div
+                                                                                        key={i}
+                                                                                        className={`rounded-full transition-all ${
+                                                                                            i === 0
+                                                                                                ? 'w-6 h-2 bg-blue-500 rounded-full'
+                                                                                                : 'w-2 h-2 bg-gray-300'
+                                                                                        }`}
+                                                                                    />
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            }
+
                                                             return tasksToShow.map((t, taskIndex) => {
                                                             const isLast = taskIndex === tasksToShow.length - 1;
                                                             return (
@@ -3718,24 +3820,6 @@
                                                             );
                                                         });
                                                         })()}
-                                                        {/* 集中モード: 進捗インジケーター */}
-                                                        {focusMode && sectionNum === 1 && section.tasks.length > 1 && (
-                                                            <div className="flex items-center justify-center gap-3 py-4">
-                                                                <div className="flex items-center gap-2">
-                                                                    {section.tasks.map((_, i) => (
-                                                                        <div
-                                                                            key={i}
-                                                                            className={`w-2 h-2 rounded-full transition-all ${
-                                                                                i === 0 ? 'bg-blue-500 scale-125' : 'bg-gray-300'
-                                                                            }`}
-                                                                        />
-                                                                    ))}
-                                                                </div>
-                                                                <span className="text-xs font-bold text-gray-400">
-                                                                    1 / {section.tasks.length}
-                                                                </span>
-                                                            </div>
-                                                        )}
                                                     </React.Fragment>
                                                 );
                                             });
