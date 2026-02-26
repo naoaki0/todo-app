@@ -3443,7 +3443,7 @@
                                     </div>
 
                                     {/* タスク入力エリア */}
-                                    <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
+                                    {!focusMode && <div className={`mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`}>
                                         <div className="w-full h-full flex items-center px-3 py-2 gap-2">
                                             <Icons.Plus className="text-gray-400 opacity-80" size={20} />
                                             <textarea
@@ -3517,7 +3517,7 @@
                                                 }}
                                             />
                                         </div>
-                                    </div>
+                                    </div>}
 
                                     {/* 🔥 Morning Burn Fuse Bar - タスク入力の下に配置 */}
                                     {stats.isBurning && stats.tempGems > 0 && (() => {
@@ -3615,10 +3615,12 @@
                                                             </div>
                                                             {sectionNum === 1 && (
                                                                 <>
-                                                                    <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
-                                                                        <span className="text-lg">🚀</span>
-                                                                        <span className="text-[10px] font-black text-yellow-700 uppercase tracking-wider">MVP Focus</span>
-                                                                    </div>
+                                                                    {!focusMode && (
+                                                                        <div className="flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse">
+                                                                            <span className="text-lg">🚀</span>
+                                                                            <span className="text-[10px] font-black text-yellow-700 uppercase tracking-wider">MVP Focus</span>
+                                                                        </div>
+                                                                    )}
                                                                     <button
                                                                         onClick={() => setFocusMode(!focusMode)}
                                                                         className={`font-black text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider transition-all border-2 ${juicyBtnClass} ${
@@ -3634,8 +3636,8 @@
                                                             )}
                                                         </div>
 
-                                                        {/* 📊 セクション進捗バー - Section 1のみ */}
-                                                        {sectionNum === 1 && section.tasks.length > 0 && (() => {
+                                                        {/* 📊 セクション進捗バー - Section 1のみ（集中モード時は非表示） */}
+                                                        {!focusMode && sectionNum === 1 && section.tasks.length > 0 && (() => {
                                                             const currentSectionId = section.tasks[0]?.sectionId;
                                                             const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId);
                                                             const completedCount = currentSectionAllTasks.filter(t => t.completed).length;

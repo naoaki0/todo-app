@@ -3955,7 +3955,7 @@ const App = () => {
     className: "text-blue-600 font-bold"
   }, 365 - stats.streak > 0 ? 365 - stats.streak : 0, "\u65E5"), "\u306737\u500D\u3002") : /*#__PURE__*/React.createElement(React.Fragment, null, "\uD83D\uDCC8 \u6BCE\u65E51%\u306E\u6210\u9577\u3067\u30011\u5E74\u5F8C", /*#__PURE__*/React.createElement("span", {
     className: "font-bold text-green-600"
-  }, "37\u500D"), "\u3002\u4ECA\u65E5\u304B\u3089\u59CB\u3081\u3088\u3046\u3002"))), /*#__PURE__*/React.createElement("div", {
+  }, "37\u500D"), "\u3002\u4ECA\u65E5\u304B\u3089\u59CB\u3081\u3088\u3046\u3002"))), !focusMode && /*#__PURE__*/React.createElement("div", {
     className: `mb-8 bg-gray-100 border-2 border-gray-200 rounded-xl p-1 shadow-sm ${btn3DClass} focus-within:translate-y-[4px] focus-within:border-b-0`
   }, /*#__PURE__*/React.createElement("div", {
     className: "w-full h-full flex items-center px-3 py-2 gap-2"
@@ -4113,7 +4113,7 @@ const App = () => {
           }
         },
         title: "\u53F3\u30AF\u30EA\u30C3\u30AF\u3067\u540D\u524D\u3092\u5909\u66F4"
-      }, sectionName), sectionNum === 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      }, sectionName), sectionNum === 1 && /*#__PURE__*/React.createElement(React.Fragment, null, !focusMode && /*#__PURE__*/React.createElement("div", {
         className: "flex items-center gap-1 bg-yellow-100 border-2 border-yellow-300 rounded-full px-3 py-1 animate-pulse"
       }, /*#__PURE__*/React.createElement("span", {
         className: "text-lg"
@@ -4123,7 +4123,7 @@ const App = () => {
         onClick: () => setFocusMode(!focusMode),
         className: `font-black text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider transition-all border-2 ${juicyBtnClass} ${focusMode ? 'bg-purple-100 border-purple-300 text-purple-700 shadow-md' : 'bg-gray-50 border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`,
         title: focusMode ? '全タスク表示に切替' : '集中モード：1タスクだけ表示'
-      }, focusMode ? '🎯 集中' : '📋 全部'))), sectionNum === 1 && section.tasks.length > 0 && (() => {
+      }, focusMode ? '🎯 集中' : '📋 全部'))), !focusMode && sectionNum === 1 && section.tasks.length > 0 && (() => {
         const currentSectionId = section.tasks[0]?.sectionId;
         const currentSectionAllTasks = tasks.filter(t => t.sectionId === currentSectionId);
         const completedCount = currentSectionAllTasks.filter(t => t.completed).length;
